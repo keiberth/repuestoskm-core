@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const cards = document.querySelectorAll(".rkm-product-card");
     const summaryContainer = document.querySelector(".rkm-order-summary");
     const summaryCard = summaryContainer ? summaryContainer.querySelector(".rkm-card") : null;
+    const ORDER_DRAFT_STORAGE_KEY = "rkm_order_draft";
 
     let orderItems = {};
     let pendingHighlightItemId = null;
@@ -44,6 +45,22 @@ document.addEventListener("DOMContentLoaded", function () {
         return "rkm_repeat_order_cart";
     }
 
+    function normalizeDraftItems(items) {
+        if (!Array.isArray(items)) return [];
+
+        return items
+            .map((item) => ({
+                id: String(item.id || ""),
+                name: item.name || "",
+                price: Number(item.price || 0),
+                sku: item.sku || "",
+                image: item.image || "",
+                description: item.description || "",
+                quantity: Math.max(1, Number(item.quantity || item.qty || 1)),
+            }))
+            .filter((item) => item.id && Number.isFinite(item.price) && item.quantity > 0);
+    }
+
     function normalizeRepeatItems(items) {
         if (!Array.isArray(items)) return [];
 
@@ -56,6 +73,84 @@ document.addEventListener("DOMContentLoaded", function () {
                 quantity: Math.max(1, Number(item.quantity || item.qty || 1)),
             }))
             .filter((item) => item.id);
+    }
+
+    function saveOrderDraft() {
+        try {
+            const draftItems = normalizeDraftItems(Object.values(orderItems));
+
+            if (!draftItems.length) {
+                localStorage.removeItem(ORDER_DRAFT_STORAGE_KEY);
+                return;
+            }
+
+            localStorage.setItem(ORDER_DRAFT_STORAGE_KEY, JSON.stringify(draftItems));
+        } catch (e) {
+            // Ignore storage errors silently so the order flow keeps working.
+        }
+    }
+
+    function loadOrderDraftIfExists() {
+        if (!summaryCard) return;
+
+        let rawDraft = null;
+
+        try {
+            rawDraft = localStorage.getItem(ORDER_DRAFT_STORAGE_KEY);
+        } catch (e) {
+            rawDraft = null;
+        }
+
+        if (!rawDraft) {
+            return;
+        }
+
+        let draftItems = [];
+
+        try {
+            draftItems = normalizeDraftItems(JSON.parse(rawDraft));
+        } catch (e) {
+            draftItems = [];
+        }
+
+        if (!draftItems.length) {
+            try {
+                localStorage.removeItem(ORDER_DRAFT_STORAGE_KEY);
+            } catch (e) {
+                // Ignore storage cleanup errors.
+            }
+            return;
+        }
+
+        let restoredAnyItem = false;
+
+        draftItems.forEach((item) => {
+            const restoreResult = addItemToOrder(item, item.quantity);
+
+            if (restoreResult?.success) {
+                restoredAnyItem = true;
+                return;
+            }
+
+            if (restoreResult?.reason === "partial_stock" && restoreResult.available > 0) {
+                const partialRestoreResult = addItemToOrder(item, restoreResult.available);
+
+                if (partialRestoreResult?.success) {
+                    restoredAnyItem = true;
+                }
+            }
+        });
+
+        if (restoredAnyItem) {
+            renderSummary();
+            return;
+        }
+
+        try {
+            localStorage.removeItem(ORDER_DRAFT_STORAGE_KEY);
+        } catch (e) {
+            // Ignore storage cleanup errors.
+        }
     }
 
     function addItemToOrder(productData, qtyToAdd = 1) {
@@ -304,6 +399,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 <button class="rkm-btn rkm-btn--primary rkm-btn-block" disabled>Continuar</button>
             `;
+            saveOrderDraft();
             return;
         }
 
@@ -379,6 +475,7 @@ document.addEventListener("DOMContentLoaded", function () {
         highlightSummaryItem(pendingHighlightItemId);
         pendingHighlightItemId = null;
         revealSummaryIfNeeded();
+        saveOrderDraft();
     }
     function bindSummaryEvents() {
         document.querySelectorAll(".rkm-qty-plus").forEach((btn) => {
@@ -569,7 +666,19 @@ document.addEventListener("DOMContentLoaded", function () {
             });
         });
 
-        loadRepeatOrderIfExists();
+        let hasRepeatDraft = false;
+
+        try {
+            hasRepeatDraft = !!localStorage.getItem(saveRepeatCartKey());
+        } catch (e) {
+            hasRepeatDraft = false;
+        }
+
+        if (hasRepeatDraft) {
+            loadRepeatOrderIfExists();
+        } else {
+            loadOrderDraftIfExists();
+        }
     }
 
     // ========================
