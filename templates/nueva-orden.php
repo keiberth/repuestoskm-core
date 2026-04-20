@@ -20,6 +20,12 @@ $products = wc_get_products($args);
 
 
 $repeat_items = [];
+$user_id = get_current_user_id();
+$shipping_address = [
+    'name'     => trim(get_user_meta($user_id, 'shipping_first_name', true) . ' ' . get_user_meta($user_id, 'shipping_last_name', true)),
+    'address'  => get_user_meta($user_id, 'shipping_address_1', true),
+    'city'     => get_user_meta($user_id, 'shipping_city', true),
+];
 
 if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
     $repeat_order_id = absint($_GET['repeat_order']);
@@ -201,6 +207,35 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
                     <p class="rkm-order-summary__empty">Todavía no agregaste productos.</p>
                     <button class="rkm-btn rkm-btn--primary rkm-btn-block" disabled>Continuar</button>
                 </div>
+                <div class="rkm-card rkm-order-summary__shipping">
+                    <div class="rkm-order-summary__shipping-header">
+                        <span class="rkm-order-summary__shipping-eyebrow">Envio</span>
+                        <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=direcciones')); ?>" class="rkm-order-summary__shipping-edit">
+                            Editar
+                        </a>
+                    </div>
+
+                    <h4 class="rkm-order-summary__shipping-title">Direccion de envio</h4>
+
+                    <?php if (!empty($shipping_address['address'])) : ?>
+                        <div class="rkm-order-summary__shipping-body">
+                            <?php if (!empty($shipping_address['name'])) : ?>
+                                <strong><?php echo esc_html($shipping_address['name']); ?></strong>
+                            <?php endif; ?>
+                            <p><?php echo esc_html($shipping_address['address']); ?></p>
+                            <?php if (!empty($shipping_address['city'])) : ?>
+                                <p><?php echo esc_html($shipping_address['city']); ?></p>
+                            <?php endif; ?>
+                        </div>
+                    <?php else : ?>
+                        <div class="rkm-order-summary__shipping-empty">
+                            <p>No tenes una direccion configurada.</p>
+                            <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=direcciones')); ?>" class="rkm-order-summary__shipping-edit">
+                                Cargar direccion
+                            </a>
+                        </div>
+                    <?php endif; ?>
+                </div>
             </aside>
 
         </div>
@@ -276,23 +311,7 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
                 </div>
             </div>
         </div>
-        <?php
-        $user_id = get_current_user_id();
-
-        $billing_address = [
-            'name'     => get_user_meta($user_id, 'billing_first_name', true) . ' ' . get_user_meta($user_id, 'billing_last_name', true),
-            'address'  => get_user_meta($user_id, 'billing_address_1', true),
-            'city'     => get_user_meta($user_id, 'billing_city', true),
-            'phone'    => get_user_meta($user_id, 'billing_phone', true),
-        ];
-
-        $shipping_address = [
-            'name'     => get_user_meta($user_id, 'shipping_first_name', true) . ' ' . get_user_meta($user_id, 'shipping_last_name', true),
-            'address'  => get_user_meta($user_id, 'shipping_address_1', true),
-            'city'     => get_user_meta($user_id, 'shipping_city', true),
-        ];
-        ?>
-
+        <?php if (false) : ?>
         <div class="rkm-card rkm-address-summary">
 
             <div class="rkm-address-summary__header">
@@ -321,7 +340,8 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
 
             <?php endif; ?>
 
-</div>
+        </div>
+        <?php endif; ?>
 
     </div>
     <script>

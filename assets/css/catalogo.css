@@ -175,36 +175,60 @@
 
 .rkm-product-quick-view__thumbs {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
-    gap: 12px;
-    margin-top: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(56px, 68px));
+    justify-content: start;
+    gap: 8px;
+    margin-top: 14px;
 }
 
-.rkm-product-quick-view__thumb {
+.rkm-app .rkm-product-quick-view__thumb {
+    appearance: none;
+    -webkit-appearance: none;
     display: flex;
     align-items: center;
     justify-content: center;
     aspect-ratio: 1 / 1;
-    padding: 8px;
-    border: 1px solid #dbe3ee;
-    border-radius: 16px;
-    background: #fff;
+    padding: 6px;
+    border: 1px solid #dbe3ee !important;
+    border-radius: 12px;
+    background: #fff !important;
+    outline: none !important;
+    box-shadow: none !important;
+    overflow: hidden;
     cursor: pointer;
     transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    text-decoration: none !important;
 }
 
-.rkm-product-quick-view__thumb:hover,
-.rkm-product-quick-view__thumb:focus-visible,
-.rkm-product-quick-view__thumb.is-active {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+.rkm-app .rkm-product-quick-view__thumb:hover,
+.rkm-app .rkm-product-quick-view__thumb:focus-visible,
+.rkm-app .rkm-product-quick-view__thumb.is-active {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14) !important;
     transform: translateY(-1px);
 }
 
-.rkm-product-quick-view__thumb img {
+.rkm-app .rkm-product-quick-view__thumb:focus,
+.rkm-app .rkm-product-quick-view__thumb:active {
+    outline: none !important;
+    box-shadow: none !important;
+    border-color: #2563eb !important;
+}
+
+.rkm-app .rkm-product-quick-view__thumb::-moz-focus-inner {
+    border: 0 !important;
+}
+
+.rkm-app .rkm-product-quick-view__thumb img {
     width: 100%;
     height: 100%;
     object-fit: contain;
+    display: block;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    pointer-events: none;
 }
 
 .rkm-product-quick-view__content {
@@ -333,7 +357,7 @@ body.rkm-product-quick-view-open {
     }
 
     .rkm-product-quick-view__thumbs {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(52px, 60px));
     }
 
     .rkm-product-quick-view__actions {
