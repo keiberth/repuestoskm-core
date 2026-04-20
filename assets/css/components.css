@@ -946,3 +946,67 @@
         padding: 20px;
     }
 }
+
+/* Header de usuario unificado */
+.rkm-app .rkm-private-header-pro {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.rkm-app .rkm-private-header-pro__user {
+    position: relative;
+    display: flex;
+    align-items: center;
+    align-self: auto;
+    width: auto;
+    margin-left: auto;
+}
+
+.rkm-app .rkm-private-header-pro__toggle {
+    display: inline-flex;
+    width: auto;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.rkm-app .rkm-private-header-pro__avatar {
+    flex: 0 0 34px;
+}
+
+.rkm-app .rkm-private-header-pro__dropdown {
+    left: auto;
+    right: 0;
+    min-width: 190px;
+}
+
+@media (max-width: 768px) {
+    .rkm-app .rkm-private-header-pro {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .rkm-app .rkm-private-header-pro__user {
+        align-self: auto;
+        width: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .rkm-app .rkm-private-header-pro__toggle {
+        width: auto;
+        justify-content: center;
+    }
+
+    .rkm-app .rkm-private-header-pro__dropdown {
+        left: auto;
+        right: 0;
+        min-width: 190px;
+    }
+}

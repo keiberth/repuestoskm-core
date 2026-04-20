@@ -29,9 +29,8 @@ $shipping_city      = get_user_meta($user_id, 'shipping_city', true);
 ?>
 
 <div class="rkm-app">
-    <?php include plugin_dir_path(__FILE__) . 'partials/private-header.php'; ?>
-
     <div class="rkm-container">
+        <?php include plugin_dir_path(__FILE__) . 'partials/private-header.php'; ?>
         <div class="rkm-page-header">
             <h1><?php echo esc_html($page_title); ?></h1>
             <p><?php echo esc_html($page_subtitle); ?></p>

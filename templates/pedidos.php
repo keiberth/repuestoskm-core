@@ -5,8 +5,8 @@ if (!defined('ABSPATH')) {
 ?>
 
 <div class="rkm-app">
-    <?php include plugin_dir_path(__FILE__) . 'partials/private-header.php'; ?>
     <div class="rkm-container">
+        <?php include plugin_dir_path(__FILE__) . 'partials/private-header.php'; ?>
         <div class="rkm-page-header">
             <h1>Mis pedidos</h1>
         </div>

@@ -22,10 +22,8 @@ $products = wc_get_products($args);
 ?>
 
 <div class="rkm-app">
-
-    <?php include RKM_CORE_PATH . 'templates/partials/private-header.php'; ?>
-
     <div class="rkm-container rkm-dashboard-wrapper">
+        <?php include RKM_CORE_PATH . 'templates/partials/private-header.php'; ?>
 
         <div class="rkm-dashboard-header">
             <div>

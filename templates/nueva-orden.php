@@ -178,9 +178,8 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
 ?>
 
 <div class="rkm-app">
-    <?php include plugin_dir_path(__FILE__) . 'partials/private-header.php'; ?>
-
     <div class="rkm-container">
+        <?php include plugin_dir_path(__FILE__) . 'partials/private-header.php'; ?>
 
         <div class="rkm-page-header">
             <h1>Nueva orden</h1>
