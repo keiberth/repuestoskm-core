@@ -28,6 +28,7 @@ if (!defined('ABSPATH')) {
                     $order_date   = $order->get_date_created() ? $order->get_date_created()->date_i18n('d/m/Y') : '-';
                     $order_total  = $order->get_total();
                     $item_count   = $order->get_item_count();
+                    $item_count_label = $item_count === 1 ? '1 producto' : $item_count . ' productos';
                     $status_key   = $order->get_status();
                     $status_label = wc_get_order_status_name($status_key);
                     $status_slug  = sanitize_html_class('status-' . $status_key);
@@ -50,31 +51,47 @@ if (!defined('ABSPATH')) {
                             ];
                         }
                     ?>
-                    <div class="rkm-order-card">
-                        <div class="rkm-order-card__main">
-                            <div class="rkm-order-card__meta">
+                    <div class="rkm-order-card rkm-order-card--current">
+                        <div class="rkm-order-card__header">
+                            <div class="rkm-order-card__heading">
+                                <span class="rkm-order-card__eyebrow">Pedido activo</span>
                                 <div class="rkm-order-card__number">
-                                    <span class="rkm-order-card__label">Pedido</span>
                                     <strong>#<?php echo esc_html($order_number); ?></strong>
                                 </div>
-
                                 <div class="rkm-order-card__date">
-                                    <span class="rkm-order-card__label">Fecha</span>
-                                    <span><?php echo esc_html($order_date); ?></span>
+                                    Creado el <?php echo esc_html($order_date); ?>
                                 </div>
+                            </div>
 
-                                <div class="rkm-order-card__status">
-                                    <span class="rkm-order-card__label">Estado</span>
-                                    <mark class="rkm-order-badge <?php echo esc_attr($status_slug); ?>">
-                                        <?php echo esc_html($status_label); ?>
-                                    </mark>
-                                </div>
+                            <div class="rkm-order-card__status-wrap">
+                                <span class="rkm-order-card__label">Estado</span>
+                                <mark class="rkm-order-badge <?php echo esc_attr($status_slug); ?>">
+                                    <?php echo esc_html($status_label); ?>
+                                </mark>
+                            </div>
+                        </div>
 
-                                <div class="rkm-order-card__total">
-                                    <span class="rkm-order-card__label">Total</span>
-                                    <span><?php echo wp_kses_post(wc_price($order_total)); ?></span>
-                                    <small><?php echo esc_html($item_count); ?> elemento(s)</small>
-                                </div>
+                        <div class="rkm-order-card__body">
+                            <div class="rkm-order-card__metric rkm-order-card__metric--total">
+                                <span class="rkm-order-card__label">Total del pedido</span>
+                                <strong><?php echo wp_kses_post(wc_price($order_total)); ?></strong>
+                            </div>
+
+                            <div class="rkm-order-card__metric">
+                                <span class="rkm-order-card__label">Productos</span>
+                                <span><?php echo esc_html($item_count_label); ?></span>
+                            </div>
+
+                            <div class="rkm-order-card__metric">
+                                <span class="rkm-order-card__label">Seguimiento</span>
+                                <span>Podés ver detalle y estado actual del pedido.</span>
+                            </div>
+                        </div>
+
+                        <div class="rkm-order-card__footer">
+                            <div class="rkm-order-card__summary">
+                                <span class="rkm-order-card__summary-dot"></span>
+                                <?php echo esc_html($item_count_label); ?> listos para revisar
                             </div>
 
                             <div class="rkm-order-card__actions">
@@ -89,7 +106,7 @@ if (!defined('ABSPATH')) {
                                     data-order-total="<?php echo esc_attr(wp_strip_all_tags(wc_price($order_total))); ?>"
                                     data-order-items='<?php echo wp_json_encode($items_data); ?>'
                                 >
-                                    Ver
+                                    Ver pedido
                                 </button>
 
                                 <?php if ($can_cancel) : ?>
