@@ -17,6 +17,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const primaryAction = document.getElementById("rkmProductQuickViewPrimaryAction");
 
     let lastTrigger = null;
+    let scrollPosition = 0;
+    let imageTransitionToken = 0;
 
     function parseGallery(rawValue) {
         if (!rawValue) {
@@ -42,17 +44,57 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!item) {
             mainImage.removeAttribute("src");
             mainImage.alt = "";
+            mainImage.classList.remove("is-changing");
             return;
         }
 
-        mainImage.src = item.full || item.thumb || "";
-        mainImage.alt = item.alt || title.textContent || "Producto";
+        const currentToken = ++imageTransitionToken;
+        const nextSrc = item.full || item.thumb || "";
+        const nextAlt = item.alt || title.textContent || "Producto";
+
+        mainImage.classList.add("is-changing");
+
+        mainImage.src = nextSrc;
+        mainImage.alt = nextAlt;
+
+        const finishImageTransition = function () {
+            if (currentToken !== imageTransitionToken) {
+                return;
+            }
+
+            window.setTimeout(function () {
+                window.requestAnimationFrame(function () {
+                    if (currentToken === imageTransitionToken) {
+                        mainImage.classList.remove("is-changing");
+                    }
+                });
+            }, 90);
+        };
+
+        if (mainImage.complete) {
+            finishImageTransition();
+        } else {
+            mainImage.addEventListener("load", finishImageTransition, { once: true });
+            mainImage.addEventListener("error", finishImageTransition, { once: true });
+        }
 
         thumbs.querySelectorAll(".rkm-product-quick-view__thumb").forEach((thumbButton, index) => {
             const isActive = index === activeIndex;
             thumbButton.classList.toggle("is-active", isActive);
             thumbButton.setAttribute("aria-pressed", isActive ? "true" : "false");
         });
+    }
+
+    function lockBodyScroll() {
+        scrollPosition = window.scrollY || window.pageYOffset || 0;
+        document.body.style.top = `-${scrollPosition}px`;
+        document.body.classList.add("rkm-product-quick-view-open");
+    }
+
+    function unlockBodyScroll() {
+        document.body.classList.remove("rkm-product-quick-view-open");
+        document.body.style.top = "";
+        window.scrollTo(0, scrollPosition);
     }
 
     function renderThumbs(gallery) {
@@ -99,7 +141,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         modal.classList.add("is-active");
         modal.setAttribute("aria-hidden", "false");
-        document.body.classList.add("rkm-product-quick-view-open");
+        lockBodyScroll();
 
         const closeButton = modal.querySelector(".rkm-product-quick-view__close");
         if (closeButton) {
@@ -110,7 +152,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function closeModal() {
         modal.classList.remove("is-active");
         modal.setAttribute("aria-hidden", "true");
-        document.body.classList.remove("rkm-product-quick-view-open");
+        unlockBodyScroll();
 
         if (lastTrigger) {
             lastTrigger.focus();

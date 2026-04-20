@@ -98,6 +98,7 @@
     visibility: hidden;
     pointer-events: none;
     transition: opacity .2s ease, visibility .2s ease;
+    overscroll-behavior: contain;
 }
 
 .rkm-product-quick-view.is-active {
@@ -109,8 +110,15 @@
 .rkm-product-quick-view__overlay {
     position: absolute;
     inset: 0;
-    background: rgba(15, 23, 42, 0.56);
-    backdrop-filter: blur(4px);
+    background: rgba(15, 23, 42, 0.64);
+    backdrop-filter: blur(7px);
+    opacity: 0;
+    transition: opacity .24s ease, backdrop-filter .24s ease;
+    cursor: pointer;
+}
+
+.rkm-product-quick-view.is-active .rkm-product-quick-view__overlay {
+    opacity: 1;
 }
 
 .rkm-product-quick-view__dialog {
@@ -128,6 +136,16 @@
     box-shadow: 0 30px 80px rgba(15, 23, 42, 0.28);
     overflow: hidden;
     overflow-y: auto;
+    opacity: 0;
+    transform: translateY(18px) scale(.96);
+    transform-origin: center;
+    transition: opacity .22s ease, transform .28s cubic-bezier(.22, 1, .36, 1);
+    -webkit-overflow-scrolling: touch;
+}
+
+.rkm-product-quick-view.is-active .rkm-product-quick-view__dialog {
+    opacity: 1;
+    transform: translateY(0) scale(1);
 }
 
 .rkm-product-quick-view__close {
@@ -165,12 +183,23 @@
     border: 1px solid #e2e8f0;
     border-radius: 22px;
     background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    overflow: hidden;
 }
 
 .rkm-product-quick-view__main-image {
     width: 100%;
     max-height: 380px;
+    max-width: 100%;
     object-fit: contain;
+    opacity: 1;
+    transform: scale(1);
+    transition: opacity .18s ease, transform .24s ease;
+    will-change: opacity, transform;
+}
+
+.rkm-product-quick-view__main-image.is-changing {
+    opacity: 0;
+    transform: scale(.985);
 }
 
 .rkm-product-quick-view__thumbs {
@@ -204,14 +233,24 @@
 .rkm-app .rkm-product-quick-view__thumb:focus-visible,
 .rkm-app .rkm-product-quick-view__thumb.is-active {
     border-color: #2563eb !important;
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14) !important;
-    transform: translateY(-1px);
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.16) !important,
+        0 12px 24px rgba(15, 23, 42, 0.12) !important;
+    transform: translateY(-2px);
+}
+
+.rkm-app .rkm-product-quick-view__thumb:hover,
+.rkm-app .rkm-product-quick-view__thumb:focus-visible {
+    background: #f8fbff !important;
+}
+
+.rkm-app .rkm-product-quick-view__thumb.is-active {
+    background: #eff6ff !important;
 }
 
 .rkm-app .rkm-product-quick-view__thumb:focus,
 .rkm-app .rkm-product-quick-view__thumb:active {
     outline: none !important;
-    box-shadow: none !important;
     border-color: #2563eb !important;
 }
 
@@ -319,6 +358,10 @@
 
 body.rkm-product-quick-view-open {
     overflow: hidden;
+    position: fixed;
+    left: 0;
+    right: 0;
+    width: 100%;
 }
 
 @media (max-width: 900px) {
@@ -326,6 +369,8 @@ body.rkm-product-quick-view-open {
         grid-template-columns: 1fr;
         gap: 20px;
         padding: 22px;
+        width: min(720px, 100%);
+        max-height: calc(100dvh - 32px);
     }
 
     .rkm-product-quick-view__main-image-wrap {
@@ -344,11 +389,15 @@ body.rkm-product-quick-view-open {
 @media (max-width: 640px) {
     .rkm-product-quick-view {
         padding: 12px;
+        align-items: flex-end;
     }
 
     .rkm-product-quick-view__dialog {
         padding: 18px;
         border-radius: 20px;
+        width: 100%;
+        max-height: calc(100dvh - 16px);
+        gap: 18px;
     }
 
     .rkm-product-quick-view__main-image-wrap {
@@ -357,10 +406,28 @@ body.rkm-product-quick-view-open {
     }
 
     .rkm-product-quick-view__thumbs {
-        grid-template-columns: repeat(4, minmax(52px, 60px));
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 10px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        scrollbar-width: thin;
+    }
+
+    .rkm-app .rkm-product-quick-view__thumb {
+        flex: 0 0 58px;
     }
 
     .rkm-product-quick-view__actions {
         flex-direction: column;
+    }
+
+    .rkm-product-quick-view__close {
+        top: 14px;
+        right: 14px;
+    }
+
+    .rkm-product-quick-view__title {
+        padding-right: 44px;
     }
 }
