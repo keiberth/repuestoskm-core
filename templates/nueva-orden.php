@@ -311,37 +311,6 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
                 </div>
             </div>
         </div>
-        <?php if (false) : ?>
-        <div class="rkm-card rkm-address-summary">
-
-            <div class="rkm-address-summary__header">
-                <h3>Dirección de envío</h3>
-                <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=direcciones')); ?>" class="rkm-link-edit">
-                    Editar
-                </a>
-            </div>
-
-            <?php if (!empty($shipping_address['address'])) : ?>
-
-                <div class="rkm-address-summary__content">
-                    <strong><?php echo esc_html($shipping_address['name']); ?></strong>
-                    <p><?php echo esc_html($shipping_address['address']); ?></p>
-                    <p><?php echo esc_html($shipping_address['city']); ?></p>
-                </div>
-
-            <?php else : ?>
-
-                <div class="rkm-address-summary__empty">
-                    <p>No tenés una dirección configurada.</p>
-                    <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=direcciones')); ?>" class="rkm-btn-secondary">
-                        Cargar dirección
-                    </a>
-                </div>
-
-            <?php endif; ?>
-
-        </div>
-        <?php endif; ?>
 
     </div>
     <script>

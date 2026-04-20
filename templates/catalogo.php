@@ -1,4 +1,3 @@
-<?php echo '<div style="background:red;color:white;padding:10px;">CATALOGO REAL CARGADO</div>'; ?>
 <?php
 if (!defined('ABSPATH')) {
     exit;

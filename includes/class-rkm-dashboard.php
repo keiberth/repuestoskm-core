@@ -18,11 +18,16 @@ class RKM_Dashboard {
     }
 
     public function enqueue_assets() {
-    if (!is_user_logged_in()) {
-        return;
-    }
+        if (!is_user_logged_in()) {
+            return;
+        }
 
-    if (function_exists('is_account_page') && is_account_page()) {
+        if (!(function_exists('is_account_page') && is_account_page())) {
+            return;
+        }
+
+        $section = isset($_GET['section']) ? sanitize_key($_GET['section']) : 'panel';
+
         wp_enqueue_style(
             'rkm-base-css',
             RKM_CORE_URL . 'assets/css/base.css',
@@ -113,31 +118,16 @@ class RKM_Dashboard {
             true
         );
 
-        wp_enqueue_script(
-            'rkm-product-quick-view-js',
-            RKM_CORE_URL . 'assets/js/product-quick-view.js',
-            [],
-            '1.0.0',
-            true
-        );
-
-        wp_enqueue_script(
-            'rkm-orders',
-            RKM_CORE_URL . 'assets/js/orders.js',
-            [],
-            '1.0',
-            true
-        );
-
-        wp_localize_script('rkm-orders', 'rkmOrders', [
-            'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce'    => wp_create_nonce('rkm_orders_nonce'),
-        ]);
-
+        if ($section === 'nueva-orden') {
+            wp_enqueue_script(
+                'rkm-product-quick-view-js',
+                RKM_CORE_URL . 'assets/js/product-quick-view.js',
+                [],
+                '1.0.0',
+                true
+            );
+        }
     }
-
-
-}
 
     public function render_dashboard() {
         $user = wp_get_current_user();
