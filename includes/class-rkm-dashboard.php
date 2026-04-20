@@ -120,6 +120,14 @@ class RKM_Dashboard {
 
         if ($section === 'nueva-orden') {
             wp_enqueue_script(
+                'rkm-catalog-filters-js',
+                RKM_CORE_URL . 'assets/js/catalog-filters.js',
+                [],
+                '1.0.0',
+                true
+            );
+
+            wp_enqueue_script(
                 'rkm-product-quick-view-js',
                 RKM_CORE_URL . 'assets/js/product-quick-view.js',
                 [],
