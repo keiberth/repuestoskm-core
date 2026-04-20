@@ -4,6 +4,8 @@ document.addEventListener("DOMContentLoaded", function () {
     const summaryCard = summaryContainer ? summaryContainer.querySelector(".rkm-card") : null;
 
     let orderItems = {};
+    let pendingHighlightItemId = null;
+    let shouldScrollSummaryIntoView = false;
 
     // ========================
     // UTILIDADES
@@ -229,31 +231,109 @@ document.addEventListener("DOMContentLoaded", function () {
     // RESUMEN / NUEVA ORDEN
     // ========================
 
+    function getSelectedProductsLabel(count) {
+        if (count === 1) {
+            return "1 producto seleccionado";
+        }
+
+        return `${count} productos seleccionados`;
+    }
+
+    function highlightSummaryItem(itemId) {
+        if (!itemId) return;
+
+        const summaryItem = summaryCard?.querySelector(`.rkm-summary-item [data-id="${itemId}"]`)?.closest(".rkm-summary-item");
+
+        if (!summaryItem) {
+            return;
+        }
+
+        summaryItem.classList.add("is-highlighted");
+
+        window.setTimeout(() => {
+            summaryItem.classList.remove("is-highlighted");
+        }, 1600);
+    }
+
+    function revealSummaryIfNeeded() {
+        if (!shouldScrollSummaryIntoView || !summaryContainer) {
+            shouldScrollSummaryIntoView = false;
+            return;
+        }
+
+        shouldScrollSummaryIntoView = false;
+
+        summaryContainer.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+        });
+    }
+
     function renderSummary() {
         if (!summaryCard) return;
 
         const items = Object.values(orderItems);
+        const selectedProductsCount = items.length;
 
         if (!items.length) {
             summaryCard.innerHTML = `
-                <h3>Resumen del pedido</h3>
-                <p class="rkm-order-summary__empty">Todavía no agregaste productos.</p>
+                <div class="rkm-order-summary__header">
+                    <div>
+                        <span class="rkm-order-summary__eyebrow">Pedido</span>
+                        <h3>Resumen del pedido</h3>
+                        <p class="rkm-order-summary__count">${getSelectedProductsLabel(selectedProductsCount)}</p>
+                    </div>
+                </div>
+
+                <div class="rkm-order-summary__empty-state">
+                    <p class="rkm-order-summary__empty">No hay productos en el pedido</p>
+                    <p class="rkm-order-summary__empty-text">Agrega productos desde la grilla para ver cantidades y totales aca.</p>
+                </div>
+
+                <div class="rkm-summary-totals">
+                    <div class="rkm-summary-total rkm-summary-total--subtle">
+                        <span>Subtotal</span>
+                        <strong>${formatPrice(0)}</strong>
+                    </div>
+
+                    <div class="rkm-summary-total rkm-summary-total--grand">
+                        <span>Total</span>
+                        <strong>${formatPrice(0)}</strong>
+                    </div>
+                </div>
+
                 <button class="rkm-btn rkm-btn--primary rkm-btn-block" disabled>Continuar</button>
             `;
             return;
         }
 
-        let total = 0;
+        let subtotalGeneral = 0;
 
         const rows = items.map((item) => {
             const subtotal = item.price * item.quantity;
-            total += subtotal;
+            subtotalGeneral += subtotal;
 
             return `
                 <div class="rkm-summary-item">
                     <div class="rkm-summary-item__info">
                         <strong>${item.name}</strong>
                         ${item.sku ? `<div class="rkm-summary-meta">SKU: ${item.sku}</div>` : ""}
+
+                        <div class="rkm-summary-item__meta-actions">
+                            <div class="rkm-summary-pricing">
+                                <div class="rkm-summary-pricing__row">
+                                    <span>Unitario</span>
+                                    <strong>${formatPrice(item.price)}</strong>
+                                </div>
+
+                                <div class="rkm-summary-pricing__row">
+                                    <span>Subtotal</span>
+                                    <strong>${formatPrice(subtotal)}</strong>
+                                </div>
+                            </div>
+
+                            <button class="rkm-remove-item" data-id="${item.id}" aria-label="Eliminar producto">&times;</button>
+                        </div>
                     </div>
 
                     <div class="rkm-summary-item__controls">
@@ -261,26 +341,33 @@ document.addEventListener("DOMContentLoaded", function () {
                         <span>${item.quantity}</span>
                         <button class="rkm-qty-plus" data-id="${item.id}">+</button>
                     </div>
-
-                    <div class="rkm-summary-item__price">
-                        ${formatPrice(subtotal)}
-                    </div>
-
-                    <button class="rkm-remove-item" data-id="${item.id}">✕</button>
                 </div>
             `;
         }).join("");
 
         summaryCard.innerHTML = `
-            <h3>Resumen del pedido</h3>
+            <div class="rkm-order-summary__header">
+                <div>
+                    <span class="rkm-order-summary__eyebrow">Pedido</span>
+                    <h3>Resumen del pedido</h3>
+                    <p class="rkm-order-summary__count">${getSelectedProductsLabel(selectedProductsCount)}</p>
+                </div>
+            </div>
 
             <div class="rkm-summary-list">
                 ${rows}
             </div>
 
-            <div class="rkm-summary-total">
-                <span>Total</span>
-                <strong>${formatPrice(total)}</strong>
+            <div class="rkm-summary-totals">
+                <div class="rkm-summary-total rkm-summary-total--subtle">
+                    <span>Subtotal</span>
+                    <strong>${formatPrice(subtotalGeneral)}</strong>
+                </div>
+
+                <div class="rkm-summary-total rkm-summary-total--grand">
+                    <span>Total</span>
+                    <strong>${formatPrice(subtotalGeneral)}</strong>
+                </div>
             </div>
 
             <button class="rkm-btn rkm-btn--primary rkm-btn-block" id="rkm-confirm-order">
@@ -289,8 +376,10 @@ document.addEventListener("DOMContentLoaded", function () {
         `;
 
         bindSummaryEvents();
+        highlightSummaryItem(pendingHighlightItemId);
+        pendingHighlightItemId = null;
+        revealSummaryIfNeeded();
     }
-
     function bindSummaryEvents() {
         document.querySelectorAll(".rkm-qty-plus").forEach((btn) => {
             btn.addEventListener("click", () => {
@@ -470,9 +559,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     };
                 }
 
+                const hadItemsBefore = Object.keys(orderItems).length > 0;
                 orderItems[id].quantity += qty;
                 setVisibleStock(card, stock - qty);
                 qtyInput.value = 1;
+                pendingHighlightItemId = id;
+                shouldScrollSummaryIntoView = !hadItemsBefore;
                 renderSummary();
             });
         });
@@ -648,3 +740,4 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 });
+

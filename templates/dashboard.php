@@ -43,10 +43,10 @@ $current_section = 'panel';
                         </a>
                     </li>
                     <li>
-                        <a href="<?php echo esc_url($panel_url . '?section=nueva-orden'); ?>"
-                           class="rkm-sidebar-link <?php echo ($current_section === 'nueva-orden') ? 'is-active' : ''; ?>">
-                            <span class="rkm-sidebar-link__icon">➕</span>
-                            <span>Nueva orden</span>
+                        <a href="<?php echo esc_url($panel_url . '?section=catalogo'); ?>"
+                           class="rkm-sidebar-link <?php echo ($current_section === 'catalogo') ? 'is-active' : ''; ?>">
+                            <span class="rkm-sidebar-link__icon">&#128214;</span>
+                            <span>Catalogo</span>
                         </a>
                     </li>
                     <li>
@@ -65,8 +65,8 @@ $current_section = 'panel';
                 </ul>
 
                 <div class="rkm-sidebar-card__footer">
-                    <a class="rkm-btn-primary rkm-btn-block" href="<?php echo esc_url($panel_url . '?section=nueva-orden'); ?>">
-                        Nueva Orden
+                    <a class="rkm-btn-primary rkm-btn-block rkm-sidebar-card__cta" href="<?php echo esc_url($panel_url . '?section=nueva-orden'); ?>">
+                        <span class="rkm-sidebar-card__cta-label">Nueva Orden</span>
                     </a>
                 </div>
             </aside>

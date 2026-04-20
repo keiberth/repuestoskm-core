@@ -422,9 +422,32 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
             </section>
 
             <aside class="rkm-order-summary">
-                <div class="rkm-card">
-                    <h3>Resumen del pedido</h3>
-                    <p class="rkm-order-summary__empty">Todavía no agregaste productos.</p>
+                <div class="rkm-card rkm-order-summary__card">
+                    <div class="rkm-order-summary__header">
+                        <div>
+                            <span class="rkm-order-summary__eyebrow">Pedido</span>
+                            <h3>Resumen del pedido</h3>
+                            <p class="rkm-order-summary__count">0 productos seleccionados</p>
+                        </div>
+                    </div>
+
+                    <div class="rkm-order-summary__empty-state">
+                        <p class="rkm-order-summary__empty">No hay productos en el pedido</p>
+                        <p class="rkm-order-summary__empty-text">Agrega productos desde la grilla para ver cantidades y totales aca.</p>
+                    </div>
+
+                    <div class="rkm-summary-totals">
+                        <div class="rkm-summary-total rkm-summary-total--subtle">
+                            <span>Subtotal</span>
+                            <strong>$0</strong>
+                        </div>
+
+                        <div class="rkm-summary-total rkm-summary-total--grand">
+                            <span>Total</span>
+                            <strong>$0</strong>
+                        </div>
+                    </div>
+
                     <button class="rkm-btn rkm-btn--primary rkm-btn-block" disabled>Continuar</button>
                 </div>
                 <div class="rkm-card rkm-order-summary__shipping">
