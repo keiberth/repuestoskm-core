@@ -1,0 +1,196 @@
+:root {
+    --rkm-color-primary: #2563eb;
+    --rkm-color-primary-dark: #1d4ed8;
+    --rkm-color-primary-soft: #dbeafe;
+
+    --rkm-color-text: #0f172a;
+    --rkm-color-text-soft: #64748b;
+
+    --rkm-color-bg: #f8fafc;
+    --rkm-color-surface: #ffffff;
+    --rkm-color-surface-soft: #f1f5f9;
+    --rkm-color-border: #e2e8f0;
+
+    --rkm-color-success: #16a34a;
+    --rkm-color-success-soft: #dcfce7;
+
+    --rkm-color-warning: #d97706;
+    --rkm-color-warning-soft: #fef3c7;
+
+    --rkm-color-danger: #dc2626;
+    --rkm-color-danger-soft: #fee2e2;
+
+    --rkm-shadow-sm: 0 4px 12px rgba(15, 23, 42, 0.06);
+    --rkm-shadow-md: 0 10px 30px rgba(15, 23, 42, 0.08);
+    --rkm-shadow-lg: 0 18px 40px rgba(15, 23, 42, 0.12);
+
+    --rkm-radius-sm: 10px;
+    --rkm-radius-md: 16px;
+    --rkm-radius-lg: 22px;
+
+    --rkm-space-1: 8px;
+    --rkm-space-2: 12px;
+    --rkm-space-3: 16px;
+    --rkm-space-4: 20px;
+    --rkm-space-5: 24px;
+    --rkm-space-6: 32px;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body.woocommerce-account {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: var(--rkm-color-bg);
+    color: var(--rkm-color-text);
+    font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.rkm-app {
+    position: relative;
+    min-height: 100vh;
+    z-index: 1;
+}
+
+.rkm-app::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image: url('../img/logo.png'); /* ajustá ruta */
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 700px;
+    opacity: 0.10; /* 🔥 clave: muy suave */
+    z-index: 0;
+    pointer-events: none;
+
+}
+
+.rkm-app *,
+.rkm-app *::before,
+.rkm-app *::after {
+    box-sizing: border-box;
+}
+
+.rkm-app a,
+.rkm-app button,
+.rkm-app input,
+.rkm-app select,
+.rkm-app textarea {
+    font: inherit;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Ocultar título nativo */
+.woocommerce-account .entry-title {
+    display: none !important;
+}
+
+/* Ocultar navegación nativa de WooCommerce */
+body.woocommerce-account .woocommerce-MyAccount-navigation {
+    display: none !important;
+    width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Hacer que el contenido ocupe todo el ancho */
+body.woocommerce-account .woocommerce-MyAccount-content {
+    float: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Wrapper general WooCommerce */
+body.woocommerce-account .woocommerce {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Reset de contenedores del tema */
+body.woocommerce-account .site,
+body.woocommerce-account .site-main,
+body.woocommerce-account .content-area,
+body.woocommerce-account .site-content,
+body.woocommerce-account .page,
+body.woocommerce-account .page-content,
+body.woocommerce-account .entry-content,
+body.woocommerce-account article {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Reset de contenedores Elementor */
+body.woocommerce-account .elementor,
+body.woocommerce-account .elementor-section,
+body.woocommerce-account .elementor-container,
+body.woocommerce-account .elementor-column,
+body.woocommerce-account .elementor-widget-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Ocultar header del tema en Mi Cuenta */
+body.woocommerce-account header,
+body.woocommerce-account .site-header,
+body.woocommerce-account .site-branding,
+body.woocommerce-account .site-title,
+body.woocommerce-account .custom-logo-link {
+    display: none !important;
+}
+
+/* Si el tema deja espacio arriba aunque se oculte el header */
+body.woocommerce-account .site,
+body.woocommerce-account .site-main {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+/* Base visual propia */
+.rkm-app,
+.rkm-app * {
+    box-sizing: border-box;
+}
+
+/* Neutralizar herencias raras en botones y enlaces dentro del sistema */
+.rkm-app a,
+.rkm-app button,
+.rkm-app input,
+.rkm-app select,
+.rkm-app textarea {
+    font: inherit;
+    color: inherit;
+}
+
+/* Botones propios dominan */
+.rkm-app .rkm-btn-primary,
+.rkm-app .rkm-btn-danger,
+.rkm-app .rkm-btn-sm {
+    border: none;
+    outline: none;
+}
+
+/* Evitar bordes/colores heredados */
+.rkm-app .rkm-btn-primary,
+.rkm-app .rkm-btn-danger,
+.rkm-app .rkm-modal__close,
+.rkm-app .rkm-open-order-modal {
+    box-shadow: none !important;
+}

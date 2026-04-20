@@ -1,0 +1,15 @@
+.rkm-dashboard-welcome {
+    margin-bottom: 24px;
+}
+
+.rkm-dashboard-welcome h2 {
+    margin: 0 0 6px;
+    font-size: 34px;
+    color: var(--rkm-color-text);
+}
+
+.rkm-dashboard-welcome p {
+    margin: 0;
+    color: var(--rkm-color-text-soft);
+    font-size: 18px;
+}
