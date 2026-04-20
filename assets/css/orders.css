@@ -358,8 +358,7 @@
 }
 
 .rkm-order-summary {
-    position: sticky;
-    top: 20px;
+    position: static;
 }
 
 .rkm-order-summary .rkm-card {
@@ -374,6 +373,8 @@
     display: flex;
     flex-direction: column;
     gap: 18px;
+    position: sticky;
+    top: 20px;
 }
 
 .rkm-order-summary__header {

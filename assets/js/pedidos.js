@@ -1,3 +1,41 @@
+const REPEAT_ORDER_STORAGE_KEY = "rkm_repeat_order_cart";
+const REPEAT_ORDER_REDIRECT_DELAY = 800;
+
+function buildRepeatOrderItems(items) {
+    if (!Array.isArray(items)) {
+        return [];
+    }
+
+    return items.map((item) => ({
+        id: String(item.product_id || item.id || ""),
+        name: item.name || "",
+        price: Number(item.price_raw || 0),
+        sku: item.sku || "",
+        quantity: Math.max(1, Number(item.qty || 1))
+    })).filter((item) => item.id);
+}
+
+function repeatOrder(items, redirectUrl) {
+    try {
+        const cartItems = buildRepeatOrderItems(items);
+
+        if (!cartItems.length) {
+            showOrderNotice("No se pudieron cargar los productos del pedido.", "error");
+            return;
+        }
+
+        localStorage.setItem(REPEAT_ORDER_STORAGE_KEY, JSON.stringify(cartItems));
+        showOrderNotice("Se cargaron los productos del pedido. Redirigiendo a nueva orden...", "success");
+
+        window.setTimeout(() => {
+            window.location.href = redirectUrl;
+        }, REPEAT_ORDER_REDIRECT_DELAY);
+    } catch (error) {
+        console.error(error);
+        showOrderNotice("No se pudo repetir el pedido.", "error");
+    }
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     const modal = document.getElementById("rkmOrderModal");
     if (!modal) return;
@@ -127,26 +165,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (!repeatBtn) return;
 
         repeatBtn.addEventListener("click", () => {
-            try {
-                const cartItems = items.map((item) => ({
-                    id: String(item.product_id || item.id || ""),
-                    name: item.name || "",
-                    price: Number(item.price_raw || 0),
-                    sku: item.sku || "",
-                    quantity: Number(item.qty || 1)
-                })).filter((item) => item.id);
-
-                if (!cartItems.length) {
-                    alert("No se pudo reconstruir este pedido.");
-                    return;
-                }
-                
-                localStorage.setItem("rkm_repeat_order_cart", JSON.stringify(cartItems));
-                window.location.href = panelNuevaOrdenUrl;
-            } catch (error) {
-                console.error(error);
-                alert("No se pudo repetir el pedido.");
-            }
+            repeatOrder(items, panelNuevaOrdenUrl);
         });
     }
 
@@ -225,27 +244,12 @@ document.querySelectorAll(".rkm-repeat-order-btn").forEach(button => {
     button.addEventListener("click", function () {
         try {
             const items = JSON.parse(this.dataset.orderItems || "[]");
+            const redirectUrl = `${window.location.origin}/mi-cuenta/panel/?section=nueva-orden`;
 
-            if (!items.length) {
-                alert("No se pudo repetir el pedido.");
-                return;
-            }
-
-            const cartItems = items.map(item => ({
-                id: String(item.product_id || item.id || ""),
-                name: item.name || "",
-                price: Number(item.price_raw || 0),
-                sku: item.sku || "",
-                quantity: Number(item.qty || 1)
-            })).filter(item => item.id);
-
-            localStorage.setItem("rkm_repeat_order_cart", JSON.stringify(cartItems));
-
-            window.location.href = "/mi-cuenta/panel/?section=nueva-orden";
-
+            repeatOrder(items, redirectUrl);
         } catch (e) {
             console.error(e);
-            alert("Error al repetir el pedido.");
+            showOrderNotice("No se pudo repetir el pedido.", "error");
         }
     });
 });
