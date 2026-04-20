@@ -114,6 +114,14 @@ class RKM_Dashboard {
         );
 
         wp_enqueue_script(
+            'rkm-product-quick-view-js',
+            RKM_CORE_URL . 'assets/js/product-quick-view.js',
+            [],
+            '1.0.0',
+            true
+        );
+
+        wp_enqueue_script(
             'rkm-orders',
             RKM_CORE_URL . 'assets/js/orders.js',
             [],

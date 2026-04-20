@@ -1,3 +1,4 @@
+<?php echo '<div style="background:red;color:white;padding:10px;">CATALOGO REAL CARGADO</div>'; ?>
 <?php
 if (!defined('ABSPATH')) {
     exit;
@@ -69,6 +70,10 @@ $products = wc_get_products($args);
                             $stock_qty  = $product->get_stock_quantity();
                             $in_stock   = $product->is_in_stock();
                             $image      = get_the_post_thumbnail_url($product_id, 'medium');
+                            $product_url = home_url('/mi-cuenta/panel') . '?section=nueva-orden&add_product=' . $product_id;
+                            $stock_label = $in_stock
+                                ? (is_null($stock_qty) ? 'Disponible' : $stock_qty . ' unidades')
+                                : 'Sin stock';
 
                             if (!$image) {
                                 $image = wc_placeholder_img_src();
@@ -96,20 +101,12 @@ $products = wc_get_products($args);
 
                                     <p class="rkm-product-card__stock">
                                         <strong>Stock:</strong>
-                                        <?php
-                                        if ($in_stock) {
-                                            echo is_null($stock_qty)
-                                                ? 'Disponible'
-                                                : esc_html($stock_qty) . ' unidades';
-                                        } else {
-                                            echo 'Sin stock';
-                                        }
-                                        ?>
+                                        <?php echo esc_html($stock_label); ?>
                                     </p>
                                 </div>
 
                                 <div class="rkm-product-card__actions">
-                                    <a href="<?php echo esc_url(home_url('/mi-cuenta/panel') . '?section=nueva-orden&add_product=' . $product_id); ?>"
+                                    <a href="<?php echo esc_url($product_url); ?>"
                                        class="rkm-btn rkm-btn--primary">
                                         Agregar
                                     </a>

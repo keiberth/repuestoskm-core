@@ -29,6 +29,18 @@
     min-height: 100%;
 }
 
+.rkm-product-card--interactive {
+    cursor: pointer;
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+
+.rkm-product-card--interactive:hover,
+.rkm-product-card--interactive:focus-visible {
+    transform: translateY(-4px);
+    border-color: #cbd5e1;
+    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+}
+
 .rkm-product-card__image {
     aspect-ratio: 1 / 1;
     background: #f8fafc;
@@ -72,4 +84,259 @@
 .rkm-product-card__actions {
     padding: 0 16px 16px;
     margin-top: auto;
+}
+
+.rkm-product-quick-view {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity .2s ease, visibility .2s ease;
+}
+
+.rkm-product-quick-view.is-active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+.rkm-product-quick-view__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.56);
+    backdrop-filter: blur(4px);
+}
+
+.rkm-product-quick-view__dialog {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(320px, 1.05fr) minmax(320px, 0.95fr);
+    gap: 28px;
+    width: min(1040px, 100%);
+    max-height: min(88vh, 860px);
+    padding: 28px;
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 34%),
+        linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: 0 30px 80px rgba(15, 23, 42, 0.28);
+    overflow: hidden;
+    overflow-y: auto;
+}
+
+.rkm-product-quick-view__close {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.06);
+    color: #0f172a;
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .2s ease, transform .2s ease;
+}
+
+.rkm-product-quick-view__close:hover,
+.rkm-product-quick-view__close:focus-visible {
+    background: rgba(15, 23, 42, 0.12);
+    transform: scale(1.04);
+}
+
+.rkm-product-quick-view__media {
+    min-width: 0;
+}
+
+.rkm-product-quick-view__main-image-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 420px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 22px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.rkm-product-quick-view__main-image {
+    width: 100%;
+    max-height: 380px;
+    object-fit: contain;
+}
+
+.rkm-product-quick-view__thumbs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.rkm-product-quick-view__thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1 / 1;
+    padding: 8px;
+    border: 1px solid #dbe3ee;
+    border-radius: 16px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+
+.rkm-product-quick-view__thumb:hover,
+.rkm-product-quick-view__thumb:focus-visible,
+.rkm-product-quick-view__thumb.is-active {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+    transform: translateY(-1px);
+}
+
+.rkm-product-quick-view__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.rkm-product-quick-view__content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.rkm-product-quick-view__eyebrow {
+    display: inline-flex;
+    align-self: flex-start;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: #e0f2fe;
+    color: #075985;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.rkm-product-quick-view__title {
+    margin: 0;
+    font-size: clamp(28px, 3vw, 38px);
+    line-height: 1.05;
+    color: #0f172a;
+}
+
+.rkm-product-quick-view__meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.rkm-product-quick-view__meta-item {
+    padding: 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.78);
+}
+
+.rkm-product-quick-view__meta-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.rkm-product-quick-view__meta-item strong {
+    display: block;
+    font-size: 15px;
+    line-height: 1.4;
+    color: #0f172a;
+    word-break: break-word;
+}
+
+.rkm-product-quick-view__description {
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.84);
+}
+
+.rkm-product-quick-view__description p {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.7;
+    color: #334155;
+}
+
+.rkm-product-quick-view__actions {
+    display: flex;
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 24px;
+}
+
+.rkm-product-quick-view__actions .rkm-btn {
+    min-width: 220px;
+    justify-content: center;
+}
+
+body.rkm-product-quick-view-open {
+    overflow: hidden;
+}
+
+@media (max-width: 900px) {
+    .rkm-product-quick-view__dialog {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 22px;
+    }
+
+    .rkm-product-quick-view__main-image-wrap {
+        min-height: 320px;
+    }
+
+    .rkm-product-quick-view__meta {
+        grid-template-columns: 1fr;
+    }
+
+    .rkm-product-quick-view__actions .rkm-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    .rkm-product-quick-view {
+        padding: 12px;
+    }
+
+    .rkm-product-quick-view__dialog {
+        padding: 18px;
+        border-radius: 20px;
+    }
+
+    .rkm-product-quick-view__main-image-wrap {
+        min-height: 260px;
+        padding: 14px;
+    }
+
+    .rkm-product-quick-view__thumbs {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .rkm-product-quick-view__actions {
+        flex-direction: column;
+    }
 }

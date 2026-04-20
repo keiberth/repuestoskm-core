@@ -86,12 +86,49 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
                         $price       = (float) $product->get_price();
                         $price_html  = $product->get_price_html();
                         $sku         = $product->get_sku();
-                        $stock       = $product->get_stock_quantity();
+                        $stock_quantity = $product->get_stock_quantity();
+                        $in_stock    = $product->is_in_stock();
+                        $stock_label = $in_stock
+                            ? (is_null($stock_quantity) ? 'Disponible' : $stock_quantity . ' unidades')
+                            : 'Sin stock';
+                        $stock       = $stock_quantity;
                         $image       = get_the_post_thumbnail_url($id, 'medium');
-                        $description = $product->get_short_description();
+                        $description = trim(wp_strip_all_tags($product->get_short_description()));
+                        $product_url = home_url('/mi-cuenta/panel') . '?section=nueva-orden&add_product=' . $id;
+                        $gallery_items = [];
+                        $image_ids = array_filter(array_unique(array_merge(
+                            $product->get_image_id() ? [$product->get_image_id()] : [],
+                            $product->get_gallery_image_ids()
+                        )));
 
                         if (!$image) {
                             $image = wc_placeholder_img_src();
+                        }
+
+                        if (!empty($image_ids)) {
+                            foreach ($image_ids as $image_id) {
+                                $full_image = wp_get_attachment_image_url($image_id, 'large');
+                                $thumb_image = wp_get_attachment_image_url($image_id, 'thumbnail');
+                                $image_alt = get_post_meta($image_id, '_wp_attachment_image_alt', true);
+
+                                if (!$full_image) {
+                                    continue;
+                                }
+
+                                $gallery_items[] = [
+                                    'full'  => $full_image,
+                                    'thumb' => $thumb_image ?: $full_image,
+                                    'alt'   => $image_alt ?: $name,
+                                ];
+                            }
+                        }
+
+                        if (empty($gallery_items)) {
+                            $gallery_items[] = [
+                                'full'  => $image,
+                                'thumb' => $image,
+                                'alt'   => $name,
+                            ];
                         }
 
                         if (is_null($stock)) {
@@ -100,14 +137,24 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
                         ?>
 
                         <article
-                            class="rkm-product-card"
+                            class="rkm-product-card rkm-product-card--interactive"
                             data-id="<?php echo esc_attr($id); ?>"
                             data-name="<?php echo esc_attr($name); ?>"
                             data-price="<?php echo esc_attr($price); ?>"
                             data-sku="<?php echo esc_attr($sku); ?>"
                             data-stock="<?php echo esc_attr($stock); ?>"
                             data-image="<?php echo esc_url($image); ?>"
-                            data-description="<?php echo esc_attr(wp_strip_all_tags($description)); ?>"
+                            data-description="<?php echo esc_attr($description); ?>"
+                            data-product-name="<?php echo esc_attr($name); ?>"
+                            data-product-sku="<?php echo esc_attr($sku ?: 'Sin SKU'); ?>"
+                            data-product-price="<?php echo esc_attr(wp_strip_all_tags($price_html ?: 'Sin precio')); ?>"
+                            data-product-stock="<?php echo esc_attr($stock_label); ?>"
+                            data-product-description="<?php echo esc_attr($description ?: 'Este producto no tiene descripcion corta.'); ?>"
+                            data-product-url="<?php echo esc_url($product_url); ?>"
+                            data-product-gallery="<?php echo esc_attr(wp_json_encode($gallery_items)); ?>"
+                            tabindex="0"
+                            aria-haspopup="dialog"
+                            aria-controls="rkmProductQuickView"
                         >
                             <div class="rkm-product-card__image">
                                 <img src="<?php echo esc_url($image); ?>" alt="<?php echo esc_attr($name); ?>">
@@ -156,6 +203,78 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
                 </div>
             </aside>
 
+        </div>
+        <div class="rkm-product-quick-view" id="rkmProductQuickView" aria-hidden="true">
+            <div class="rkm-product-quick-view__overlay" data-rkm-product-quick-view-close></div>
+
+            <div
+                class="rkm-product-quick-view__dialog"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="rkmProductQuickViewTitle"
+            >
+                <button
+                    type="button"
+                    class="rkm-product-quick-view__close"
+                    data-rkm-product-quick-view-close
+                    aria-label="Cerrar vista rapida"
+                >
+                    &times;
+                </button>
+
+                <div class="rkm-product-quick-view__media">
+                    <div class="rkm-product-quick-view__main-image-wrap">
+                        <img
+                            id="rkmProductQuickViewMainImage"
+                            class="rkm-product-quick-view__main-image"
+                            src=""
+                            alt=""
+                        >
+                    </div>
+
+                    <div
+                        id="rkmProductQuickViewThumbs"
+                        class="rkm-product-quick-view__thumbs"
+                        aria-label="Galeria de imagenes del producto"
+                    ></div>
+                </div>
+
+                <div class="rkm-product-quick-view__content">
+                    <div class="rkm-product-quick-view__eyebrow">Vista rapida</div>
+                    <h2 id="rkmProductQuickViewTitle" class="rkm-product-quick-view__title">Producto</h2>
+
+                    <div class="rkm-product-quick-view__meta">
+                        <div class="rkm-product-quick-view__meta-item">
+                            <span class="rkm-product-quick-view__meta-label">SKU</span>
+                            <strong id="rkmProductQuickViewSku"></strong>
+                        </div>
+
+                        <div class="rkm-product-quick-view__meta-item">
+                            <span class="rkm-product-quick-view__meta-label">Precio</span>
+                            <strong id="rkmProductQuickViewPrice"></strong>
+                        </div>
+
+                        <div class="rkm-product-quick-view__meta-item">
+                            <span class="rkm-product-quick-view__meta-label">Stock</span>
+                            <strong id="rkmProductQuickViewStock"></strong>
+                        </div>
+                    </div>
+
+                    <div class="rkm-product-quick-view__description">
+                        <p id="rkmProductQuickViewDescription"></p>
+                    </div>
+
+                    <div class="rkm-product-quick-view__actions">
+                        <a
+                            id="rkmProductQuickViewPrimaryAction"
+                            href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=nueva-orden')); ?>"
+                            class="rkm-btn rkm-btn--primary"
+                        >
+                            Ir a nueva orden
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
         <?php
         $user_id = get_current_user_id();
