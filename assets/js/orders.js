@@ -33,8 +33,64 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    function showInlineError(message) {
-        alert(message);
+    function getFeedbackBox() {
+        return document.getElementById("rkm-order-feedback");
+    }
+
+    function hideFeedback() {
+        const feedbackBox = getFeedbackBox();
+
+        if (!feedbackBox) return;
+
+        feedbackBox.style.display = "none";
+        feedbackBox.classList.remove("is-visible", "rkm-order-feedback--error");
+        feedbackBox.innerHTML = "";
+    }
+
+    function showFeedback({ type = "success", icon = "&#10003;", eyebrow = "", title = "", text = "", actionsHtml = "" }) {
+        const feedbackBox = getFeedbackBox();
+
+        if (!feedbackBox) return;
+
+        feedbackBox.classList.remove("rkm-order-feedback--error");
+
+        if (type === "error") {
+            feedbackBox.classList.add("rkm-order-feedback--error");
+        }
+
+        feedbackBox.innerHTML = `
+            <div class="rkm-order-feedback__inner">
+                <div class="rkm-order-feedback__icon">${icon}</div>
+
+                <div class="rkm-order-feedback__content">
+                    ${eyebrow ? `<div class="rkm-order-feedback__eyebrow">${eyebrow}</div>` : ""}
+                    ${title ? `<div class="rkm-order-feedback__title">${title}</div>` : ""}
+                    ${text ? `<div class="rkm-order-feedback__text">${text}</div>` : ""}
+                    ${actionsHtml}
+                </div>
+
+                <button type="button" class="rkm-order-feedback__close" id="rkm-close-feedback" aria-label="Cerrar">&times;</button>
+            </div>
+        `;
+
+        feedbackBox.style.display = "block";
+        feedbackBox.classList.add("is-visible");
+        feedbackBox.scrollIntoView({ behavior: "smooth", block: "start" });
+
+        const closeBtn = document.getElementById("rkm-close-feedback");
+        if (closeBtn) {
+            closeBtn.addEventListener("click", hideFeedback);
+        }
+    }
+
+    function showInlineError(message, title = "No se pudo continuar") {
+        showFeedback({
+            type: "error",
+            icon: "!",
+            eyebrow: "Revisa el pedido",
+            title,
+            text: message,
+        });
     }
 
     // ========================
@@ -43,6 +99,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function saveRepeatCartKey() {
         return "rkm_repeat_order_cart";
+    }
+
+    function clearOrderDraft() {
+        try {
+            localStorage.removeItem(ORDER_DRAFT_STORAGE_KEY);
+        } catch (e) {
+            // Ignore storage cleanup errors.
+        }
     }
 
     function normalizeDraftItems(items) {
@@ -80,7 +144,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const draftItems = normalizeDraftItems(Object.values(orderItems));
 
             if (!draftItems.length) {
-                localStorage.removeItem(ORDER_DRAFT_STORAGE_KEY);
+                clearOrderDraft();
                 return;
             }
 
@@ -114,11 +178,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         if (!draftItems.length) {
-            try {
-                localStorage.removeItem(ORDER_DRAFT_STORAGE_KEY);
-            } catch (e) {
-                // Ignore storage cleanup errors.
-            }
+            clearOrderDraft();
             return;
         }
 
@@ -146,11 +206,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        try {
-            localStorage.removeItem(ORDER_DRAFT_STORAGE_KEY);
-        } catch (e) {
-            // Ignore storage cleanup errors.
-        }
+        clearOrderDraft();
     }
 
     function addItemToOrder(productData, qtyToAdd = 1) {
@@ -267,15 +323,12 @@ document.addEventListener("DOMContentLoaded", function () {
         renderSummary();
         localStorage.removeItem(storageKey);
 
-        const feedbackBox = document.getElementById("rkm-order-feedback");
-        if (!feedbackBox) return;
-
         let warningHtml = "";
 
         if (warnings.length) {
             warningHtml = `
                 <div class="rkm-order-feedback__warnings">
-                    <strong>Revisá estos productos:</strong>
+                    <strong>Revisa estos productos:</strong>
                     <ul class="rkm-order-feedback__warning-list">
                         ${warnings.map((warning) => `<li>${warning}</li>`).join("")}
                     </ul>
@@ -284,42 +337,23 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         let title = "Se cargaron productos de un pedido anterior";
-        let text = "Revisá cantidades, disponibilidad y confirmá la nueva orden cuando quieras.";
+        let text = "Revisa cantidades, disponibilidad y confirma la nueva orden cuando quieras.";
 
         if (!addedCount) {
             title = "No se pudieron cargar productos del pedido anterior";
-            text = "Ningún producto pudo agregarse automáticamente a la nueva orden.";
+            text = "Ningun producto pudo agregarse automaticamente a la nueva orden.";
         } else if (warnings.length) {
-            title = "Se cargó el pedido con observaciones";
-            text = "Algunos productos se agregaron correctamente, pero otros requieren revisión.";
+            title = "Se cargo el pedido con observaciones";
+            text = "Algunos productos se agregaron correctamente, pero otros requieren revision.";
         }
 
-        feedbackBox.innerHTML = `
-            <div class="rkm-order-feedback__inner">
-                <div class="rkm-order-feedback__icon">↺</div>
-
-                <div class="rkm-order-feedback__content">
-                    <div class="rkm-order-feedback__eyebrow">Pedido reutilizado</div>
-                    <div class="rkm-order-feedback__title">${title}</div>
-                    <div class="rkm-order-feedback__text">${text}</div>
-                    ${warningHtml}
-                </div>
-
-                <button type="button" class="rkm-order-feedback__close" id="rkm-close-feedback" aria-label="Cerrar">×</button>
-            </div>
-        `;
-
-        feedbackBox.style.display = "block";
-        feedbackBox.classList.add("is-visible");
-
-        const closeBtn = document.getElementById("rkm-close-feedback");
-        if (closeBtn) {
-            closeBtn.addEventListener("click", () => {
-                feedbackBox.style.display = "none";
-                feedbackBox.classList.remove("is-visible");
-                feedbackBox.innerHTML = "";
-            });
-        }
+        showFeedback({
+            icon: "&#8635;",
+            eyebrow: "Pedido reutilizado",
+            title,
+            text,
+            actionsHtml: warningHtml,
+        });
     }
 
     // ========================
@@ -526,15 +560,19 @@ document.addEventListener("DOMContentLoaded", function () {
         const confirmBtn = document.getElementById("rkm-confirm-order");
         if (confirmBtn) {
             confirmBtn.addEventListener("click", async () => {
+                if (confirmBtn.disabled) {
+                    return;
+                }
+
                 const items = Object.values(orderItems);
 
                 if (!items.length) {
-                    showInlineError("No hay productos en el pedido.");
+                    showInlineError("No hay productos en el pedido.", "Pedido vacio");
                     return;
                 }
 
                 confirmBtn.disabled = true;
-                confirmBtn.textContent = "Generando pedido...";
+                confirmBtn.textContent = "Procesando...";
 
                 try {
                     const formData = new FormData();
@@ -555,62 +593,36 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
 
                     orderItems = {};
+                    clearOrderDraft();
                     renderSummary();
 
-                    const feedbackBox = document.getElementById("rkm-order-feedback");
-
-                    if (feedbackBox) {
-                        feedbackBox.innerHTML = `
-                            <div class="rkm-order-feedback__inner">
-                                <div class="rkm-order-feedback__icon">✓</div>
-
-                                <div class="rkm-order-feedback__content">
-                                    <div class="rkm-order-feedback__eyebrow">Pedido confirmado</div>
-                                    <div class="rkm-order-feedback__title">Pedido #${result.data.order_id} generado correctamente</div>
-                                    <div class="rkm-order-feedback__text">
-                                        Tu pedido fue enviado con éxito y ya se encuentra disponible en la sección <strong>Pedidos</strong>.
-                                    </div>
-
-                                    <div class="rkm-order-feedback__actions">
-                                        <a href="${result.data.redirect}" class="rkm-btn rkm-btn--primary">
-                                            Ver mis pedidos
-                                        </a>
-                                        <button type="button" class="rkm-btn rkm-btn--secondary" id="rkm-new-order-again">
-                                            Crear otra orden
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <button type="button" class="rkm-order-feedback__close" id="rkm-close-feedback" aria-label="Cerrar">×</button>
+                    showFeedback({
+                        icon: "&#10003;",
+                        eyebrow: "Pedido confirmado",
+                        title: "Pedido enviado correctamente",
+                        text: `Tu pedido #${result.data.order_id} fue enviado con exito y ya esta disponible en la seccion Pedidos.`,
+                        actionsHtml: `
+                            <div class="rkm-order-feedback__actions">
+                                <a href="${result.data.redirect}" class="rkm-btn rkm-btn--primary">
+                                    Ver mis pedidos
+                                </a>
+                                <button type="button" class="rkm-btn rkm-btn--secondary" id="rkm-new-order-again">
+                                    Crear otra orden
+                                </button>
                             </div>
-                        `;
+                        `,
+                    });
 
-                        feedbackBox.style.display = "block";
-                        feedbackBox.classList.add("is-visible");
-                        feedbackBox.scrollIntoView({ behavior: "smooth", block: "start" });
-
-                        const closeBtn = document.getElementById("rkm-close-feedback");
-                        if (closeBtn) {
-                            closeBtn.addEventListener("click", () => {
-                                feedbackBox.style.display = "none";
-                                feedbackBox.classList.remove("is-visible");
-                                feedbackBox.innerHTML = "";
-                            });
-                        }
-
-                        const newOrderBtn = document.getElementById("rkm-new-order-again");
-                        if (newOrderBtn) {
-                            newOrderBtn.addEventListener("click", () => {
-                                feedbackBox.style.display = "none";
-                                feedbackBox.classList.remove("is-visible");
-                                feedbackBox.innerHTML = "";
-                                window.scrollTo({ top: 0, behavior: "smooth" });
-                            });
-                        }
+                    const newOrderBtn = document.getElementById("rkm-new-order-again");
+                    if (newOrderBtn) {
+                        newOrderBtn.addEventListener("click", () => {
+                            hideFeedback();
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                        });
                     }
                 } catch (error) {
                     console.error(error);
-                    showInlineError(error.message || "Ocurrió un error al generar el pedido.");
+                    showInlineError(error.message || "Ocurrio un error al generar el pedido.", "No se pudo enviar el pedido");
                 } finally {
                     confirmBtn.disabled = false;
                     confirmBtn.textContent = "Confirmar pedido";
