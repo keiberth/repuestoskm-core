@@ -69,6 +69,21 @@
     box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
 }
 
+.rkm-sellers-dashboard__item--primary {
+    background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
+    border-color: rgba(191, 219, 254, 0.95);
+}
+
+.rkm-sellers-dashboard__item--warning {
+    background: linear-gradient(180deg, #ffffff 0%, #fff8eb 100%);
+    border-color: rgba(253, 230, 138, 0.95);
+}
+
+.rkm-sellers-dashboard__item--neutral {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border-color: rgba(226, 232, 240, 0.95);
+}
+
 .rkm-sellers-dashboard__item-label {
     display: block;
     margin-bottom: 8px;
@@ -82,13 +97,159 @@
 .rkm-sellers-dashboard__item-value {
     display: block;
     color: #0f172a;
-    font-size: 18px;
-    line-height: 1.35;
+    font-size: clamp(26px, 4vw, 34px);
+    line-height: 1;
+    letter-spacing: -0.04em;
+}
+
+.rkm-sellers-dashboard__item-meta {
+    margin: 10px 0 0;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+.rkm-sellers-dashboard__layout {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.rkm-sellers-panel {
+    border-radius: 24px;
+}
+
+.rkm-sellers-panel__header {
+    margin-bottom: 18px;
+}
+
+.rkm-sellers-panel__header h3 {
+    margin: 0 0 6px;
+    color: #0f172a;
+    font-size: 20px;
+}
+
+.rkm-sellers-panel__header p {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.rkm-sellers-actions,
+.rkm-sellers-stack {
+    display: grid;
+    gap: 14px;
+}
+
+.rkm-sellers-action-card,
+.rkm-sellers-stack__item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    padding: 18px;
+    border-radius: 18px;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    background: #fff;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.04);
+}
+
+.rkm-sellers-action-card {
+    color: #0f172a;
+    text-align: left;
+    text-decoration: none;
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+
+.rkm-sellers-action-card:hover,
+.rkm-sellers-action-card:focus-visible {
+    transform: translateY(-2px);
+    border-color: #93c5fd;
+    box-shadow: 0 16px 30px rgba(37, 99, 235, 0.12);
+}
+
+.rkm-sellers-action-card--button {
+    cursor: pointer;
+}
+
+.rkm-sellers-action-card strong,
+.rkm-sellers-stack__item strong {
+    color: #0f172a;
+    font-size: 16px;
+    line-height: 1.2;
+}
+
+.rkm-sellers-action-card span,
+.rkm-sellers-stack__item p {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.rkm-sellers-note {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-top: 20px;
+    border-radius: 24px;
+    border: 1px solid rgba(191, 219, 254, 0.95);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.rkm-sellers-note__content {
+    max-width: 760px;
+}
+
+.rkm-sellers-note__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.08);
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.rkm-sellers-note h3 {
+    margin: 0 0 6px;
+    color: #0f172a;
+    font-size: 22px;
+}
+
+.rkm-sellers-note p {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.rkm-sellers-disclaimer {
+    margin-top: 16px;
+}
+
+.rkm-sellers-disclaimer p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.7;
 }
 
 @media (max-width: 900px) {
-    .rkm-sellers-dashboard__grid {
+    .rkm-sellers-dashboard__grid,
+    .rkm-sellers-dashboard__layout {
         grid-template-columns: 1fr;
+    }
+
+    .rkm-sellers-note {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
 
@@ -100,5 +261,10 @@
 
     .rkm-sellers-dashboard__title {
         font-size: 28px;
+    }
+
+    .rkm-sellers-note {
+        padding: 20px 18px;
+        border-radius: 22px;
     }
 }
