@@ -198,6 +198,15 @@ class RKM_Dashboard {
                 $template = RKM_CORE_PATH . 'templates/dashboard.php';
                 break;
 
+            case 'usuarios':
+                if (class_exists('RKM_Admin_Users')) {
+                    (new RKM_Admin_Users())->render_page($data);
+                    return;
+                }
+
+                $template = RKM_CORE_PATH . 'templates/dashboard.php';
+                break;
+
             case 'panel':
             default:
                 if (class_exists('RKM_Admin_Dashboard') && RKM_Admin_Dashboard::can_access($user)) {
@@ -536,14 +545,9 @@ class RKM_Dashboard {
 
         $role = $user->roles[0];
 
-        $labels = [
-            'administrator' => 'Administrador',
-            'customer'      => 'Cliente',
-            'subscriber'    => 'Suscriptor',
-            'shop_manager'  => 'Encargado de tienda',
-        ];
-
-        return $labels[$role] ?? ucfirst($role);
+        return class_exists('RKM_Permissions')
+            ? RKM_Permissions::get_role_label($role)
+            : ucfirst($role);
     }
 
     private function get_pending_total($user_id) {

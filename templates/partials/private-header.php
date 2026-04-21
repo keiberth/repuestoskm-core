@@ -9,15 +9,9 @@ $user_name = $user->display_name ? $user->display_name : $user->user_login;
 $user_role = 'Cliente';
 if (!empty($user->roles) && is_array($user->roles)) {
     $role = $user->roles[0];
-
-    $labels = [
-        'administrator' => 'Administrador',
-        'customer'      => 'Cliente',
-        'subscriber'    => 'Suscriptor',
-        'shop_manager'  => 'Encargado de tienda',
-    ];
-
-    $user_role = $labels[$role] ?? ucfirst($role);
+    $user_role = class_exists('RKM_Permissions')
+        ? RKM_Permissions::get_role_label($role)
+        : ucfirst($role);
 }
 
 $initial = strtoupper(mb_substr($user_name, 0, 1));
@@ -69,6 +63,9 @@ $bcv_rate = isset($data['bcv_rate']) && is_array($data['bcv_rate']) ? $data['bcv
         </button>
 
         <div class="rkm-private-header-pro__dropdown" id="rkmUserMenuDropdown">
+            <?php if (class_exists('RKM_Admin_Users') && RKM_Admin_Users::can_access()) : ?>
+                <a href="<?php echo esc_url(RKM_Admin_Users::get_section_url()); ?>">Usuarios</a>
+            <?php endif; ?>
             <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=mi-cuenta')); ?>">Mi cuenta</a>
             <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=pedidos')); ?>">Pedidos</a>
             <a href="<?php echo esc_url(class_exists('RKM_Auth') ? RKM_Auth::get_logout_url() : wc_logout_url(home_url('/mi-cuenta/'))); ?>">Cerrar sesión</a>

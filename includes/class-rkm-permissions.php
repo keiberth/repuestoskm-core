@@ -6,6 +6,46 @@ if (!defined('ABSPATH')) {
 
 class RKM_Permissions {
 
+    public static function get_vendor_role_candidates() {
+        return ['seller', 'vendor', 'vendedor', 'shop_manager'];
+    }
+
+    public static function get_vendor_role_for_assignment() {
+        foreach (self::get_vendor_role_candidates() as $role) {
+            if (get_role($role)) {
+                return $role;
+            }
+        }
+
+        return 'shop_manager';
+    }
+
+    public static function get_assignable_user_roles() {
+        return [
+            'customer'                    => 'Cliente',
+            self::get_vendor_role_for_assignment() => 'Vendedor',
+            'administrator'               => 'Administrador',
+        ];
+    }
+
+    public static function get_role_label($role) {
+        $labels = [
+            'administrator' => 'Administrador',
+            'customer'      => 'Cliente',
+            'subscriber'    => 'Suscriptor',
+            'seller'        => 'Vendedor',
+            'vendor'        => 'Vendedor',
+            'vendedor'      => 'Vendedor',
+            'shop_manager'  => 'Vendedor',
+        ];
+
+        if (isset($labels[$role])) {
+            return $labels[$role];
+        }
+
+        return ucwords(str_replace(['_', '-'], ' ', (string) $role));
+    }
+
     public static function get_user($user = null) {
         if ($user instanceof WP_User) {
             return $user;
@@ -33,7 +73,7 @@ class RKM_Permissions {
     }
 
     public static function is_rkm_vendor($user = null) {
-        return self::user_has_role($user, ['seller', 'vendor', 'vendedor', 'shop_manager']);
+        return self::user_has_role($user, self::get_vendor_role_candidates());
     }
 
     public static function is_rkm_admin($user = null) {

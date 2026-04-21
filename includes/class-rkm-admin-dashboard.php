@@ -82,6 +82,11 @@ class RKM_Admin_Dashboard {
                     'url'         => class_exists('RKM_Sellers') ? RKM_Sellers::get_section_url() : home_url('/mi-cuenta/panel/'),
                 ],
                 [
+                    'label'       => 'Usuarios',
+                    'description' => 'Crear usuarios internos y asignar roles sin salir del sistema RKM.',
+                    'url'         => class_exists('RKM_Admin_Users') ? RKM_Admin_Users::get_section_url() : home_url('/mi-cuenta/panel/'),
+                ],
+                [
                     'label'       => 'Mi cuenta',
                     'description' => 'Gestionar los datos personales del usuario actual.',
                     'url'         => home_url('/mi-cuenta/panel/?section=mi-cuenta'),
@@ -177,7 +182,9 @@ class RKM_Admin_Dashboard {
 
     private function get_active_sellers_count() {
         $query = new WP_User_Query([
-            'role__in' => ['seller', 'vendor', 'vendedor', 'shop_manager'],
+            'role__in' => class_exists('RKM_Permissions')
+                ? RKM_Permissions::get_vendor_role_candidates()
+                : ['seller', 'vendor', 'vendedor', 'shop_manager'],
             'fields'   => 'ID',
         ]);
         $results = $query->get_results();
