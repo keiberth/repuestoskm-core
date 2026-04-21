@@ -24,6 +24,7 @@ $initial = strtoupper(mb_substr($user_name, 0, 1));
 
 $brand_logo = 'http://repuestos-km.local/wp-content/uploads/2026/03/ChatGPT-Image-14-mar-2026-02_22_59-p.m-e1773612976421.png';
 $brand_name = 'Repuestos-KM';
+$bcv_rate = isset($data['bcv_rate']) && is_array($data['bcv_rate']) ? $data['bcv_rate'] : null;
 ?>
 
 <div class="rkm-private-header-pro">
@@ -38,6 +39,22 @@ $brand_name = 'Repuestos-KM';
             <?php echo esc_html($brand_name); ?>
         </span>
     </a>-->
+
+    <?php if (!empty($bcv_rate['value_display'])) : ?>
+        <div class="rkm-private-header-pro__rate" aria-label="Tasa oficial BCV del dólar">
+            <span class="rkm-private-header-pro__rate-label">
+                <?php echo esc_html($bcv_rate['label']); ?>
+            </span>
+            <strong class="rkm-private-header-pro__rate-value">
+                <?php echo esc_html($bcv_rate['value_display']); ?>
+            </strong>
+            <?php if (!empty($bcv_rate['effective_date'])) : ?>
+                <small class="rkm-private-header-pro__rate-date">
+                    Fecha valor: <?php echo esc_html($bcv_rate['effective_date']); ?>
+                </small>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
 
     <div class="rkm-private-header-pro__user">
         <button type="button" class="rkm-private-header-pro__toggle" id="rkmUserMenuToggle">
