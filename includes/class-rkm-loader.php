@@ -11,6 +11,7 @@ class RKM_Loader {
         require_once RKM_CORE_PATH . 'includes/class-rkm-permissions.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-auth.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-dashboard.php';
+        require_once RKM_CORE_PATH . 'includes/class-rkm-admin-dashboard.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-sellers.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-orders.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-redirects.php';

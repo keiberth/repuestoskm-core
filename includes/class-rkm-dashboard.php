@@ -155,18 +155,8 @@ class RKM_Dashboard {
     public function render_dashboard() {
         $user = wp_get_current_user();
         $bcv_rate = $this->get_bcv_usd_rate();
-
-        $data = [
-            'user_name'          => $user->display_name,
-            'user_role_label'    => $this->get_role_label($user),
-            'pending_total'      => $this->get_pending_total($user->ID),
-            'balance_favor'      => $this->get_balance_favor($user->ID),
-            'last_purchase_date' => $this->get_last_purchase_date($user->ID),
-            'returns_count'      => $this->get_returns_count($user->ID),
-            'bcv_rate'           => $bcv_rate,
-        ];
-
         $section = isset($_GET['section']) ? sanitize_key($_GET['section']) : 'panel';
+        $data = $this->get_view_context($user, $bcv_rate);
 
         switch ($section) {
             case 'mi-cuenta':
@@ -210,6 +200,12 @@ class RKM_Dashboard {
 
             case 'panel':
             default:
+                if (class_exists('RKM_Admin_Dashboard') && RKM_Admin_Dashboard::can_access($user)) {
+                    (new RKM_Admin_Dashboard())->render_dashboard($data);
+                    return;
+                }
+
+                $data = array_merge($data, $this->get_customer_dashboard_data($user));
                 $template = RKM_CORE_PATH . 'templates/dashboard.php';
                 break;
         }
@@ -217,6 +213,46 @@ class RKM_Dashboard {
         if (file_exists($template)) {
             include $template;
         }
+    }
+
+    private function get_view_context($user, $bcv_rate) {
+        return [
+            'user_name'       => $user->display_name,
+            'user_role_label' => $this->get_role_label($user),
+            'bcv_rate'        => $bcv_rate,
+        ];
+    }
+
+    private function get_customer_dashboard_data($user) {
+        $pending_total = $this->get_pending_total($user->ID);
+        $balance_favor = $this->get_balance_favor($user->ID);
+        $last_purchase_date = $this->get_last_purchase_date($user->ID);
+        $returns_count = $this->get_returns_count($user->ID);
+
+        return [
+            'pending_total'      => $pending_total,
+            'balance_favor'      => $balance_favor,
+            'last_purchase_date' => $last_purchase_date,
+            'returns_count'      => $returns_count,
+            'dashboard_cards'    => [
+                [
+                    'label' => 'Pendiente por pagar',
+                    'value' => $pending_total,
+                ],
+                [
+                    'label' => 'Saldo a favor',
+                    'value' => $balance_favor,
+                ],
+                [
+                    'label' => 'Ultima compra',
+                    'value' => $last_purchase_date,
+                ],
+                [
+                    'label' => 'Devoluciones',
+                    'value' => $returns_count,
+                ],
+            ],
+        ];
     }
 
     public function get_bcv_usd_rate($force_refresh = false) {
