@@ -110,6 +110,16 @@ class RKM_Dashboard {
             true
         );
 
+        wp_localize_script(
+            'rkm-pedidos-js',
+            'rkmPedidos',
+            [
+                'cancelable_statuses' => class_exists('RKM_Orders_Actions')
+                    ? RKM_Orders_Actions::get_cancelable_statuses()
+                    : ['pending', 'on-hold', 'processing'],
+            ]
+        );
+
         wp_enqueue_script(
             'rkm-private-header-js',
             RKM_CORE_URL . 'assets/js/private-header.js',

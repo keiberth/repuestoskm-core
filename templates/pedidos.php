@@ -33,9 +33,10 @@ if (!defined('ABSPATH')) {
                     $status_key   = $order->get_status();
                     $status_label = wc_get_order_status_name($status_key);
                     $status_slug  = sanitize_html_class('status-' . $status_key);
-                    $cancel_url   = $order->get_cancel_order_url();
-
-                    $can_cancel = in_array($status_key, ['pending', 'on-hold', 'en-revision'], true);
+                    $cancelable_statuses = class_exists('RKM_Orders_Actions')
+                        ? RKM_Orders_Actions::get_cancelable_statuses()
+                        : ['pending', 'on-hold', 'processing'];
+                    $can_cancel = in_array($status_key, $cancelable_statuses, true);
 
                     $items_data = [];
                         foreach ($order->get_items() as $item) {

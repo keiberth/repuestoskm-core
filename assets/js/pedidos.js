@@ -36,6 +36,14 @@ function repeatOrder(items, redirectUrl) {
     }
 }
 
+function getCancelableStatuses() {
+    if (window.rkmPedidos && Array.isArray(window.rkmPedidos.cancelable_statuses)) {
+        return window.rkmPedidos.cancelable_statuses;
+    }
+
+    return ["pending", "on-hold", "processing"];
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     const modal = document.getElementById("rkmOrderModal");
     if (!modal) return;
@@ -147,7 +155,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function canCancelOrder(status) {
-        return ["pending", "on-hold", "en-revision"].includes(status);
+        return getCancelableStatuses().includes(status);
     }
 
     function formatCurrency(value) {

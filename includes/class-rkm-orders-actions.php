@@ -6,6 +6,10 @@ if (!defined('ABSPATH')) {
 
 class RKM_Orders_Actions {
 
+    public static function get_cancelable_statuses() {
+        return ['pending', 'on-hold', 'processing'];
+    }
+
     public function init() {
         add_action('wp_ajax_rkm_cancel_order', [$this, 'cancel_order']);
     }
@@ -33,7 +37,7 @@ class RKM_Orders_Actions {
             wp_send_json_error(['message' => 'No podés cancelar este pedido.']);
         }
 
-        $allowed_statuses = ['pending', 'on-hold', 'processing', 'en-revision'];
+        $allowed_statuses = self::get_cancelable_statuses();
 
         if (!in_array($order->get_status(), $allowed_statuses, true)) {
             wp_send_json_error(['message' => 'Este pedido ya no puede cancelarse.']);
