@@ -244,16 +244,18 @@
 
 .rkm-orders-feedback {
     margin: 18px 0 22px;
-    border-radius: 16px;
-    padding: 14px 18px;
+    border-radius: 18px;
+    padding: 0;
     border: 1px solid #d1fadf;
-    background: #ecfdf3;
+    background: linear-gradient(135deg, #ecfdf3 0%, #f6fffa 100%);
     color: #065f46;
+    box-shadow: 0 10px 30px rgba(16, 24, 40, 0.08);
+    overflow: hidden;
 }
 
 .rkm-orders-feedback.is-error {
-    border-color: #fecdca;
-    background: #fef3f2;
+    border-color: #fecaca;
+    background: linear-gradient(135deg, #fef2f2 0%, #fff7f7 100%);
     color: #b42318;
 }
 
@@ -261,21 +263,35 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 14px;
+    padding: 16px 18px;
 }
 
 .rkm-orders-feedback__text {
     font-size: 14px;
     font-weight: 600;
+    line-height: 1.55;
 }
 
 .rkm-orders-feedback__close {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
     background: transparent;
     border: none;
     font-size: 20px;
     line-height: 1;
     cursor: pointer;
     color: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color .2s ease, transform .2s ease;
+}
+
+.rkm-orders-feedback__close:hover {
+    background: rgba(15, 23, 42, 0.06);
+    transform: scale(1.04);
 }
 
 .rkm-catalog-grid {
