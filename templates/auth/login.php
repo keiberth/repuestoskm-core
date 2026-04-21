@@ -40,9 +40,9 @@ do_action('woocommerce_before_customer_login_form');
 
             <div class="rkm-login-screen__copy">
                 <p class="rkm-login-screen__eyebrow"><?php esc_html_e('Acceso seguro', 'repuestoskm-core'); ?></p>
-                <h1><?php esc_html_e('Entrá al sistema y seguí operando sin fricción.', 'repuestoskm-core'); ?></h1>
+                <h1><?php esc_html_e('Acceso al sistema de gestion comercial', 'repuestoskm-core'); ?></h1>
                 <p class="rkm-login-screen__lead">
-                    <?php esc_html_e('Una experiencia de acceso alineada con el panel: clara, rápida y enfocada en pedidos, cuenta y operación comercial.', 'repuestoskm-core'); ?>
+                    <?php esc_html_e('Una experiencia de acceso alineada con el panel: clara, rapida y enfocada en pedidos, cuenta y operacion comercial.', 'repuestoskm-core'); ?>
                 </p>
             </div>
 
@@ -68,8 +68,8 @@ do_action('woocommerce_before_customer_login_form');
             <div class="rkm-login-card">
                 <div class="rkm-login-card__header">
                     <p class="rkm-login-card__eyebrow"><?php esc_html_e('Mi cuenta', 'repuestoskm-core'); ?></p>
-                    <h2><?php esc_html_e('Iniciar sesión', 'repuestoskm-core'); ?></h2>
-                    <p><?php esc_html_e('Usá tu usuario o correo y tu contraseña para entrar al panel.', 'repuestoskm-core'); ?></p>
+                    <h2><?php esc_html_e('Iniciar sesion', 'repuestoskm-core'); ?></h2>
+                    <p><?php esc_html_e('Usa tu usuario o correo y tu contrasena para entrar al panel.', 'repuestoskm-core'); ?></p>
                 </div>
 
                 <form class="woocommerce-form woocommerce-form-login login rkm-login-form" method="post" novalidate>
@@ -91,18 +91,20 @@ do_action('woocommerce_before_customer_login_form');
                     </p>
 
                     <p class="woocommerce-form-row woocommerce-form-row--wide form-row form-row-wide rkm-login-form__row">
-                        <label for="password"><?php esc_html_e('Contraseña', 'repuestoskm-core'); ?></label>
+                        <label for="password"><?php esc_html_e('Contrasena', 'repuestoskm-core'); ?></label>
                         <span class="rkm-login-form__password-wrap">
-                            <input
-                                class="woocommerce-Input woocommerce-Input--text input-text"
-                                type="password"
-                                name="password"
-                                id="password"
-                                autocomplete="current-password"
-                                placeholder="<?php esc_attr_e('Ingresá tu contraseña', 'repuestoskm-core'); ?>"
-                                required
-                                aria-required="true"
-                            />
+                            <span class="rkm-login-form__password-input">
+                                <input
+                                    class="woocommerce-Input woocommerce-Input--text input-text"
+                                    type="password"
+                                    name="password"
+                                    id="password"
+                                    autocomplete="current-password"
+                                    placeholder="<?php esc_attr_e('Ingresa tu contrasena', 'repuestoskm-core'); ?>"
+                                    required
+                                    aria-required="true"
+                                />
+                            </span>
                             <button
                                 class="rkm-login-form__password-toggle"
                                 type="button"
@@ -110,7 +112,7 @@ do_action('woocommerce_before_customer_login_form');
                                 data-target="password"
                                 aria-controls="password"
                                 aria-pressed="false"
-                                aria-label="<?php esc_attr_e('Mostrar contraseña', 'repuestoskm-core'); ?>"
+                                aria-label="<?php esc_attr_e('Mostrar contrasena', 'repuestoskm-core'); ?>"
                             >
                                 <span class="rkm-login-form__password-toggle-icon" aria-hidden="true"></span>
                                 <span class="rkm-login-form__password-toggle-label"><?php esc_html_e('Mostrar', 'repuestoskm-core'); ?></span>
@@ -123,11 +125,11 @@ do_action('woocommerce_before_customer_login_form');
                     <div class="rkm-login-form__actions">
                         <label class="woocommerce-form__label woocommerce-form__label-for-checkbox woocommerce-form-login__rememberme rkm-login-form__remember">
                             <input class="woocommerce-form__input woocommerce-form__input-checkbox" name="rememberme" type="checkbox" id="rememberme" value="forever" />
-                            <span><?php esc_html_e('Mantener sesión iniciada', 'repuestoskm-core'); ?></span>
+                            <span><?php esc_html_e('Recordarme', 'repuestoskm-core'); ?></span>
                         </label>
 
                         <a class="rkm-login-form__lost" href="<?php echo esc_url(wp_lostpassword_url()); ?>">
-                            <?php esc_html_e('Recuperar contraseña', 'repuestoskm-core'); ?>
+                            <?php esc_html_e('Recuperar contrasena', 'repuestoskm-core'); ?>
                         </a>
                     </div>
 
@@ -137,10 +139,10 @@ do_action('woocommerce_before_customer_login_form');
                             type="submit"
                             class="woocommerce-button button woocommerce-form-login__submit rkm-login-form__submit<?php echo esc_attr($theme_button_class ? ' ' . $theme_button_class : ''); ?>"
                             name="login"
-                            value="<?php esc_attr_e('Iniciar sesión', 'repuestoskm-core'); ?>"
+                            value="<?php esc_attr_e('Log in', 'woocommerce'); ?>"
                             data-rkm-submit-label="<?php esc_attr_e('Ingresando...', 'repuestoskm-core'); ?>"
                         >
-                            <?php esc_html_e('Iniciar sesión', 'repuestoskm-core'); ?>
+                            <?php esc_html_e('Iniciar sesion', 'repuestoskm-core'); ?>
                         </button>
                     </p>
 
@@ -153,7 +155,7 @@ do_action('woocommerce_before_customer_login_form');
                     <div class="rkm-login-card__header rkm-login-card__header--compact">
                         <p class="rkm-login-card__eyebrow"><?php esc_html_e('Nuevo acceso', 'repuestoskm-core'); ?></p>
                         <h2><?php esc_html_e('Registro', 'repuestoskm-core'); ?></h2>
-                        <p><?php esc_html_e('Si la tienda permite registro, completá tus datos para crear una cuenta.', 'repuestoskm-core'); ?></p>
+                        <p><?php esc_html_e('Si la tienda permite registro, completa tus datos para crear una cuenta.', 'repuestoskm-core'); ?></p>
                     </div>
 
                     <form method="post" class="woocommerce-form woocommerce-form-register register rkm-register-form" <?php do_action('woocommerce_register_form_tag'); ?>>
@@ -169,7 +171,7 @@ do_action('woocommerce_before_customer_login_form');
                                     id="reg_username"
                                     autocomplete="username"
                                     value="<?php echo esc_attr($register_username_value); ?>"
-                                    placeholder="<?php esc_attr_e('Elegí un usuario', 'repuestoskm-core'); ?>"
+                                    placeholder="<?php esc_attr_e('Elegi un usuario', 'repuestoskm-core'); ?>"
                                     required
                                     aria-required="true"
                                 />
@@ -177,7 +179,7 @@ do_action('woocommerce_before_customer_login_form');
                         <?php endif; ?>
 
                         <p class="woocommerce-form-row woocommerce-form-row--wide form-row form-row-wide rkm-login-form__row">
-                            <label for="reg_email"><?php esc_html_e('Correo electrónico', 'repuestoskm-core'); ?></label>
+                            <label for="reg_email"><?php esc_html_e('Correo electronico', 'repuestoskm-core'); ?></label>
                             <input
                                 type="email"
                                 class="woocommerce-Input woocommerce-Input--text input-text"
@@ -193,18 +195,20 @@ do_action('woocommerce_before_customer_login_form');
 
                         <?php if ($generate_password) : ?>
                             <p class="woocommerce-form-row woocommerce-form-row--wide form-row form-row-wide rkm-login-form__row">
-                                <label for="reg_password"><?php esc_html_e('Contraseña', 'repuestoskm-core'); ?></label>
+                                <label for="reg_password"><?php esc_html_e('Contrasena', 'repuestoskm-core'); ?></label>
                                 <span class="rkm-login-form__password-wrap">
-                                    <input
-                                        type="password"
-                                        class="woocommerce-Input woocommerce-Input--text input-text"
-                                        name="password"
-                                        id="reg_password"
-                                        autocomplete="new-password"
-                                        placeholder="<?php esc_attr_e('Creá una contraseña segura', 'repuestoskm-core'); ?>"
-                                        required
-                                        aria-required="true"
-                                    />
+                                    <span class="rkm-login-form__password-input">
+                                        <input
+                                            type="password"
+                                            class="woocommerce-Input woocommerce-Input--text input-text"
+                                            name="password"
+                                            id="reg_password"
+                                            autocomplete="new-password"
+                                            placeholder="<?php esc_attr_e('Crea una contrasena segura', 'repuestoskm-core'); ?>"
+                                            required
+                                            aria-required="true"
+                                        />
+                                    </span>
                                     <button
                                         class="rkm-login-form__password-toggle"
                                         type="button"
@@ -212,7 +216,7 @@ do_action('woocommerce_before_customer_login_form');
                                         data-target="reg_password"
                                         aria-controls="reg_password"
                                         aria-pressed="false"
-                                        aria-label="<?php esc_attr_e('Mostrar contraseña', 'repuestoskm-core'); ?>"
+                                        aria-label="<?php esc_attr_e('Mostrar contrasena', 'repuestoskm-core'); ?>"
                                     >
                                         <span class="rkm-login-form__password-toggle-icon" aria-hidden="true"></span>
                                         <span class="rkm-login-form__password-toggle-label"><?php esc_html_e('Mostrar', 'repuestoskm-core'); ?></span>
@@ -221,7 +225,7 @@ do_action('woocommerce_before_customer_login_form');
                             </p>
                         <?php else : ?>
                             <p class="rkm-login-form__helper">
-                                <?php esc_html_e('Te enviaremos un enlace por correo para definir tu contraseña.', 'repuestoskm-core'); ?>
+                                <?php esc_html_e('Te enviaremos un enlace por correo para definir tu contrasena.', 'repuestoskm-core'); ?>
                             </p>
                         <?php endif; ?>
 

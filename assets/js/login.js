@@ -1,4 +1,38 @@
 document.addEventListener('DOMContentLoaded', function () {
+    function cleanupWooPasswordToggles() {
+        var wrappers = document.querySelectorAll('.rkm-login-form__password-input .password-input');
+
+        wrappers.forEach(function (wrapper) {
+            var rogueButtons = wrapper.querySelectorAll('.show-password-input');
+
+            rogueButtons.forEach(function (button) {
+                button.remove();
+            });
+
+            var input = wrapper.querySelector('input');
+            var parent = wrapper.parentElement;
+
+            if (!input || !parent || !parent.classList.contains('rkm-login-form__password-input')) {
+                return;
+            }
+
+            parent.insertBefore(input, wrapper);
+            wrapper.remove();
+        });
+    }
+
+    cleanupWooPasswordToggles();
+    window.setTimeout(cleanupWooPasswordToggles, 0);
+
+    var observer = new MutationObserver(function () {
+        cleanupWooPasswordToggles();
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
     var toggleButtons = document.querySelectorAll('[data-rkm-password-toggle]');
 
     toggleButtons.forEach(function (button) {
@@ -36,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             submit.classList.add('is-loading');
-            submit.disabled = true;
+            submit.setAttribute('aria-disabled', 'true');
             submit.dataset.originalLabel = submit.textContent;
             submit.textContent = submit.getAttribute('data-rkm-submit-label') || submit.textContent;
         });

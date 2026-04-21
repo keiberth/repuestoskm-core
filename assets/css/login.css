@@ -288,30 +288,81 @@ body.woocommerce-account.rkm-login-ui .woocommerce-error {
     transform: translateY(-1px);
 }
 
-.rkm-login-form__password-wrap {
+body.woocommerce-account.rkm-login-ui .rkm-login-form .rkm-login-form__password-wrap,
+body.woocommerce-account.rkm-login-ui .rkm-register-form .rkm-login-form__password-wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0;
+    min-height: 54px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 16px;
+    background: #fff;
+    overflow: hidden;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+body.woocommerce-account.rkm-login-ui .rkm-login-form .rkm-login-form__password-input,
+body.woocommerce-account.rkm-login-ui .rkm-register-form .rkm-login-form__password-input {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    min-height: 54px;
+    padding: 0 16px;
+}
+
+body.woocommerce-account.rkm-login-ui .rkm-login-form .rkm-login-form__password-input .password-input,
+body.woocommerce-account.rkm-login-ui .rkm-register-form .rkm-login-form__password-input .password-input {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+}
+
+body.woocommerce-account.rkm-login-ui .rkm-login-form .rkm-login-form__password-input .show-password-input,
+body.woocommerce-account.rkm-login-ui .rkm-register-form .rkm-login-form__password-input .show-password-input {
+    display: none !important;
+}
+
+body.woocommerce-account.rkm-login-ui .rkm-login-form .rkm-login-form__password-input .password-input .woocommerce-Input.input-text,
+body.woocommerce-account.rkm-login-ui .rkm-register-form .rkm-login-form__password-input .password-input .woocommerce-Input.input-text {
+    padding-right: 0 !important;
+}
+
+body.woocommerce-account.rkm-login-ui .rkm-login-form .rkm-login-form__password-wrap .woocommerce-Input.input-text,
+body.woocommerce-account.rkm-login-ui .rkm-register-form .rkm-login-form__password-wrap .woocommerce-Input.input-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: auto !important;
+    max-width: none !important;
+    min-height: 40px;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    line-height: normal;
+}
+
+body.woocommerce-account.rkm-login-ui .rkm-login-form .rkm-login-form__password-toggle,
+body.woocommerce-account.rkm-login-ui .rkm-register-form .rkm-login-form__password-toggle {
     position: relative;
-    display: block;
-}
-
-.rkm-login-form__password-wrap .input-text {
-    padding-right: 126px;
-}
-
-.rkm-login-form__password-toggle {
-    position: absolute;
-    top: 50%;
-    right: 8px;
-    transform: translateY(-50%);
+    flex: 0 0 auto;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    min-width: 108px;
-    height: 40px;
-    padding: 0 14px;
-    border: 1px solid rgba(148, 163, 184, 0.18);
-    border-radius: 12px;
-    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    min-width: 116px;
+    align-self: stretch;
+    height: 100%;
+    padding: 0 16px;
+    border: none;
+    border-left: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 0;
+    background: linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
     color: #2563eb;
     font-size: 12px;
     font-weight: 800;
@@ -320,6 +371,22 @@ body.woocommerce-account.rkm-login-ui .woocommerce-error {
     cursor: pointer;
     box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
     transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    white-space: nowrap;
+}
+
+body.woocommerce-account.rkm-login-ui .rkm-login-form .rkm-login-form__password-wrap:focus-within,
+body.woocommerce-account.rkm-login-ui .rkm-register-form .rkm-login-form__password-wrap:focus-within {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.18);
+    transform: translateY(-1px);
+}
+
+body.woocommerce-account.rkm-login-ui .rkm-login-form .rkm-login-form__password-wrap .woocommerce-Input.input-text:focus,
+body.woocommerce-account.rkm-login-ui .rkm-register-form .rkm-login-form__password-wrap .woocommerce-Input.input-text:focus {
+    border: none;
+    box-shadow: none;
+    outline: none;
+    transform: none;
 }
 
 .rkm-login-form__password-toggle-icon {
@@ -348,20 +415,17 @@ body.woocommerce-account.rkm-login-ui .woocommerce-error {
 }
 
 .rkm-login-form__password-toggle:hover {
-    border-color: rgba(37, 99, 235, 0.28);
     background: #eff6ff;
     box-shadow: 0 12px 24px rgba(37, 99, 235, 0.12);
-    transform: translateY(-50%) scale(1.01);
+    transform: scale(1.01);
 }
 
 .rkm-login-form__password-toggle:focus-visible {
     outline: none;
-    border-color: rgba(37, 99, 235, 0.34);
     box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.18), 0 12px 24px rgba(37, 99, 235, 0.12);
 }
 
 .rkm-login-form__password-toggle.is-active {
-    border-color: rgba(37, 99, 235, 0.3);
     background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
     color: #1d4ed8;
 }
@@ -400,7 +464,38 @@ body.woocommerce-account.rkm-login-ui .woocommerce-error {
     width: 18px;
     height: 18px;
     margin: 0;
-    accent-color: #2563eb;
+    appearance: none;
+    border: 1.5px solid rgba(148, 163, 184, 0.45);
+    border-radius: 6px;
+    background: #fff;
+    box-shadow: inset 0 1px 1px rgba(15, 23, 42, 0.04);
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.rkm-login-form__remember input:hover {
+    border-color: rgba(37, 99, 235, 0.42);
+}
+
+.rkm-login-form__remember input:focus-visible {
+    outline: none;
+    border-color: rgba(37, 99, 235, 0.55);
+    box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.18);
+}
+
+.rkm-login-form__remember input:checked {
+    border-color: #2563eb;
+    background-color: #2563eb;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M6.2 11.4L2.8 8l1.4-1.4 2 2 5.6-5.6L13.2 4z' fill='white'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 12px 12px;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
+}
+
+.rkm-login-form__remember input:checked:hover {
+    background-color: #1d4ed8;
+    border-color: #1d4ed8;
 }
 
 .rkm-login-form__lost {
@@ -533,13 +628,19 @@ body.woocommerce-account.rkm-login-ui .woocommerce-error {
         flex-direction: column;
     }
 
-    .rkm-login-form__password-wrap .input-text {
-        padding-right: 114px;
+    body.woocommerce-account.rkm-login-ui .rkm-login-form .rkm-login-form__password-wrap,
+    body.woocommerce-account.rkm-login-ui .rkm-register-form .rkm-login-form__password-wrap {
+        grid-template-columns: minmax(0, 1fr) auto;
     }
 
-    .rkm-login-form__password-toggle {
-        min-width: 96px;
-        height: 38px;
+    body.woocommerce-account.rkm-login-ui .rkm-login-form .rkm-login-form__password-input,
+    body.woocommerce-account.rkm-login-ui .rkm-register-form .rkm-login-form__password-input {
+        padding: 0 14px;
+    }
+
+    body.woocommerce-account.rkm-login-ui .rkm-login-form .rkm-login-form__password-toggle,
+    body.woocommerce-account.rkm-login-ui .rkm-register-form .rkm-login-form__password-toggle {
+        min-width: 104px;
         padding: 0 12px;
     }
 }
