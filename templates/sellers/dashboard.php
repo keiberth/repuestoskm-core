@@ -15,13 +15,13 @@ if (!defined('ABSPATH')) {
 
         <?php include plugin_dir_path(__FILE__) . '../partials/subnav.php'; ?>
 
-        <div class="rkm-card rkm-sellers-dashboard">
+        <section class="rkm-card rkm-sellers-dashboard">
             <div class="rkm-sellers-dashboard__hero">
-                <span class="rkm-sellers-dashboard__eyebrow">Acceso vendedor</span>
-                <h2 class="rkm-sellers-dashboard__title">Base comercial lista para operar</h2>
+                <span class="rkm-sellers-dashboard__eyebrow">Panel comercial</span>
+                <h2 class="rkm-sellers-dashboard__title">Resumen operativo del vendedor</h2>
                 <p class="rkm-sellers-dashboard__text">
-                    Este dashboard ya separa la experiencia del vendedor del resto del sistema y deja una primera capa
-                    util para seguimiento comercial, accesos rapidos y futuras asignaciones reales.
+                    Esta primera version usa datos reales simples del sistema para que el vendedor tenga un punto de
+                    trabajo util sin mezclar logica de clientes, admin u otros modulos.
                 </p>
             </div>
 
@@ -34,64 +34,88 @@ if (!defined('ABSPATH')) {
                     </article>
                 <?php endforeach; ?>
             </div>
-        </div>
+        </section>
 
         <div class="rkm-sellers-dashboard__layout">
             <section class="rkm-card rkm-sellers-panel">
                 <div class="rkm-sellers-panel__header">
-                    <h3>Accesos rapidos</h3>
-                    <p>Atajos operativos del vendedor sobre la base actual del sistema.</p>
+                    <h3>Acciones rapidas</h3>
+                    <p>Atajos directos a los flujos comerciales ya existentes.</p>
                 </div>
 
                 <div class="rkm-sellers-actions">
                     <?php foreach ($data['seller_quick_actions'] as $action) : ?>
-                        <?php if ($action['kind'] === 'placeholder') : ?>
-                            <button type="button" class="rkm-sellers-action-card rkm-sellers-action-card--button" data-rkm-sellers-action="<?php echo esc_attr($action['action']); ?>">
-                                <strong><?php echo esc_html($action['label']); ?></strong>
-                                <span><?php echo esc_html($action['description']); ?></span>
-                            </button>
-                        <?php else : ?>
-                            <a class="rkm-sellers-action-card" href="<?php echo esc_url($action['url']); ?>">
-                                <strong><?php echo esc_html($action['label']); ?></strong>
-                                <span><?php echo esc_html($action['description']); ?></span>
-                            </a>
-                        <?php endif; ?>
+                        <a class="rkm-sellers-action-card" href="<?php echo esc_url($action['url']); ?>">
+                            <strong><?php echo esc_html($action['label']); ?></strong>
+                            <span><?php echo esc_html($action['description']); ?></span>
+                        </a>
                     <?php endforeach; ?>
                 </div>
             </section>
 
             <section class="rkm-card rkm-sellers-panel">
                 <div class="rkm-sellers-panel__header">
-                    <h3>Estado del modulo</h3>
-                    <p>Checklist inicial para seguir construyendo el dashboard comercial.</p>
+                    <h3>Clientes</h3>
+                    <p>Base simple de usuarios customer, preparada para futura asignacion comercial.</p>
                 </div>
 
-                <div class="rkm-sellers-stack">
-                    <?php foreach ($data['seller_pipeline'] as $item) : ?>
-                        <article class="rkm-sellers-stack__item">
-                            <strong><?php echo esc_html($item['title']); ?></strong>
-                            <p><?php echo esc_html($item['description']); ?></p>
-                        </article>
-                    <?php endforeach; ?>
-                </div>
+                <?php if (!empty($data['seller_recent_customers'])) : ?>
+                    <div class="rkm-sellers-list">
+                        <?php foreach ($data['seller_recent_customers'] as $customer) : ?>
+                            <article class="rkm-sellers-list__item">
+                                <strong><?php echo esc_html($customer['name']); ?></strong>
+                                <span><?php echo esc_html($customer['email']); ?></span>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else : ?>
+                    <div class="rkm-sellers-empty-state">
+                        <p>No hay clientes registrados para mostrar.</p>
+                    </div>
+                <?php endif; ?>
             </section>
         </div>
 
-        <section class="rkm-card rkm-sellers-note" id="rkm-sellers-note" data-rkm-sellers-note hidden>
-            <div class="rkm-sellers-note__content">
-                <span class="rkm-sellers-note__eyebrow">Placeholder preparado</span>
-                <h3 data-rkm-sellers-note-title><?php echo esc_html($data['seller_placeholder_notice']['title']); ?></h3>
-                <p data-rkm-sellers-note-message><?php echo esc_html($data['seller_placeholder_notice']['message']); ?></p>
+        <section class="rkm-card rkm-sellers-panel rkm-sellers-panel--orders">
+            <div class="rkm-sellers-panel__header">
+                <h3>Pedidos recientes</h3>
+                <p>Por ahora se muestran los ultimos pedidos del sistema. La estructura queda lista para filtrar por vendedor despues.</p>
             </div>
 
-            <button type="button" class="rkm-btn-secondary rkm-btn-sm" data-rkm-sellers-close>Cerrar</button>
+            <?php if (!empty($data['seller_recent_orders'])) : ?>
+                <div class="rkm-sellers-orders-table-wrap">
+                    <table class="rkm-sellers-orders-table">
+                        <thead>
+                            <tr>
+                                <th>Pedido</th>
+                                <th>Cliente</th>
+                                <th>Estado</th>
+                                <th>Total</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($data['seller_recent_orders'] as $order) : ?>
+                                <tr>
+                                    <td data-label="Pedido">#<?php echo esc_html($order['number']); ?></td>
+                                    <td data-label="Cliente"><?php echo esc_html($order['customer_name']); ?></td>
+                                    <td data-label="Estado">
+                                        <span class="rkm-sellers-status rkm-sellers-status--<?php echo esc_attr($order['status_slug']); ?>">
+                                            <?php echo esc_html($order['status']); ?>
+                                        </span>
+                                    </td>
+                                    <td data-label="Total"><?php echo esc_html($order['total']); ?></td>
+                                    <td data-label="Fecha"><?php echo esc_html($order['date']); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else : ?>
+                <div class="rkm-sellers-empty-state">
+                    <p>No hay pedidos recientes para mostrar.</p>
+                </div>
+            <?php endif; ?>
         </section>
-
-        <div class="rkm-sellers-disclaimer">
-            <p>
-                Las metricas actuales usan una base global compatible con WooCommerce mientras se define la asignacion
-                real por vendedor. La separacion de vistas, estilos y comportamiento ya quedo lista para esa conexion.
-            </p>
-        </div>
     </div>
 </div>

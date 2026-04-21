@@ -7,6 +7,8 @@ if (!defined('ABSPATH')) {
 class RKM_Sellers {
 
     const SECTION_KEY = 'panel-vendedor';
+    const RECENT_ORDERS_LIMIT = 6;
+    const RECENT_CUSTOMERS_LIMIT = 8;
 
     public function init() {
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
@@ -29,7 +31,7 @@ class RKM_Sellers {
     }
 
     public static function get_page_subtitle() {
-        return 'Espacio de trabajo comercial separado del panel de cliente y preparado para crecer.';
+        return 'Vista comercial inicial con pedidos, clientes y accesos rapidos del vendedor.';
     }
 
     public function enqueue_assets() {
@@ -68,12 +70,6 @@ class RKM_Sellers {
             [
                 'section' => self::SECTION_KEY,
                 'can_access' => true,
-                'messages' => [
-                    'clients' => [
-                        'title' => 'Modulo de clientes preparado',
-                        'message' => 'Todavia no existe una cartera individual conectada. Esta accion queda lista para enlazar clientes asignados por vendedor sin mezclar logica administrativa.',
-                    ],
-                ],
             ]
         );
     }
@@ -87,7 +83,7 @@ class RKM_Sellers {
         $data = array_merge($data, $this->get_dashboard_data());
         $current = self::SECTION_KEY;
         $page_title = self::get_page_title();
-        $page_subtitle = 'Dashboard comercial inicial con metricas base y accesos listos para conectar asignaciones reales.';
+        $page_subtitle = self::get_page_subtitle();
         $template = RKM_CORE_PATH . 'templates/sellers/dashboard.php';
 
         if (file_exists($template)) {
@@ -97,119 +93,143 @@ class RKM_Sellers {
 
     private function get_dashboard_data() {
         return [
-            'seller_metrics' => [
-                [
-                    'label' => 'Pedidos asignados',
-                    'value' => $this->get_provisional_orders_count(),
-                    'meta'  => 'Base global temporal hasta conectar asignacion por vendedor',
-                    'tone'  => 'warning',
-                ],
-                [
-                    'label' => 'Clientes asignados',
-                    'value' => $this->get_provisional_clients_count(),
-                    'meta'  => 'Clientes con actividad reciente, sin filtro individual aun',
-                    'tone'  => 'primary',
-                ],
-                [
-                    'label' => 'Pendientes de seguimiento',
-                    'value' => $this->get_provisional_follow_up_count(),
-                    'meta'  => 'Pedidos que requieren contacto o definicion comercial',
-                    'tone'  => 'neutral',
-                ],
+            'seller_metrics' => $this->get_metrics(),
+            'seller_quick_actions' => $this->get_quick_actions(),
+            'seller_recent_orders' => $this->get_recent_orders(),
+            'seller_recent_customers' => $this->get_recent_customers(),
+        ];
+    }
+
+    private function get_metrics() {
+        return [
+            [
+                'label' => 'Total pedidos',
+                'value' => $this->get_total_orders_count(),
+                'meta'  => 'Conteo general del sistema',
+                'tone'  => 'primary',
             ],
-            'seller_quick_actions' => [
-                [
-                    'label'       => 'Ver pedidos',
-                    'description' => 'Entrar al listado actual de pedidos para seguimiento operativo.',
-                    'url'         => home_url('/mi-cuenta/panel/?section=pedidos'),
-                    'kind'        => 'link',
-                ],
-                [
-                    'label'       => 'Cargar pedido',
-                    'description' => 'Crear una nueva orden desde el flujo comercial existente.',
-                    'url'         => home_url('/mi-cuenta/panel/?section=nueva-orden'),
-                    'kind'        => 'link',
-                ],
-                [
-                    'label'       => 'Ver clientes',
-                    'description' => 'Placeholder listo para conectar cartera y seguimiento por vendedor.',
-                    'url'         => '#rkm-sellers-note',
-                    'kind'        => 'placeholder',
-                    'action'      => 'clients',
-                ],
+            [
+                'label' => 'Pedidos activos',
+                'value' => $this->get_active_orders_count(),
+                'meta'  => 'Estados pending y processing',
+                'tone'  => 'warning',
             ],
-            'seller_pipeline' => [
-                [
-                    'title'       => 'Base del modulo',
-                    'description' => 'La vista ya separa metricas, accesos y pendientes del vendedor sin reutilizar paneles de cliente.',
-                ],
-                [
-                    'title'       => 'Asignaciones futuras',
-                    'description' => 'El siguiente paso es conectar pedidos y clientes reales por vendedor con filtros dedicados.',
-                ],
-                [
-                    'title'       => 'Seguimiento comercial',
-                    'description' => 'La estructura ya esta lista para sumar estados de contacto, recordatorios y cartera activa.',
-                ],
-            ],
-            'seller_placeholder_notice' => [
-                'title'   => 'Modulo de clientes preparado',
-                'message' => 'Todavia no existe una cartera individual conectada. Esta accion queda lista para enlazar clientes asignados por vendedor sin mezclar logica administrativa.',
+            [
+                'label' => 'Total clientes',
+                'value' => $this->get_total_customers_count(),
+                'meta'  => 'Usuarios con rol customer',
+                'tone'  => 'neutral',
             ],
         ];
     }
 
-    private function get_provisional_orders_count() {
+    private function get_recent_orders() {
         if (!function_exists('wc_get_orders')) {
-            return 0;
+            return [];
         }
 
         $orders = wc_get_orders([
-            'status'   => ['pending', 'on-hold', 'processing', 'en-revision'],
-            'limit'    => 1,
-            'paginate' => true,
+            'limit'   => self::RECENT_ORDERS_LIMIT,
+            'orderby' => 'date',
+            'order'   => 'DESC',
         ]);
 
-        return isset($orders->total) ? (int) $orders->total : 0;
+        if (empty($orders)) {
+            return [];
+        }
+
+        return array_map([$this, 'format_order_row'], $orders);
     }
 
-    private function get_provisional_clients_count() {
-        if (!function_exists('wc_get_orders')) {
-            return 0;
+    private function format_order_row($order) {
+        $customer_name = trim($order->get_formatted_billing_full_name());
+
+        if ($customer_name === '') {
+            $customer_name = $order->get_billing_email() ? $order->get_billing_email() : 'Cliente sin nombre';
         }
 
-        $lookback_timestamp = current_time('timestamp') - (DAY_IN_SECONDS * 90);
-        $orders = wc_get_orders([
-            'status' => ['pending', 'on-hold', 'processing', 'completed', 'en-revision'],
-            'limit'  => -1,
+        $date_created = $order->get_date_created();
+
+        return [
+            'number'        => $order->get_order_number(),
+            'customer_name' => $customer_name,
+            'status'        => wc_get_order_status_name($order->get_status()),
+            'status_slug'   => sanitize_html_class($order->get_status()),
+            'total'         => wp_strip_all_tags($order->get_formatted_order_total()),
+            'date'          => $date_created ? $date_created->date_i18n('d/m/Y') : 'Sin fecha',
+        ];
+    }
+
+    private function get_recent_customers() {
+        $users = get_users([
+            'role'    => 'customer',
+            'number'  => self::RECENT_CUSTOMERS_LIMIT,
+            'orderby' => 'registered',
+            'order'   => 'DESC',
+            'fields'  => ['ID', 'display_name', 'user_email'],
         ]);
+
+        if (empty($users)) {
+            return [];
+        }
+
         $customers = [];
 
-        foreach ($orders as $order) {
-            $customer_id = (int) $order->get_customer_id();
-            $date_created = $order->get_date_created();
-
-            if ($customer_id <= 0 || !$date_created || $date_created->getTimestamp() < $lookback_timestamp) {
-                continue;
-            }
-
-            $customers[$customer_id] = true;
+        foreach ($users as $user) {
+            $customers[] = [
+                'name'  => $user->display_name ? $user->display_name : 'Cliente sin nombre',
+                'email' => $user->user_email ? $user->user_email : 'Sin email',
+            ];
         }
 
-        return count($customers);
+        return $customers;
     }
 
-    private function get_provisional_follow_up_count() {
+    private function get_quick_actions() {
+        return [
+            [
+                'label'       => 'Cargar pedido',
+                'description' => 'Ir directo al flujo actual de nueva orden.',
+                'url'         => home_url('/mi-cuenta/panel/?section=nueva-orden'),
+            ],
+            [
+                'label'       => 'Ver pedidos',
+                'description' => 'Abrir el listado actual de pedidos del sistema.',
+                'url'         => home_url('/mi-cuenta/panel/?section=pedidos'),
+            ],
+        ];
+    }
+
+    private function get_total_orders_count() {
         if (!function_exists('wc_get_orders')) {
             return 0;
         }
 
         $orders = wc_get_orders([
-            'status'   => ['pending', 'on-hold', 'en-revision'],
             'limit'    => 1,
             'paginate' => true,
         ]);
 
         return isset($orders->total) ? (int) $orders->total : 0;
+    }
+
+    private function get_active_orders_count() {
+        if (!function_exists('wc_get_orders')) {
+            return 0;
+        }
+
+        $orders = wc_get_orders([
+            'status'   => ['pending', 'processing'],
+            'limit'    => 1,
+            'paginate' => true,
+        ]);
+
+        return isset($orders->total) ? (int) $orders->total : 0;
+    }
+
+    private function get_total_customers_count() {
+        $counts = count_users();
+
+        return isset($counts['avail_roles']['customer']) ? (int) $counts['avail_roles']['customer'] : 0;
     }
 }
