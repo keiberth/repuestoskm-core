@@ -71,7 +71,8 @@ $bcv_rate = isset($data['bcv_rate']) && is_array($data['bcv_rate']) ? $data['bcv
         <div class="rkm-private-header-pro__dropdown" id="rkmUserMenuDropdown">
             <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=mi-cuenta')); ?>">Mi cuenta</a>
             <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=pedidos')); ?>">Pedidos</a>
-            <a href="<?php echo esc_url(wc_logout_url(wp_login_url())); ?>">Cerrar sesión</a>
+            <a href="<?php echo esc_url(class_exists('RKM_Auth') ? RKM_Auth::get_logout_url() : wc_logout_url(home_url('/mi-cuenta/'))); ?>">Cerrar sesión</a>
         </div>
     </div>
 </div>
+

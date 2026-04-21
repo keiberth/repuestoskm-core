@@ -18,9 +18,9 @@ class RKM_Redirects {
         if (is_front_page() || is_home()) {
 
             if (is_user_logged_in()) {
-                wp_redirect(home_url('/mi-cuenta/panel/'));
+                wp_safe_redirect(RKM_Auth::get_redirect_url_for_user());
             } else {
-                wp_redirect(wp_login_url());
+                wp_safe_redirect(RKM_Auth::get_login_url());
             }
 
             exit;

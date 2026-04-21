@@ -15,6 +15,7 @@ define('RKM_CORE_PATH', plugin_dir_path(__FILE__));
 define('RKM_CORE_URL', plugin_dir_url(__FILE__));
 
 require_once RKM_CORE_PATH . 'includes/class-rkm-loader.php';
+require_once RKM_CORE_PATH . 'includes/class-rkm-permissions.php';
 require_once RKM_CORE_PATH . 'includes/class-rkm-auth.php';
 require_once RKM_CORE_PATH . 'includes/class-rkm-routes.php';
 require_once RKM_CORE_PATH . 'includes/class-rkm-dashboard.php';

@@ -8,6 +8,7 @@ class RKM_Loader {
 
     public function run() {
         require_once RKM_CORE_PATH . 'includes/class-rkm-routes.php';
+        require_once RKM_CORE_PATH . 'includes/class-rkm-permissions.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-auth.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-dashboard.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-orders.php';

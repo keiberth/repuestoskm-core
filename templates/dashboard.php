@@ -57,7 +57,7 @@ $current_section = 'panel';
                         </a>
                     </li>
                     <li>
-                        <a href="<?php echo esc_url(wc_logout_url()); ?>" class="rkm-sidebar-link rkm-sidebar-link--danger">
+                        <a href="<?php echo esc_url(class_exists('RKM_Auth') ? RKM_Auth::get_logout_url() : wc_logout_url(home_url('/mi-cuenta/'))); ?>" class="rkm-sidebar-link rkm-sidebar-link--danger">
                             <span class="rkm-sidebar-link__icon">↩</span>
                             <span>Cerrar sesión</span>
                         </a>
@@ -100,3 +100,4 @@ $current_section = 'panel';
 
     </div>
 </div>
+
