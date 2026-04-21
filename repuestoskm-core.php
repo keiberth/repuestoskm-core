@@ -41,6 +41,10 @@ function rkm_core_deactivate() {
 register_deactivation_hook(__FILE__, 'rkm_core_deactivate');
 
 function rkm_enqueue_assets() {
+    if (function_exists('is_account_page') && is_account_page()) {
+        return;
+    }
+
     wp_enqueue_style(
         'rkm-orders',
         plugin_dir_url(__FILE__) . 'assets/css/orders.css',

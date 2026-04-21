@@ -10,6 +10,7 @@ class RKM_Loader {
         require_once RKM_CORE_PATH . 'includes/class-rkm-routes.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-permissions.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-auth.php';
+        require_once RKM_CORE_PATH . 'includes/class-rkm-login-ui.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-dashboard.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-admin-dashboard.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-sellers.php';
@@ -20,6 +21,7 @@ class RKM_Loader {
 
         (new RKM_Routes())->init();
         (new RKM_Auth())->init();
+        (new RKM_Login_UI())->init();
         (new RKM_Dashboard())->init();
         (new RKM_Sellers())->init();
         (new RKM_Orders())->init();
