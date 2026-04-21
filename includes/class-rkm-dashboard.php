@@ -199,6 +199,15 @@ class RKM_Dashboard {
                 $template = RKM_CORE_PATH . 'templates/historial.php';
                 break;
 
+            case 'panel-vendedor':
+                if (class_exists('RKM_Sellers')) {
+                    (new RKM_Sellers())->render_dashboard($data);
+                    return;
+                }
+
+                $template = RKM_CORE_PATH . 'templates/dashboard.php';
+                break;
+
             case 'panel':
             default:
                 $template = RKM_CORE_PATH . 'templates/dashboard.php';

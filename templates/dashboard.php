@@ -56,6 +56,15 @@ $current_section = 'panel';
                             <span>Historial</span>
                         </a>
                     </li>
+                    <?php if (class_exists('RKM_Sellers') && RKM_Sellers::can_access()) : ?>
+                        <li>
+                            <a href="<?php echo esc_url(RKM_Sellers::get_section_url()); ?>"
+                               class="rkm-sidebar-link <?php echo ($current_section === RKM_Sellers::get_section_key()) ? 'is-active' : ''; ?>">
+                                <span class="rkm-sidebar-link__icon">&#128188;</span>
+                                <span>Panel vendedor</span>
+                            </a>
+                        </li>
+                    <?php endif; ?>
                     <li>
                         <a href="<?php echo esc_url(class_exists('RKM_Auth') ? RKM_Auth::get_logout_url() : wc_logout_url(home_url('/mi-cuenta/'))); ?>" class="rkm-sidebar-link rkm-sidebar-link--danger">
                             <span class="rkm-sidebar-link__icon">↩</span>
@@ -100,4 +109,7 @@ $current_section = 'panel';
 
     </div>
 </div>
+
+
+
 

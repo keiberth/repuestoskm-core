@@ -27,4 +27,10 @@ $panel_url = home_url('/mi-cuenta/panel/');
        class="rkm-subnav__link <?php echo ($current === 'historial') ? 'is-active' : ''; ?>">
         Historial
     </a>
-</nav>
+
+    <?php if (class_exists('RKM_Sellers') && RKM_Sellers::can_access()) : ?>
+        <a href="<?php echo esc_url(RKM_Sellers::get_section_url()); ?>"
+           class="rkm-subnav__link <?php echo ($current === RKM_Sellers::get_section_key()) ? 'is-active' : ''; ?>">
+            Panel vendedor
+        </a>
+    <?php endif; ?></nav>
