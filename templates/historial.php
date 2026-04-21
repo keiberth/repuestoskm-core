@@ -29,6 +29,7 @@ if (!defined('ABSPATH')) {
                     $order_number = $order->get_order_number();
                     $order_date   = $order->get_date_created() ? $order->get_date_created()->date_i18n('d/m/Y') : '-';
                     $order_total  = $order->get_total();
+                    $order_subtotal = $order->get_subtotal();
                     $item_count   = $order->get_item_count();
                     $item_count_label = $item_count === 1 ? '1 producto' : $item_count . ' productos';
                     $status_key   = $order->get_status();
@@ -102,6 +103,7 @@ if (!defined('ABSPATH')) {
                                     data-order-date="<?php echo esc_attr($order_date); ?>"
                                     data-order-status="<?php echo esc_attr($status_key); ?>"
                                     data-order-status-label="<?php echo esc_attr($status_label); ?>"
+                                    data-order-subtotal="<?php echo esc_attr(wp_strip_all_tags(wc_price($order_subtotal))); ?>"
                                     data-order-total="<?php echo esc_attr(wp_strip_all_tags(wc_price($order_total))); ?>"
                                     data-order-items='<?php echo wp_json_encode($items_data); ?>'
                                 >
@@ -126,37 +128,67 @@ if (!defined('ABSPATH')) {
     <div class="rkm-modal" id="rkmOrderModal">
         <div class="rkm-modal__overlay"></div>
 
-        <div class="rkm-modal__content">
-            <button type="button" class="rkm-modal__close">✕</button>
+        <div class="rkm-modal__content rkm-order-modal">
+            <button type="button" class="rkm-modal__close">&times;</button>
 
-            <div class="rkm-modal__header">
-                <h2 id="rkmOrderModalTitle">Pedido</h2>
-                <p id="rkmOrderModalMeta"></p>
-            </div>
+            <div class="rkm-modal__header rkm-order-modal__header">
+                <div class="rkm-order-modal__heading">
+                    <span class="rkm-order-modal__eyebrow">Detalle del pedido</span>
+                    <h2 id="rkmOrderModalTitle">Pedido</h2>
+                    <p id="rkmOrderModalMeta"></p>
+                </div>
 
-            <div class="rkm-modal__section">
-                <h3>Estado actual</h3>
-                <div class="rkm-modal__status-box">
+                <div class="rkm-order-modal__status">
+                    <span class="rkm-order-modal__status-label">Estado</span>
                     <mark id="rkmOrderModalStatus" class="rkm-order-badge"></mark>
-                    <p id="rkmOrderModalStatusDescription" class="rkm-modal__status-description"></p>
                 </div>
             </div>
 
-            <div class="rkm-modal__section">
-                <h3>Productos</h3>
-                <div id="rkmOrderModalItems" class="rkm-modal__items"></div>
-            </div>
+            <div class="rkm-modal__body">
+                <div class="rkm-modal__section rkm-order-modal__section">
+                    <div class="rkm-order-modal__section-head">
+                        <h3>Estado actual</h3>
+                        <span class="rkm-order-modal__section-kicker">Seguimiento general</span>
+                    </div>
+                    <div class="rkm-modal__status-box rkm-order-modal__status-box">
+                        <p id="rkmOrderModalStatusDescription" class="rkm-modal__status-description"></p>
+                    </div>
+                </div>
 
-            <div class="rkm-modal__section">
-                <h3>Seguimiento del pedido</h3>
-                <div id="rkmOrderTimeline" class="rkm-timeline"></div>
-            </div>
+                <div class="rkm-modal__section rkm-order-modal__section">
+                    <div class="rkm-order-modal__section-head">
+                        <h3>Productos</h3>
+                        <span class="rkm-order-modal__section-kicker">Detalle del pedido</span>
+                    </div>
+                    <div id="rkmOrderModalItems" class="rkm-modal__items rkm-order-modal__items"></div>
+                </div>
 
-            <div class="rkm-modal__section" id="rkmOrderModalActions"></div>
+                <div class="rkm-modal__section rkm-order-modal__section">
+                    <div class="rkm-order-modal__section-head">
+                        <h3>Seguimiento del pedido</h3>
+                        <span class="rkm-order-modal__section-kicker">Estado por etapas</span>
+                    </div>
+                    <div id="rkmOrderTimeline" class="rkm-timeline rkm-order-modal__timeline"></div>
+                </div>
 
-            <div class="rkm-modal__footer">
-                <strong>Total: <span id="rkmOrderModalTotal"></span></strong>
+                <div class="rkm-modal__section rkm-order-modal__section">
+                    <div class="rkm-order-modal__summary">
+                        <div class="rkm-order-modal__total-row">
+                            <span>Subtotal</span>
+                            <strong id="rkmOrderModalSubtotal"></strong>
+                        </div>
+                        <div class="rkm-order-modal__total-row rkm-order-modal__total-row--final">
+                            <span>Total</span>
+                            <strong id="rkmOrderModalTotal"></strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rkm-modal__section rkm-order-modal__section">
+                    <div id="rkmOrderModalActions" class="rkm-order-modal__actions"></div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+

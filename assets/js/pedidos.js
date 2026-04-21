@@ -48,6 +48,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const statusEl = document.getElementById("rkmOrderModalStatus");
     const statusDescriptionEl = document.getElementById("rkmOrderModalStatusDescription");
     const itemsEl = document.getElementById("rkmOrderModalItems");
+    const subtotalEl = document.getElementById("rkmOrderModalSubtotal");
     const totalEl = document.getElementById("rkmOrderModalTotal");
     const timelineEl = document.getElementById("rkmOrderTimeline");
     const actionsEl = document.getElementById("rkmOrderModalActions");
@@ -145,28 +146,61 @@ document.addEventListener("DOMContentLoaded", function () {
         return ["completed", "cancelled", "refunded", "failed"].includes(status);
     }
 
+    function canCancelOrder(status) {
+        return ["pending", "on-hold", "en-revision"].includes(status);
+    }
+
+    function formatCurrency(value) {
+        return new Intl.NumberFormat("es-AR", {
+            style: "currency",
+            currency: "ARS",
+            minimumFractionDigits: 2
+        }).format(Number(value || 0));
+    }
+
     function renderActions(button, status, items) {
         if (!actionsEl) return;
 
         const panelNuevaOrdenUrl = `${window.location.origin}/mi-cuenta/panel/?section=nueva-orden`;
+        const actions = [];
 
-        if (!canRepeatOrder(status)) {
+        if (canRepeatOrder(status)) {
+            actions.push(`
+                <button type="button" class="rkm-btn rkm-btn--primary" id="rkmRepeatOrderBtn">
+                    Repetir pedido
+                </button>
+            `);
+        }
+
+        if (canCancelOrder(status)) {
+            actions.push(`
+                <button type="button" class="rkm-btn-danger" id="rkmModalCancelOrderBtn">
+                    Cancelar pedido
+                </button>
+            `);
+        }
+
+        if (!actions.length) {
             actionsEl.innerHTML = "";
             return;
         }
 
-        actionsEl.innerHTML = `
-            <button type="button" class="rkm-btn rkm-btn--primary" id="rkmRepeatOrderBtn">
-                Repetir pedido
-            </button>
-        `;
+        actionsEl.innerHTML = actions.join("");
 
         const repeatBtn = document.getElementById("rkmRepeatOrderBtn");
-        if (!repeatBtn) return;
+        if (repeatBtn) {
+            repeatBtn.addEventListener("click", () => {
+                repeatOrder(items, panelNuevaOrdenUrl);
+            });
+        }
 
-        repeatBtn.addEventListener("click", () => {
-            repeatOrder(items, panelNuevaOrdenUrl);
-        });
+        const cancelBtn = document.getElementById("rkmModalCancelOrderBtn");
+        if (cancelBtn) {
+            cancelBtn.addEventListener("click", () => {
+                closeModal();
+                openCancelModal(button.dataset.orderId);
+            });
+        }
     }
 
     function openModal(button) {
@@ -174,6 +208,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const date = button.dataset.orderDate;
         const status = button.dataset.orderStatus;
         const statusLabel = button.dataset.orderStatusLabel;
+        const subtotal = button.dataset.orderSubtotal;
         const total = button.dataset.orderTotal;
 
         let items = [];
@@ -185,6 +220,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
         titleEl.textContent = `Pedido #${number}`;
         metaEl.textContent = `Fecha: ${date}`;
+        if (subtotalEl) {
+            const itemsSubtotal = items.reduce((sum, item) => {
+                const qty = Number(item.qty || 1);
+                const price = Number(item.price_raw || 0);
+                return sum + (qty * price);
+            }, 0);
+            subtotalEl.textContent = subtotal || formatCurrency(itemsSubtotal);
+        }
         totalEl.textContent = total;
 
         statusEl.className = "rkm-order-badge";
@@ -202,11 +245,20 @@ document.addEventListener("DOMContentLoaded", function () {
                 <div class="rkm-modal__item">
                     <div class="rkm-modal__item-main">
                         <div class="rkm-modal__item-name">${item.name}</div>
-                        <div class="rkm-modal__item-meta">Cantidad: ${item.qty}</div>
+                        <div class="rkm-modal__item-meta">
+                            <span>Cantidad: ${item.qty}</span>
+                            <span>Unitario: ${formatCurrency(item.price_raw)}</span>
+                        </div>
                     </div>
                     <div class="rkm-modal__item-side">
-                        <div class="rkm-modal__item-label">Subtotal</div>
-                        <div class="rkm-modal__item-price">${item.subtotal}</div>
+                        <div class="rkm-modal__item-row">
+                            <div class="rkm-modal__item-label">Precio unitario</div>
+                            <div class="rkm-modal__item-value">${formatCurrency(item.price_raw)}</div>
+                        </div>
+                        <div class="rkm-modal__item-row rkm-modal__item-row--total">
+                            <div class="rkm-modal__item-label">Subtotal</div>
+                            <div class="rkm-modal__item-price">${item.subtotal}</div>
+                        </div>
                     </div>
                 </div>
             `).join("");
