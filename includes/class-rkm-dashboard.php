@@ -6,8 +6,10 @@ if (!defined('ABSPATH')) {
 
 class RKM_Dashboard {
 
-    const BCV_USD_RATE_TRANSIENT = 'rkm_bcv_usd_rate';
+    const BCV_USD_RATE_TRANSIENT = 'rkm_bcv_usd_rate_alcambio_v1';
     const BCV_USD_RATE_TTL = 21600;
+    const ALCAMBIO_GRAPHQL_URL = 'https://api.alcambio.app/graphql';
+    const ALCAMBIO_PUBLIC_URL = 'https://alcambio.app/';
     const BCV_USD_RATE_URL = 'https://www.bcv.org.ve/';
     const DOLARAPI_BCV_USD_RATE_URL = 'https://dolarapi.com/v1/dolares/oficial';
 
@@ -101,9 +103,10 @@ class RKM_Dashboard {
             'rkm-orders-js',
             'rkmOrders',
             [
-                'ajax_url'   => admin_url('admin-ajax.php'),
-                'nonce'      => wp_create_nonce('rkm_orders_nonce'),
-                'orders_url' => wc_get_account_endpoint_url('orders'),
+                'ajax_url'        => admin_url('admin-ajax.php'),
+                'nonce'           => wp_create_nonce('rkm_orders_nonce'),
+                'orders_url'      => wc_get_account_endpoint_url('orders'),
+                'current_user_id' => get_current_user_id(),
             ]
         );
 
@@ -293,21 +296,19 @@ class RKM_Dashboard {
             }
         }
 
-        $is_local_environment = $this->is_local_environment();
-        $sources = $is_local_environment
-            ? ['dolarapi', 'bcv']
-            : ['bcv', 'dolarapi'];
+        $sources = ['alcambio', 'bcv', 'dolarapi'];
 
-        $this->log_bcv_debug('Consultando tasa BCV segun prioridad de entorno.', [
+        $this->log_bcv_debug('Consultando tasa BCV segun prioridad configurada.', [
             'force_refresh' => $force_refresh,
-            'is_local_environment' => $is_local_environment,
             'sources' => $sources,
         ]);
 
         $parsed_rate = null;
 
         foreach ($sources as $source) {
-            if ($source === 'bcv') {
+            if ($source === 'alcambio') {
+                $parsed_rate = $this->fetch_bcv_usd_rate_from_alcambio();
+            } elseif ($source === 'bcv') {
                 $parsed_rate = $this->fetch_bcv_usd_rate_from_official_site();
             } elseif ($source === 'dolarapi') {
                 $parsed_rate = $this->fetch_bcv_usd_rate_from_dolarapi();
@@ -333,6 +334,111 @@ class RKM_Dashboard {
         ]);
 
         return $parsed_rate;
+    }
+
+    private function fetch_bcv_usd_rate_from_alcambio() {
+        $payload = [
+            'query' => $this->get_alcambio_bcv_query(),
+            'variables' => [
+                'countryCode' => 'VE',
+                'dateSearch'  => $this->get_alcambio_date_search_payload(),
+            ],
+        ];
+
+        $this->log_bcv_debug('Intentando fuente Al Cambio.', [
+            'url' => self::ALCAMBIO_GRAPHQL_URL,
+            'variables' => $payload['variables'],
+        ]);
+
+        $response = wp_remote_post(self::ALCAMBIO_GRAPHQL_URL, [
+            'timeout'    => 12,
+            'redirection'=> 3,
+            'user-agent' => 'RKM Dashboard/1.0; ' . home_url('/'),
+            'headers'    => [
+                'Accept'       => 'application/json',
+                'Content-Type' => 'application/json',
+            ],
+            'body'       => wp_json_encode($payload),
+        ]);
+
+        if (is_wp_error($response)) {
+            $this->log_bcv_debug('wp_remote_post devolvio WP_Error en Al Cambio.', [
+                'error' => $response->get_error_message(),
+                'error_data' => $response->get_error_data(),
+            ]);
+            return null;
+        }
+
+        $status_code = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        $data = json_decode($body, true);
+
+        $this->log_bcv_debug('Respuesta remota recibida desde Al Cambio.', [
+            'status_code' => $status_code,
+            'body_length' => is_string($body) ? strlen($body) : 0,
+        ]);
+
+        if (!is_array($data)) {
+            $this->log_bcv_debug('Al Cambio no devolvio JSON utilizable.', [
+                'body_preview' => is_string($body) ? substr($body, 0, 220) : null,
+            ]);
+            return null;
+        }
+
+        if (!empty($data['errors'])) {
+            $this->log_bcv_debug('Al Cambio devolvio errores GraphQL.', [
+                'errors' => $data['errors'],
+            ]);
+            return null;
+        }
+
+        $conversion_data = $data['data']['getCountryConversions'] ?? null;
+
+        if (!is_array($conversion_data)) {
+            $this->log_bcv_debug('Al Cambio no devolvio getCountryConversions.', [
+                'payload' => $data,
+            ]);
+            return null;
+        }
+
+        $rate_entry = $this->get_alcambio_usd_rate_entry($conversion_data['conversionRates'] ?? []);
+
+        if (!is_array($rate_entry)) {
+            $this->log_bcv_debug('Al Cambio no devolvio una tasa oficial USD utilizable.', [
+                'conversion_rates' => $conversion_data['conversionRates'] ?? null,
+            ]);
+            return null;
+        }
+
+        $raw_value = !empty($rate_entry['usesRateValue'])
+            ? ($rate_entry['rateValue'] ?? null)
+            : ($rate_entry['baseValue'] ?? null);
+
+        $value = $this->normalize_bcv_rate_number($raw_value);
+        $effective_date = $this->format_bcv_timestamp(
+            $conversion_data['dateBcvFees'] ?? ($conversion_data['dateBcv'] ?? null)
+        );
+
+        $rate = [
+            'label'          => 'Tasa BCV',
+            'currency'       => 'USD',
+            'value'          => $value,
+            'value_display'  => 'USD ' . $value,
+            'effective_date' => $effective_date,
+            'source_url'     => self::ALCAMBIO_PUBLIC_URL,
+            'source_name'    => 'Al Cambio',
+            'fetched_at'     => current_time('mysql'),
+        ];
+
+        if (!$this->is_valid_bcv_rate($rate)) {
+            $this->log_bcv_debug('Al Cambio respondio pero la tasa no fue valida.', [
+                'rate_entry' => $rate_entry,
+                'conversion_data' => $conversion_data,
+            ]);
+            return null;
+        }
+
+        return $rate;
     }
 
     private function fetch_bcv_usd_rate_from_official_site() {
@@ -501,12 +607,122 @@ class RKM_Dashboard {
         return preg_match('/^\d[\d\.,]*$/', (string) $rate['value']) === 1;
     }
 
+    private function get_alcambio_bcv_query() {
+        return <<<'GRAPHQL'
+query getCountryConversions($countryCode: String!, $dateSearch: DateSearchInput) {
+  getCountryConversions(payload: { countryCode: $countryCode }, dateSearch: $dateSearch) {
+    conversionRates {
+      baseValue
+      official
+      rateCurrency {
+        code
+      }
+      rateValue
+      type
+      usesRateValue
+    }
+    dateBcvFees
+    dateBcv
+    createdAt
+  }
+}
+GRAPHQL;
+    }
+
+    private function get_alcambio_date_search_payload() {
+        $reference_timestamp = time() - (4 * HOUR_IN_SECONDS);
+        $weekday = (int) gmdate('w', $reference_timestamp);
+        $days_offset = 0;
+
+        if ($weekday === 6) {
+            $days_offset = 1;
+        } elseif ($weekday === 0) {
+            $days_offset = 2;
+        }
+
+        $year = (int) gmdate('Y', $reference_timestamp);
+        $month = (int) gmdate('n', $reference_timestamp);
+        $day = (int) gmdate('j', $reference_timestamp) - $days_offset;
+
+        $start_date = gmmktime(4, 0, 0, $month, $day, $year) * 1000;
+
+        return [
+            'startDate'     => $start_date,
+            'endDate'       => $start_date + (480 * MINUTE_IN_SECONDS * 1000),
+            'filterByField' => 'dateBcvFees',
+        ];
+    }
+
+    private function get_alcambio_usd_rate_entry($conversion_rates) {
+        if (!is_array($conversion_rates)) {
+            return null;
+        }
+
+        foreach ($conversion_rates as $entry) {
+            if (
+                is_array($entry)
+                && !empty($entry['official'])
+                && ($entry['type'] ?? '') === 'SECONDARY'
+                && (($entry['rateCurrency']['code'] ?? '') === 'USD')
+            ) {
+                return $entry;
+            }
+        }
+
+        foreach ($conversion_rates as $entry) {
+            if (
+                is_array($entry)
+                && !empty($entry['official'])
+                && (($entry['rateCurrency']['code'] ?? '') === 'USD')
+            ) {
+                return $entry;
+            }
+        }
+
+        return null;
+    }
+
+    private function format_bcv_timestamp($timestamp_ms) {
+        $timestamp_ms = is_numeric($timestamp_ms) ? (int) $timestamp_ms : 0;
+
+        if ($timestamp_ms <= 0) {
+            return '';
+        }
+
+        return wp_date('d/m/Y', (int) floor($timestamp_ms / 1000), new DateTimeZone('America/Caracas'));
+    }
+
     private function normalize_bcv_rate_number($value) {
+        if (is_string($value)) {
+            $value = trim($value);
+
+            if ($value === '') {
+                return '';
+            }
+
+            $normalized = preg_replace('/[^0-9\.,]/', '', $value);
+
+            if (strpos($normalized, ',') !== false && strpos($normalized, '.') !== false) {
+                $normalized = str_replace('.', '', $normalized);
+                $normalized = str_replace(',', '.', $normalized);
+            } elseif (strpos($normalized, ',') !== false) {
+                $normalized = str_replace(',', '.', $normalized);
+            }
+
+            $normalized = preg_replace('/[^0-9\.]/', '', $normalized);
+
+            if ($normalized === '' || !is_numeric($normalized)) {
+                return '';
+            }
+
+            $value = (float) $normalized;
+        }
+
         if (!is_numeric($value)) {
             return '';
         }
 
-        return number_format((float) $value, 2, ',', '.');
+        return number_format((float) $value, 4, ',', '.');
     }
 
     private function is_local_environment() {

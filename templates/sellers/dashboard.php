@@ -43,6 +43,32 @@ if (!defined('ABSPATH')) {
                     <p>Atajos directos a los flujos comerciales ya existentes.</p>
                 </div>
 
+                <?php if (!empty($data['seller_customer_options'])) : ?>
+                    <form class="rkm-sellers-actions-form" method="get" action="<?php echo esc_url(home_url('/mi-cuenta/panel/')); ?>">
+                        <input type="hidden" name="section" value="nueva-orden">
+
+                        <label class="rkm-sellers-actions-form__field" for="rkmSellerCustomerId">
+                            <span>Cliente asignado</span>
+                            <select id="rkmSellerCustomerId" name="customer_id" required>
+                                <option value="">Selecciona un cliente</option>
+                                <?php foreach ($data['seller_customer_options'] as $customer_option) : ?>
+                                    <option value="<?php echo esc_attr((string) $customer_option['id']); ?>">
+                                        <?php echo esc_html($customer_option['name'] . ' - ' . $customer_option['email']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </label>
+
+                        <button type="submit" class="rkm-btn rkm-btn--primary">
+                            Crear pedido
+                        </button>
+                    </form>
+                <?php else : ?>
+                    <div class="rkm-sellers-empty-state">
+                        <p><?php echo esc_html($data['seller_empty_message'] ?? 'No tenes clientes asignados'); ?></p>
+                    </div>
+                <?php endif; ?>
+
                 <div class="rkm-sellers-actions">
                     <?php foreach ($data['seller_quick_actions'] as $action) : ?>
                         <a class="rkm-sellers-action-card" href="<?php echo esc_url($action['url']); ?>">

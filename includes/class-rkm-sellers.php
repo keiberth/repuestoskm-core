@@ -99,6 +99,7 @@ class RKM_Sellers {
         return [
             'seller_has_assigned_customers' => !empty($assigned_customer_ids),
             'seller_empty_message' => 'No tenes clientes asignados',
+            'seller_customer_options' => $this->get_assigned_customer_options(),
             'seller_metrics' => $this->get_metrics(),
             'seller_quick_actions' => $this->get_quick_actions(),
             'seller_recent_orders' => $this->get_recent_orders(),
@@ -167,38 +168,7 @@ class RKM_Sellers {
     }
 
     private function get_recent_customers() {
-        $assigned_customer_ids = $this->get_assigned_customer_ids();
-
-        if (empty($assigned_customer_ids)) {
-            return [];
-        }
-
-        $users = get_users([
-            'include' => $assigned_customer_ids,
-            'fields'  => ['ID', 'display_name', 'user_email', 'first_name', 'last_name', 'user_registered'],
-        ]);
-
-        if (empty($users)) {
-            return [];
-        }
-
-        usort($users, static function ($left, $right) {
-            return strcmp($right->user_registered, $left->user_registered);
-        });
-
-        $users = array_slice($users, 0, self::RECENT_CUSTOMERS_LIMIT);
-        $customers = [];
-
-        foreach ($users as $user) {
-            $name = trim($user->first_name . ' ' . $user->last_name);
-
-            $customers[] = [
-                'name'  => $name !== '' ? $name : ($user->display_name ? $user->display_name : 'Cliente sin nombre'),
-                'email' => $user->user_email ? $user->user_email : 'Sin email',
-            ];
-        }
-
-        return $customers;
+        return array_slice($this->get_assigned_customer_options(), 0, self::RECENT_CUSTOMERS_LIMIT);
     }
 
     private function get_quick_actions() {
@@ -263,6 +233,43 @@ class RKM_Sellers {
         );
 
         return $this->assigned_customer_ids_cache;
+    }
+
+    private function get_assigned_customer_options() {
+        $assigned_customer_ids = $this->get_assigned_customer_ids();
+
+        if (empty($assigned_customer_ids)) {
+            return [];
+        }
+
+        $users = get_users([
+            'include'  => $assigned_customer_ids,
+            'role__in' => RKM_Permissions::get_customer_role_candidates(),
+            'fields'   => 'all',
+        ]);
+
+        if (empty($users)) {
+            return [];
+        }
+
+        usort($users, static function ($left, $right) {
+            return strcmp($left->display_name, $right->display_name);
+        });
+
+        $customers = [];
+
+        foreach ($users as $user) {
+            $name = trim($user->first_name . ' ' . $user->last_name);
+            $display_name = $name !== '' ? $name : ($user->display_name ? $user->display_name : 'Cliente sin nombre');
+
+            $customers[] = [
+                'id'    => (int) $user->ID,
+                'name'  => $display_name,
+                'email' => $user->user_email ? $user->user_email : 'Sin email',
+            ];
+        }
+
+        return $customers;
     }
 
     private function has_assigned_customers() {

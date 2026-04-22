@@ -5,13 +5,17 @@ if (!defined('ABSPATH')) {
 
 $current = isset($current) ? $current : '';
 $panel_url = home_url('/mi-cuenta/panel/');
+$current_user = wp_get_current_user();
+$is_vendor_user = class_exists('RKM_Permissions') && RKM_Permissions::is_rkm_vendor($current_user);
 ?>
 
 <nav class="rkm-subnav">
-    <a href="<?php echo esc_url($panel_url); ?>"
-       class="rkm-subnav__link <?php echo ($current === 'panel') ? 'is-active' : ''; ?>">
-        Panel
-    </a>
+    <?php if (!$is_vendor_user) : ?>
+        <a href="<?php echo esc_url($panel_url); ?>"
+           class="rkm-subnav__link <?php echo ($current === 'panel') ? 'is-active' : ''; ?>">
+            Panel
+        </a>
+    <?php endif; ?>
 
     <a href="<?php echo esc_url($panel_url . '?section=nueva-orden'); ?>"
        class="rkm-subnav__link <?php echo ($current === 'nueva-orden') ? 'is-active' : ''; ?>">

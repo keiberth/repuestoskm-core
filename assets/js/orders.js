@@ -2,7 +2,15 @@ document.addEventListener("DOMContentLoaded", function () {
     const cards = document.querySelectorAll(".rkm-product-card");
     const summaryContainer = document.querySelector(".rkm-order-summary");
     const summaryCard = summaryContainer ? summaryContainer.querySelector(".rkm-card") : null;
-    const ORDER_DRAFT_STORAGE_KEY = "rkm_order_draft";
+    const LEGACY_ORDER_DRAFT_STORAGE_KEY = "rkm_order_draft";
+    const LEGACY_REPEAT_ORDER_STORAGE_KEY = "rkm_repeat_order_cart";
+    const activeCustomerId = window.rkmOrderContext && window.rkmOrderContext.active_customer_id
+        ? String(window.rkmOrderContext.active_customer_id)
+        : "0";
+    const storageScope = window.rkmOrders && window.rkmOrders.current_user_id
+        ? `${String(window.rkmOrders.current_user_id)}_${activeCustomerId}`
+        : "0";
+    const ORDER_DRAFT_STORAGE_KEY = `rkm_order_draft_${storageScope}`;
 
     let orderItems = {};
     let pendingHighlightItemId = null;
@@ -93,12 +101,38 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    function renderActiveCustomerContext() {
+        if (!window.rkmOrderContext || !window.rkmOrderContext.is_vendor_customer_context) {
+            return "";
+        }
+
+        const customerName = window.rkmOrderContext.active_customer_name || "Cliente seleccionado";
+        const customerEmail = window.rkmOrderContext.active_customer_email || "";
+
+        return `
+            <div class="rkm-order-summary__customer">
+                <span class="rkm-order-summary__customer-label">Pedido a nombre de</span>
+                <strong>${customerName}</strong>
+                ${customerEmail ? `<p>${customerEmail}</p>` : ""}
+            </div>
+        `;
+    }
+
     // ========================
     // REPETIR PEDIDO
     // ========================
 
     function saveRepeatCartKey() {
-        return "rkm_repeat_order_cart";
+        return `rkm_repeat_order_cart_${storageScope}`;
+    }
+
+    function cleanupLegacyStorageKeys() {
+        try {
+            localStorage.removeItem(LEGACY_ORDER_DRAFT_STORAGE_KEY);
+            localStorage.removeItem(LEGACY_REPEAT_ORDER_STORAGE_KEY);
+        } catch (e) {
+            // Ignore storage cleanup errors.
+        }
     }
 
     function clearOrderDraft() {
@@ -414,6 +448,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     </div>
                 </div>
 
+                ${renderActiveCustomerContext()}
+
                 <div class="rkm-order-summary__empty-state">
                     <p class="rkm-order-summary__empty">No hay productos en el pedido</p>
                     <p class="rkm-order-summary__empty-text">Agrega productos desde la grilla para ver cantidades y totales aca.</p>
@@ -483,6 +519,8 @@ document.addEventListener("DOMContentLoaded", function () {
                     <p class="rkm-order-summary__count">${getSelectedProductsLabel(selectedProductsCount)}</p>
                 </div>
             </div>
+
+            ${renderActiveCustomerContext()}
 
             <div class="rkm-summary-list">
                 ${rows}
@@ -580,6 +618,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     formData.append("nonce", rkmOrders.nonce);
                     formData.append("items", JSON.stringify(items));
 
+                    if (window.rkmOrderContext && window.rkmOrderContext.active_customer_id) {
+                        formData.append("customer_id", String(window.rkmOrderContext.active_customer_id));
+                    }
+
                     const response = await fetch(rkmOrders.ajax_url, {
                         method: "POST",
                         body: formData,
@@ -599,12 +641,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     showFeedback({
                         icon: "&#10003;",
                         eyebrow: "Pedido confirmado",
-                        title: "Pedido enviado correctamente",
-                        text: `Tu pedido #${result.data.order_id} fue enviado con exito y ya esta disponible en la seccion Pedidos.`,
+                        title: result.data?.success_title || "Pedido enviado correctamente",
+                        text: result.data?.message || `Tu pedido #${result.data.order_id} fue enviado con exito y ya esta disponible en la seccion Pedidos.`,
                         actionsHtml: `
                             <div class="rkm-order-feedback__actions">
                                 <a href="${result.data.redirect}" class="rkm-btn rkm-btn--primary">
-                                    Ver mis pedidos
+                                    ${result.data?.redirect_label || "Ver mis pedidos"}
                                 </a>
                                 <button type="button" class="rkm-btn rkm-btn--secondary" id="rkm-new-order-again">
                                     Crear otra orden
@@ -632,6 +674,8 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (summaryCard) {
+        cleanupLegacyStorageKeys();
+
         cards.forEach((card) => {
             const btn = card.querySelector(".rkm-add-to-summary");
             const qtyInput = card.querySelector(".rkm-qty-input");

@@ -1,4 +1,7 @@
-const REPEAT_ORDER_STORAGE_KEY = "rkm_repeat_order_cart";
+const storageScope = window.rkmOrders && window.rkmOrders.current_user_id
+    ? String(window.rkmOrders.current_user_id)
+    : "0";
+const REPEAT_ORDER_STORAGE_KEY = `rkm_repeat_order_cart_${storageScope}`;
 const REPEAT_ORDER_REDIRECT_DELAY = 800;
 
 function buildRepeatOrderItems(items) {

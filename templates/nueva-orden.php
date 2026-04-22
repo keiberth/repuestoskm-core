@@ -10,6 +10,40 @@ $stock_filter = isset($_GET['rkm_stock']) ? sanitize_key(wp_unslash($_GET['rkm_s
 $current_page = isset($_GET['rkm_page']) ? max(1, absint($_GET['rkm_page'])) : 1;
 $products_per_page = 12;
 $allowed_stock_filters = ['all', 'in', 'out'];
+$current_user = wp_get_current_user();
+$current_user_id = get_current_user_id();
+$requested_customer_id = isset($_GET['customer_id']) ? absint($_GET['customer_id']) : 0;
+$active_customer_id = $current_user_id;
+$active_customer = $current_user;
+$is_vendor_customer_context = false;
+
+if (
+    $requested_customer_id > 0
+    && class_exists('RKM_Permissions')
+    && class_exists('RKM_Assignments')
+    && RKM_Permissions::is_rkm_vendor($current_user)
+) {
+    $assigned_customer_ids = array_map('intval', RKM_Assignments::get_assigned_customer_ids($current_user_id));
+
+    if (in_array($requested_customer_id, $assigned_customer_ids, true)) {
+        $requested_customer = get_user_by('id', $requested_customer_id);
+
+        if ($requested_customer instanceof WP_User && RKM_Permissions::is_rkm_customer($requested_customer)) {
+            $active_customer_id = (int) $requested_customer->ID;
+            $active_customer = $requested_customer;
+            $is_vendor_customer_context = true;
+        }
+    }
+}
+
+$active_customer_name = trim(($active_customer->first_name ?? '') . ' ' . ($active_customer->last_name ?? ''));
+$active_customer_email = $active_customer instanceof WP_User ? $active_customer->user_email : '';
+
+if ($active_customer_name === '') {
+    $active_customer_name = $active_customer instanceof WP_User
+        ? ($active_customer->display_name ?: $active_customer->user_login)
+        : 'Cliente seleccionado';
+}
 
 if (!in_array($stock_filter, $allowed_stock_filters, true)) {
     $stock_filter = 'all';
@@ -138,6 +172,10 @@ if ($stock_filter !== 'all') {
     $pagination_args['rkm_stock'] = $stock_filter;
 }
 
+if ($is_vendor_customer_context) {
+    $pagination_args['customer_id'] = $active_customer_id;
+}
+
 if (isset($_GET['repeat_order'])) {
     $pagination_args['repeat_order'] = absint($_GET['repeat_order']);
 }
@@ -146,7 +184,7 @@ $pagination_base_url = $panel_base_url;
 
 
 $repeat_items = [];
-$user_id = get_current_user_id();
+$user_id = $active_customer_id;
 $shipping_address = [
     'name'     => trim(get_user_meta($user_id, 'shipping_first_name', true) . ' ' . get_user_meta($user_id, 'shipping_last_name', true)),
     'address'  => get_user_meta($user_id, 'shipping_address_1', true),
@@ -184,6 +222,17 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
         <div class="rkm-page-header">
             <h1>Nueva orden</h1>
             <p>Selecciona productos y arma tu pedido</p>
+
+            <?php if ($is_vendor_customer_context) : ?>
+                <div class="rkm-order-context">
+                    <span class="rkm-order-context__eyebrow">Pedido para</span>
+                    <strong class="rkm-order-context__name"><?php echo esc_html($active_customer_name); ?></strong>
+                    <?php if ($active_customer_email !== '') : ?>
+                        <span class="rkm-order-context__meta"><?php echo esc_html($active_customer_email); ?></span>
+                    <?php endif; ?>
+                    <span class="rkm-order-context__hint">Este pedido se cargara a nombre de este cliente.</span>
+                </div>
+            <?php endif; ?>
         </div>
 
         <?php include plugin_dir_path(__FILE__) . 'partials/subnav.php'; ?>
@@ -199,6 +248,9 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
             >
                 <input type="hidden" name="section" value="nueva-orden">
                 <input type="hidden" name="rkm_page" value="1">
+                <?php if ($is_vendor_customer_context) : ?>
+                    <input type="hidden" name="customer_id" value="<?php echo esc_attr((string) $active_customer_id); ?>">
+                <?php endif; ?>
                 <?php if (isset($_GET['repeat_order'])) : ?>
                     <input type="hidden" name="repeat_order" value="<?php echo esc_attr(absint($_GET['repeat_order'])); ?>">
                 <?php endif; ?>
@@ -263,7 +315,11 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
                             $stock       = $stock_quantity;
                             $image       = get_the_post_thumbnail_url($id, 'medium');
                             $description = trim(wp_strip_all_tags($product->get_short_description()));
-                            $product_url = home_url('/mi-cuenta/panel') . '?section=nueva-orden&add_product=' . $id;
+                            $product_url = add_query_arg(array_filter([
+                                'section'     => 'nueva-orden',
+                                'add_product' => $id,
+                                'customer_id' => $is_vendor_customer_context ? $active_customer_id : null,
+                            ]), home_url('/mi-cuenta/panel'));
                             $gallery_items = [];
                             $image_ids = array_filter(array_unique(array_merge(
                                 $product->get_image_id() ? [$product->get_image_id()] : [],
@@ -431,6 +487,16 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
                         </div>
                     </div>
 
+                    <?php if ($is_vendor_customer_context) : ?>
+                        <div class="rkm-order-summary__customer">
+                            <span class="rkm-order-summary__customer-label">Pedido a nombre de</span>
+                            <strong><?php echo esc_html($active_customer_name); ?></strong>
+                            <?php if ($active_customer_email !== '') : ?>
+                                <p><?php echo esc_html($active_customer_email); ?></p>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+
                     <div class="rkm-order-summary__empty-state">
                         <p class="rkm-order-summary__empty">No hay productos en el pedido</p>
                         <p class="rkm-order-summary__empty-text">Agrega productos desde la grilla para ver cantidades y totales aca.</p>
@@ -453,9 +519,11 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
                 <div class="rkm-card rkm-order-summary__shipping">
                     <div class="rkm-order-summary__shipping-header">
                         <span class="rkm-order-summary__shipping-eyebrow">Envio</span>
-                        <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=direcciones')); ?>" class="rkm-order-summary__shipping-edit">
-                            Editar
-                        </a>
+                        <?php if (!$is_vendor_customer_context) : ?>
+                            <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=direcciones')); ?>" class="rkm-order-summary__shipping-edit">
+                                Editar
+                            </a>
+                        <?php endif; ?>
                     </div>
 
                     <h4 class="rkm-order-summary__shipping-title">Direccion de envio</h4>
@@ -472,10 +540,16 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
                         </div>
                     <?php else : ?>
                         <div class="rkm-order-summary__shipping-empty">
-                            <p>No tenes una direccion configurada.</p>
-                            <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=direcciones')); ?>" class="rkm-order-summary__shipping-edit">
-                                Cargar direccion
-                            </a>
+                            <p>
+                                <?php echo $is_vendor_customer_context
+                                    ? esc_html('El cliente seleccionado no tiene una direccion de envio configurada.')
+                                    : esc_html('No tenes una direccion configurada.'); ?>
+                            </p>
+                            <?php if (!$is_vendor_customer_context) : ?>
+                                <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=direcciones')); ?>" class="rkm-order-summary__shipping-edit">
+                                    Cargar direccion
+                                </a>
+                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -558,5 +632,11 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
     </div>
     <script>
         window.rkmRepeatOrderItems = <?php echo wp_json_encode($repeat_items); ?>;
+        window.rkmOrderContext = <?php echo wp_json_encode([
+            'active_customer_id'   => $active_customer_id,
+            'active_customer_name' => $active_customer_name,
+            'active_customer_email' => $active_customer_email,
+            'is_vendor_customer_context' => $is_vendor_customer_context,
+        ]); ?>;
     </script>
 </div>
