@@ -66,6 +66,9 @@ $bcv_rate = isset($data['bcv_rate']) && is_array($data['bcv_rate']) ? $data['bcv
             <?php if (class_exists('RKM_Admin_Users') && RKM_Admin_Users::can_access()) : ?>
                 <a href="<?php echo esc_url(RKM_Admin_Users::get_section_url()); ?>">Usuarios</a>
             <?php endif; ?>
+            <?php if (class_exists('RKM_Assignments') && RKM_Assignments::can_access()) : ?>
+                <a href="<?php echo esc_url(RKM_Assignments::get_section_url()); ?>">Asignaciones</a>
+            <?php endif; ?>
             <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=mi-cuenta')); ?>">Mi cuenta</a>
             <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=pedidos')); ?>">Pedidos</a>
             <a href="<?php echo esc_url(class_exists('RKM_Auth') ? RKM_Auth::get_logout_url() : wc_logout_url(home_url('/mi-cuenta/'))); ?>">Cerrar sesión</a>

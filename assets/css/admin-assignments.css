@@ -1,0 +1,377 @@
+.rkm-admin-assignments-page {
+    padding-bottom: 48px;
+}
+
+.rkm-admin-assignments-page__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.rkm-admin-assignments-page__back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0 18px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.06);
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.rkm-admin-assignments-page__back:hover {
+    background: rgba(37, 99, 235, 0.12);
+    transform: translateY(-1px);
+}
+
+.rkm-admin-assignments-hero {
+    margin-bottom: 22px;
+    padding: 28px 30px;
+    border: 1px solid rgba(14, 116, 144, 0.16);
+    background:
+        radial-gradient(circle at top right, rgba(14, 116, 144, 0.12), transparent 34%),
+        linear-gradient(145deg, #f8fcff 0%, #edf9fb 100%);
+}
+
+.rkm-admin-assignments-hero__eyebrow {
+    display: inline-block;
+    margin-bottom: 12px;
+    color: #0f766e;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.rkm-admin-assignments-hero h2 {
+    margin: 0 0 12px;
+    color: #0f172a;
+    font-size: 34px;
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+}
+
+.rkm-admin-assignments-hero p {
+    margin: 0;
+    max-width: 720px;
+    color: #475569;
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+.rkm-admin-assignments-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 20px;
+}
+
+.rkm-admin-assignments-metric {
+    padding: 22px 24px;
+    border-radius: 22px;
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 18px 28px rgba(15, 23, 42, 0.06);
+}
+
+.rkm-admin-assignments-metric span {
+    display: block;
+    margin-bottom: 10px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.rkm-admin-assignments-metric strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #0f172a;
+    font-size: 32px;
+    line-height: 1;
+    letter-spacing: -0.04em;
+}
+
+.rkm-admin-assignments-metric p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.rkm-admin-assignments-notice {
+    margin-bottom: 20px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: #fff;
+    box-shadow: 0 16px 28px rgba(15, 23, 42, 0.06);
+}
+
+.rkm-admin-assignments-notice p {
+    margin: 0;
+    font-weight: 600;
+}
+
+.rkm-admin-assignments-notice--success {
+    border-color: rgba(34, 197, 94, 0.22);
+    background: rgba(240, 253, 244, 0.92);
+    color: #166534;
+}
+
+.rkm-admin-assignments-notice--error {
+    border-color: rgba(239, 68, 68, 0.22);
+    background: rgba(254, 242, 242, 0.96);
+    color: #b91c1c;
+}
+
+.rkm-admin-assignments-panel {
+    padding: 28px;
+}
+
+.rkm-admin-assignments-panel__header {
+    margin-bottom: 18px;
+}
+
+.rkm-admin-assignments-panel__header h3 {
+    margin: 0 0 10px;
+    color: #0f172a;
+    font-size: 24px;
+    line-height: 1.1;
+}
+
+.rkm-admin-assignments-panel__header p {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.65;
+}
+
+.rkm-admin-assignments-panel__header code {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.06);
+    color: #0f172a;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 12px;
+}
+
+.rkm-admin-assignments-table-wrap {
+    overflow-x: auto;
+}
+
+.rkm-admin-assignments-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 920px;
+}
+
+.rkm-admin-assignments-table th,
+.rkm-admin-assignments-table td {
+    padding: 16px 14px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.96);
+    text-align: left;
+    vertical-align: top;
+}
+
+.rkm-admin-assignments-table th {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.rkm-admin-assignments-table td {
+    color: #0f172a;
+    font-size: 14px;
+}
+
+.rkm-admin-assignments-table td strong,
+.rkm-admin-assignments-table td span {
+    display: block;
+}
+
+.rkm-admin-assignments-table td span {
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.rkm-admin-assignments-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+}
+
+.rkm-admin-assignments-form__controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rkm-admin-assignments-form select {
+    min-width: 220px;
+    min-height: 46px;
+    padding: 0 14px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 14px;
+    background: #fff;
+    color: #0f172a;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.rkm-admin-assignments-form select:focus {
+    outline: none;
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.16);
+}
+
+.rkm-admin-assignments-form__submit {
+    min-height: 46px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #0f766e 0%, #0ea5a5 100%);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+    box-shadow: 0 16px 26px rgba(15, 118, 110, 0.18);
+}
+
+.rkm-admin-assignments-form__submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 20px 30px rgba(15, 118, 110, 0.22);
+}
+
+.rkm-admin-assignments-form__submit.is-loading {
+    opacity: 0.86;
+    pointer-events: none;
+}
+
+.rkm-admin-assignments-form__current {
+    color: #64748b;
+    font-size: 12px;
+}
+
+.rkm-admin-assignments-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 12px;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, 0.1);
+    color: #15803d;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.rkm-admin-assignments-action-copy {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.rkm-admin-assignments-table__empty {
+    text-align: center;
+    color: #64748b;
+}
+
+@media (max-width: 1080px) {
+    .rkm-admin-assignments-metrics {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .rkm-admin-assignments-page__header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .rkm-admin-assignments-panel,
+    .rkm-admin-assignments-hero {
+        padding: 22px 20px;
+    }
+}
+
+@media (max-width: 720px) {
+    .rkm-admin-assignments-form__controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .rkm-admin-assignments-form select,
+    .rkm-admin-assignments-form__submit {
+        width: 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    .rkm-admin-assignments-table,
+    .rkm-admin-assignments-table thead,
+    .rkm-admin-assignments-table tbody,
+    .rkm-admin-assignments-table th,
+    .rkm-admin-assignments-table td,
+    .rkm-admin-assignments-table tr {
+        display: block;
+    }
+
+    .rkm-admin-assignments-table {
+        min-width: 0;
+    }
+
+    .rkm-admin-assignments-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+    }
+
+    .rkm-admin-assignments-table tbody {
+        display: grid;
+        gap: 14px;
+    }
+
+    .rkm-admin-assignments-table tr {
+        padding: 16px;
+        border: 1px solid rgba(226, 232, 240, 0.96);
+        border-radius: 16px;
+        background: #fff;
+    }
+
+    .rkm-admin-assignments-table td {
+        padding: 10px 0;
+        border-bottom: none;
+    }
+
+    .rkm-admin-assignments-table td::before {
+        content: attr(data-label);
+        display: block;
+        margin-bottom: 6px;
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+}

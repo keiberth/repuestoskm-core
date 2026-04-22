@@ -87,6 +87,11 @@ class RKM_Admin_Dashboard {
                     'url'         => class_exists('RKM_Admin_Users') ? RKM_Admin_Users::get_section_url() : home_url('/mi-cuenta/panel/'),
                 ],
                 [
+                    'label'       => 'Asignaciones',
+                    'description' => 'Asignar clientes a vendedores y preparar el filtrado comercial por cartera.',
+                    'url'         => class_exists('RKM_Assignments') ? RKM_Assignments::get_section_url() : home_url('/mi-cuenta/panel/'),
+                ],
+                [
                     'label'       => 'Mi cuenta',
                     'description' => 'Gestionar los datos personales del usuario actual.',
                     'url'         => home_url('/mi-cuenta/panel/?section=mi-cuenta'),

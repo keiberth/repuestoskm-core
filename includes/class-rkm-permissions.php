@@ -6,6 +6,10 @@ if (!defined('ABSPATH')) {
 
 class RKM_Permissions {
 
+    public static function get_customer_role_candidates() {
+        return ['customer'];
+    }
+
     public static function get_vendor_role_candidates() {
         return ['seller', 'vendor', 'vendedor', 'shop_manager'];
     }
@@ -22,7 +26,7 @@ class RKM_Permissions {
 
     public static function get_assignable_user_roles() {
         return [
-            'customer'                    => 'Cliente',
+            self::get_customer_role_candidates()[0] => 'Cliente',
             self::get_vendor_role_for_assignment() => 'Vendedor',
             'administrator'               => 'Administrador',
         ];
@@ -69,7 +73,7 @@ class RKM_Permissions {
     }
 
     public static function is_rkm_customer($user = null) {
-        return self::user_has_role($user, ['customer']);
+        return self::user_has_role($user, self::get_customer_role_candidates());
     }
 
     public static function is_rkm_vendor($user = null) {

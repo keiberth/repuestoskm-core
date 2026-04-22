@@ -20,8 +20,8 @@ if (!defined('ABSPATH')) {
                 <span class="rkm-sellers-dashboard__eyebrow">Panel comercial</span>
                 <h2 class="rkm-sellers-dashboard__title">Resumen operativo del vendedor</h2>
                 <p class="rkm-sellers-dashboard__text">
-                    Esta primera version usa datos reales simples del sistema para que el vendedor tenga un punto de
-                    trabajo util sin mezclar logica de clientes, admin u otros modulos.
+                    Esta vista ahora usa la cartera asignada al vendedor para mostrar solo clientes y pedidos
+                    relacionados, sin depender de datos globales del sistema.
                 </p>
             </div>
 
@@ -56,7 +56,7 @@ if (!defined('ABSPATH')) {
             <section class="rkm-card rkm-sellers-panel">
                 <div class="rkm-sellers-panel__header">
                     <h3>Clientes</h3>
-                    <p>Base simple de usuarios customer, preparada para futura asignacion comercial.</p>
+                    <p>Clientes asignados al vendedor actual desde el modulo de asignaciones.</p>
                 </div>
 
                 <?php if (!empty($data['seller_recent_customers'])) : ?>
@@ -70,7 +70,7 @@ if (!defined('ABSPATH')) {
                     </div>
                 <?php else : ?>
                     <div class="rkm-sellers-empty-state">
-                        <p>No hay clientes registrados para mostrar.</p>
+                        <p><?php echo esc_html($data['seller_empty_message'] ?? 'No tenes clientes asignados'); ?></p>
                     </div>
                 <?php endif; ?>
             </section>
@@ -79,7 +79,7 @@ if (!defined('ABSPATH')) {
         <section class="rkm-card rkm-sellers-panel rkm-sellers-panel--orders">
             <div class="rkm-sellers-panel__header">
                 <h3>Pedidos recientes</h3>
-                <p>Por ahora se muestran los ultimos pedidos del sistema. La estructura queda lista para filtrar por vendedor despues.</p>
+                <p>Solo se muestran pedidos relacionados con los clientes asignados a esta cartera.</p>
             </div>
 
             <?php if (!empty($data['seller_recent_orders'])) : ?>
@@ -113,7 +113,11 @@ if (!defined('ABSPATH')) {
                 </div>
             <?php else : ?>
                 <div class="rkm-sellers-empty-state">
-                    <p>No hay pedidos recientes para mostrar.</p>
+                    <p>
+                        <?php echo !empty($data['seller_has_assigned_customers'])
+                            ? esc_html('No hay pedidos recientes de tu cartera.')
+                            : esc_html($data['seller_empty_message'] ?? 'No tenes clientes asignados'); ?>
+                    </p>
                 </div>
             <?php endif; ?>
         </section>

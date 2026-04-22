@@ -207,6 +207,15 @@ class RKM_Dashboard {
                 $template = RKM_CORE_PATH . 'templates/dashboard.php';
                 break;
 
+            case 'asignaciones':
+                if (class_exists('RKM_Assignments')) {
+                    (new RKM_Assignments())->render_page($data);
+                    return;
+                }
+
+                $template = RKM_CORE_PATH . 'templates/dashboard.php';
+                break;
+
             case 'panel':
             default:
                 if (class_exists('RKM_Admin_Dashboard') && RKM_Admin_Dashboard::can_access($user)) {

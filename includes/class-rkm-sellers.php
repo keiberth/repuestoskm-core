@@ -10,6 +10,8 @@ class RKM_Sellers {
     const RECENT_ORDERS_LIMIT = 6;
     const RECENT_CUSTOMERS_LIMIT = 8;
 
+    private $assigned_customer_ids_cache = null;
+
     public function init() {
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
     }
@@ -92,7 +94,11 @@ class RKM_Sellers {
     }
 
     private function get_dashboard_data() {
+        $assigned_customer_ids = $this->get_assigned_customer_ids();
+
         return [
+            'seller_has_assigned_customers' => !empty($assigned_customer_ids),
+            'seller_empty_message' => 'No tenes clientes asignados',
             'seller_metrics' => $this->get_metrics(),
             'seller_quick_actions' => $this->get_quick_actions(),
             'seller_recent_orders' => $this->get_recent_orders(),
@@ -105,34 +111,34 @@ class RKM_Sellers {
             [
                 'label' => 'Total pedidos',
                 'value' => $this->get_total_orders_count(),
-                'meta'  => 'Conteo general del sistema',
+                'meta'  => 'Pedidos de clientes asignados a tu cartera',
                 'tone'  => 'primary',
             ],
             [
                 'label' => 'Pedidos activos',
                 'value' => $this->get_active_orders_count(),
-                'meta'  => 'Estados pending y processing',
+                'meta'  => 'Estados pending y processing de tu cartera',
                 'tone'  => 'warning',
             ],
             [
                 'label' => 'Total clientes',
                 'value' => $this->get_total_customers_count(),
-                'meta'  => 'Usuarios con rol customer',
+                'meta'  => 'Clientes asignados a tu usuario',
                 'tone'  => 'neutral',
             ],
         ];
     }
 
     private function get_recent_orders() {
-        if (!function_exists('wc_get_orders')) {
+        if (!function_exists('wc_get_orders') || !$this->has_assigned_customers()) {
             return [];
         }
 
-        $orders = wc_get_orders([
+        $orders = wc_get_orders($this->get_customer_orders_query_args([
             'limit'   => self::RECENT_ORDERS_LIMIT,
             'orderby' => 'date',
             'order'   => 'DESC',
-        ]);
+        ]));
 
         if (empty($orders)) {
             return [];
@@ -161,23 +167,33 @@ class RKM_Sellers {
     }
 
     private function get_recent_customers() {
+        $assigned_customer_ids = $this->get_assigned_customer_ids();
+
+        if (empty($assigned_customer_ids)) {
+            return [];
+        }
+
         $users = get_users([
-            'role'    => 'customer',
-            'number'  => self::RECENT_CUSTOMERS_LIMIT,
-            'orderby' => 'registered',
-            'order'   => 'DESC',
-            'fields'  => ['ID', 'display_name', 'user_email'],
+            'include' => $assigned_customer_ids,
+            'fields'  => ['ID', 'display_name', 'user_email', 'first_name', 'last_name', 'user_registered'],
         ]);
 
         if (empty($users)) {
             return [];
         }
 
+        usort($users, static function ($left, $right) {
+            return strcmp($right->user_registered, $left->user_registered);
+        });
+
+        $users = array_slice($users, 0, self::RECENT_CUSTOMERS_LIMIT);
         $customers = [];
 
         foreach ($users as $user) {
+            $name = trim($user->first_name . ' ' . $user->last_name);
+
             $customers[] = [
-                'name'  => $user->display_name ? $user->display_name : 'Cliente sin nombre',
+                'name'  => $name !== '' ? $name : ($user->display_name ? $user->display_name : 'Cliente sin nombre'),
                 'email' => $user->user_email ? $user->user_email : 'Sin email',
             ];
         }
@@ -201,35 +217,61 @@ class RKM_Sellers {
     }
 
     private function get_total_orders_count() {
-        if (!function_exists('wc_get_orders')) {
+        if (!function_exists('wc_get_orders') || !$this->has_assigned_customers()) {
             return 0;
         }
 
-        $orders = wc_get_orders([
+        $orders = wc_get_orders($this->get_customer_orders_query_args([
             'limit'    => 1,
             'paginate' => true,
-        ]);
+        ]));
 
         return isset($orders->total) ? (int) $orders->total : 0;
     }
 
     private function get_active_orders_count() {
-        if (!function_exists('wc_get_orders')) {
+        if (!function_exists('wc_get_orders') || !$this->has_assigned_customers()) {
             return 0;
         }
 
-        $orders = wc_get_orders([
+        $orders = wc_get_orders($this->get_customer_orders_query_args([
             'status'   => ['pending', 'processing'],
             'limit'    => 1,
             'paginate' => true,
-        ]);
+        ]));
 
         return isset($orders->total) ? (int) $orders->total : 0;
     }
 
     private function get_total_customers_count() {
-        $counts = count_users();
+        return count($this->get_assigned_customer_ids());
+    }
 
-        return isset($counts['avail_roles']['customer']) ? (int) $counts['avail_roles']['customer'] : 0;
+    private function get_assigned_customer_ids() {
+        if (is_array($this->assigned_customer_ids_cache)) {
+            return $this->assigned_customer_ids_cache;
+        }
+
+        if (!class_exists('RKM_Assignments')) {
+            return [];
+        }
+
+        $vendor_id = get_current_user_id();
+
+        $this->assigned_customer_ids_cache = array_values(
+            array_filter(array_map('intval', RKM_Assignments::get_assigned_customer_ids($vendor_id)))
+        );
+
+        return $this->assigned_customer_ids_cache;
+    }
+
+    private function has_assigned_customers() {
+        return !empty($this->get_assigned_customer_ids());
+    }
+
+    private function get_customer_orders_query_args($args = []) {
+        return array_merge([
+            'customer_id' => $this->get_assigned_customer_ids(),
+        ], $args);
     }
 }
