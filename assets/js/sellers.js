@@ -10,10 +10,26 @@ document.addEventListener("DOMContentLoaded", function () {
     var historySelect = document.querySelector("[data-rkm-sellers-history-select]");
 
     if (historySelect) {
-        historySelect.addEventListener("change", function () {
-            if (historySelect.form) {
-                historySelect.form.submit();
-            }
-        });
+        var historyForm = historySelect.form;
+
+        if (historyForm) {
+            historyForm.addEventListener("submit", function (event) {
+                var formData = new FormData(historyForm);
+                var query = new URLSearchParams(formData).toString();
+                var targetUrl = historyForm.action.split("#")[0];
+
+                event.preventDefault();
+                window.location.href = targetUrl + (query ? "?" + query : "") + "#rkm-seller-customer-history";
+            });
+
+            historySelect.addEventListener("change", function () {
+                if (typeof historyForm.requestSubmit === "function") {
+                    historyForm.requestSubmit();
+                    return;
+                }
+
+                historyForm.dispatchEvent(new Event("submit", { cancelable: true }));
+            });
+        }
     }
 });

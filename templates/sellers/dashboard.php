@@ -102,7 +102,7 @@ if (!defined('ABSPATH')) {
             </section>
         </div>
 
-        <section class="rkm-card rkm-sellers-panel rkm-sellers-panel--history">
+        <section id="rkm-seller-customer-history" class="rkm-card rkm-sellers-panel rkm-sellers-panel--history">
             <div class="rkm-sellers-panel__header rkm-sellers-panel__header--split">
                 <div>
                     <h3>Historial por cliente</h3>
