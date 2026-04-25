@@ -4,20 +4,30 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!toggle || !dropdown) return;
 
+    const closeDropdown = function () {
+        dropdown.classList.remove("is-open");
+        toggle.setAttribute("aria-expanded", "false");
+    };
+
+    const toggleDropdown = function () {
+        const isOpen = dropdown.classList.toggle("is-open");
+        toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+    };
+
     toggle.addEventListener("click", function (e) {
         e.stopPropagation();
-        dropdown.classList.toggle("is-open");
+        toggleDropdown();
     });
 
     document.addEventListener("click", function (e) {
         if (!dropdown.contains(e.target) && !toggle.contains(e.target)) {
-            dropdown.classList.remove("is-open");
+            closeDropdown();
         }
     });
 
     document.addEventListener("keydown", function (e) {
         if (e.key === "Escape") {
-            dropdown.classList.remove("is-open");
+            closeDropdown();
         }
     });
 });

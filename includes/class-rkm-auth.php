@@ -8,6 +8,7 @@ class RKM_Auth {
 
     public function init() {
         add_action('init', [$this, 'handle_debug_toggle'], 1);
+        add_action('after_setup_theme', [$this, 'hide_frontend_admin_bar']);
         add_action('admin_init', [$this, 'redirect_admin_dashboard_entry'], 1);
         add_action('template_redirect', [$this, 'debug_frontend_request_state'], 1);
         add_action('admin_init', [$this, 'debug_admin_request_state'], 1);
@@ -19,6 +20,18 @@ class RKM_Auth {
         add_filter('woocommerce_login_redirect', [$this, 'redirect_after_woocommerce_login'], 10, 2);
         add_filter('woocommerce_process_login_errors', [$this, 'debug_woocommerce_login_errors'], 9999, 3);
         add_filter('logout_redirect', [$this, 'redirect_after_logout'], 10, 3);
+    }
+
+    public function hide_frontend_admin_bar() {
+        if (is_admin() || !is_user_logged_in()) {
+            return;
+        }
+
+        if (!RKM_Permissions::can_access_rkm_panel()) {
+            return;
+        }
+
+        show_admin_bar(false);
     }
 
     public function handle_debug_toggle() {

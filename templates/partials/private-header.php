@@ -16,63 +16,96 @@ if (!empty($user->roles) && is_array($user->roles)) {
 
 $initial = strtoupper(mb_substr($user_name, 0, 1));
 
-$brand_logo = 'http://repuestos-km.local/wp-content/uploads/2026/03/ChatGPT-Image-14-mar-2026-02_22_59-p.m-e1773612976421.png';
+$brand_logo = defined('RKM_CORE_URL') ? RKM_CORE_URL . 'assets/img/logo.png' : '';
 $brand_name = 'Repuestos-KM';
 $bcv_rate = isset($data['bcv_rate']) && is_array($data['bcv_rate']) ? $data['bcv_rate'] : null;
+$section = isset($_GET['section']) ? sanitize_key(wp_unslash($_GET['section'])) : 'panel';
+$module_labels = [
+    'panel'          => 'Panel de cuenta',
+    'catalogo'       => 'Catalogo',
+    'nueva-orden'    => 'Nueva orden',
+    'pedidos'        => 'Pedidos',
+    'historial'      => 'Historial',
+    'panel-vendedor' => 'Panel vendedor',
+    'admin'          => 'Administracion',
+    'usuarios'       => 'Usuarios',
+    'asignaciones'   => 'Asignaciones',
+    'mi-cuenta'      => 'Mi perfil',
+];
+$module_label = isset($module_labels[$section]) ? $module_labels[$section] : 'Sistema RKM';
 ?>
 
 <div class="rkm-private-header-pro">
-    <!--<a href="<?php echo esc_url(home_url('/mi-cuenta/panel')); ?>" class="rkm-private-header-pro__brand-link">
-        <img
-            src="<?php echo esc_url($brand_logo); ?>"
-            alt="<?php echo esc_attr($brand_name); ?>"
-            class="rkm-private-header-pro__logo"
-            onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';"
-        >
-        <span class="rkm-private-header-pro__brand-fallback" style="display:none;">
-            <?php echo esc_html($brand_name); ?>
-        </span>
-    </a>-->
-
-    <?php if (!empty($bcv_rate['value_display'])) : ?>
-        <div class="rkm-private-header-pro__rate" aria-label="Tasa oficial BCV del dólar">
-            <span class="rkm-private-header-pro__rate-label">
-                <?php echo esc_html($bcv_rate['label']); ?>
-            </span>
-            <strong class="rkm-private-header-pro__rate-value">
-                <?php echo esc_html($bcv_rate['value_display']); ?>
-            </strong>
-            <?php if (!empty($bcv_rate['effective_date'])) : ?>
-                <small class="rkm-private-header-pro__rate-date">
-                    Fecha valor: <?php echo esc_html($bcv_rate['effective_date']); ?>
-                </small>
-            <?php endif; ?>
+    <div class="rkm-private-header-pro__inner">
+        <div class="rkm-private-header-pro__brand">
+            <a href="<?php echo esc_url(home_url('/mi-cuenta/panel')); ?>" class="rkm-private-header-pro__brand-link">
+                <?php if ($brand_logo !== '') : ?>
+                    <img
+                        src="<?php echo esc_url($brand_logo); ?>"
+                        alt="<?php echo esc_attr($brand_name); ?>"
+                        class="rkm-private-header-pro__logo"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';"
+                    >
+                <?php endif; ?>
+                <span class="rkm-private-header-pro__brand-fallback" <?php echo $brand_logo !== '' ? 'style="display:none;"' : ''; ?>>
+                    <?php echo esc_html($brand_name); ?>
+                </span>
+            </a>
         </div>
-    <?php endif; ?>
 
-    <div class="rkm-private-header-pro__user">
-        <button type="button" class="rkm-private-header-pro__toggle" id="rkmUserMenuToggle">
-            <span class="rkm-private-header-pro__avatar"><?php echo esc_html($initial); ?></span>
+        <div class="rkm-private-header-pro__context" aria-label="Modulo actual">
+            <span class="rkm-private-header-pro__context-label">Modulo</span>
+            <strong><?php echo esc_html($module_label); ?></strong>
+        </div>
 
-            <span class="rkm-private-header-pro__meta">
-                <strong><?php echo esc_html($user_name); ?></strong>
-                <small><?php echo esc_html($user_role); ?></small>
-            </span>
-
-            <span class="rkm-private-header-pro__caret">▾</span>
-        </button>
-
-        <div class="rkm-private-header-pro__dropdown" id="rkmUserMenuDropdown">
-            <?php if (class_exists('RKM_Admin_Users') && RKM_Admin_Users::can_access()) : ?>
-                <a href="<?php echo esc_url(RKM_Admin_Users::get_section_url()); ?>">Usuarios</a>
+        <div class="rkm-private-header-pro__right">
+            <?php if (!empty($bcv_rate['value_display'])) : ?>
+                <div class="rkm-private-header-pro__rate" aria-label="Tasa oficial BCV del dolar">
+                    <span class="rkm-private-header-pro__rate-label">
+                        <?php echo esc_html($bcv_rate['label']); ?>
+                    </span>
+                    <strong class="rkm-private-header-pro__rate-value">
+                        <?php echo esc_html($bcv_rate['value_display']); ?>
+                    </strong>
+                    <?php if (!empty($bcv_rate['effective_date'])) : ?>
+                        <small class="rkm-private-header-pro__rate-date">
+                            <?php echo esc_html($bcv_rate['effective_date']); ?>
+                        </small>
+                    <?php endif; ?>
+                </div>
             <?php endif; ?>
-            <?php if (class_exists('RKM_Assignments') && RKM_Assignments::can_access()) : ?>
-                <a href="<?php echo esc_url(RKM_Assignments::get_section_url()); ?>">Asignaciones</a>
-            <?php endif; ?>
-            <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=mi-cuenta')); ?>">Mi cuenta</a>
-            <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=pedidos')); ?>">Pedidos</a>
-            <a href="<?php echo esc_url(class_exists('RKM_Auth') ? RKM_Auth::get_logout_url() : wc_logout_url(home_url('/mi-cuenta/'))); ?>">Cerrar sesión</a>
+
+            <div class="rkm-private-header-pro__user">
+                <button
+                    type="button"
+                    class="rkm-private-header-pro__toggle"
+                    id="rkmUserMenuToggle"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    aria-controls="rkmUserMenuDropdown"
+                >
+                    <span class="rkm-private-header-pro__avatar"><?php echo esc_html($initial); ?></span>
+
+                    <span class="rkm-private-header-pro__meta">
+                        <strong><?php echo esc_html($user_name); ?></strong>
+                        <small class="rkm-private-header-pro__role"><?php echo esc_html($user_role); ?></small>
+                    </span>
+
+                    <span class="rkm-private-header-pro__caret" aria-hidden="true">&#9662;</span>
+                </button>
+
+                <div class="rkm-private-header-pro__dropdown" id="rkmUserMenuDropdown">
+                    <?php if (class_exists('RKM_Admin_Users') && RKM_Admin_Users::can_access()) : ?>
+                        <a href="<?php echo esc_url(RKM_Admin_Users::get_section_url()); ?>">Usuarios</a>
+                    <?php endif; ?>
+                    <?php if (class_exists('RKM_Assignments') && RKM_Assignments::can_access()) : ?>
+                        <a href="<?php echo esc_url(RKM_Assignments::get_section_url()); ?>">Asignaciones</a>
+                    <?php endif; ?>
+                    <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=mi-cuenta')); ?>">Mi perfil</a>
+                    <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=pedidos')); ?>">Pedidos</a>
+                    <a class="rkm-private-header-pro__dropdown-danger" href="<?php echo esc_url(class_exists('RKM_Auth') ? RKM_Auth::get_logout_url() : wc_logout_url(home_url('/mi-cuenta/'))); ?>">Cerrar sesion</a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
-
