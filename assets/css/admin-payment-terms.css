@@ -1,0 +1,214 @@
+.rkm-admin-payment-terms-page {
+    padding-bottom: 48px;
+}
+
+.rkm-admin-payment-terms-page__header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.rkm-admin-payment-terms-page__back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 18px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 750;
+    text-decoration: none;
+}
+
+.rkm-admin-payment-terms-shell,
+.rkm-admin-payment-terms-form {
+    display: grid;
+    gap: 22px;
+}
+
+.rkm-admin-payment-terms-hero {
+    padding: 28px;
+    border: 1px solid rgba(14, 116, 144, 0.16);
+    border-radius: 22px;
+    background:
+        radial-gradient(circle at top right, rgba(14, 165, 233, 0.10), transparent 36%),
+        linear-gradient(145deg, #f8fcff 0%, #f1f7fb 100%);
+    box-shadow: inset 4px 0 0 rgba(14, 165, 233, 0.58);
+}
+
+.rkm-admin-payment-terms-hero__eyebrow {
+    display: inline-flex;
+    margin-bottom: 12px;
+    color: #0f766e;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.rkm-admin-payment-terms-hero h2 {
+    margin: 0 0 10px;
+    color: #0f172a;
+    font-size: 30px;
+    line-height: 1.1;
+}
+
+.rkm-admin-payment-terms-hero p {
+    margin: 0;
+    max-width: 720px;
+    color: #475569;
+    font-size: 14px;
+    line-height: 1.65;
+}
+
+.rkm-admin-payment-terms-notice {
+    padding: 16px 18px;
+    border-radius: 18px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: #fff;
+}
+
+.rkm-admin-payment-terms-notice p {
+    margin: 0;
+    font-weight: 650;
+}
+
+.rkm-admin-payment-terms-notice--success {
+    border-color: rgba(34, 197, 94, 0.22);
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.rkm-admin-payment-terms-notice--error {
+    border-color: rgba(239, 68, 68, 0.22);
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.rkm-admin-payment-terms-discount,
+.rkm-admin-payment-terms-card {
+    padding: 26px;
+    border-color: rgba(203, 213, 225, 0.78);
+    box-shadow: 0 18px 32px rgba(15, 23, 42, 0.06);
+}
+
+.rkm-admin-payment-terms-panel__header {
+    margin-bottom: 18px;
+}
+
+.rkm-admin-payment-terms-panel__header h3 {
+    margin: 0 0 8px;
+    color: #0f172a;
+    font-size: 22px;
+    line-height: 1.2;
+}
+
+.rkm-admin-payment-terms-panel__header p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.rkm-admin-payment-terms-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.rkm-admin-payment-terms-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.rkm-admin-payment-terms-card__badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 850;
+}
+
+.rkm-admin-payment-terms-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #344054;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.rkm-admin-payment-terms-toggle input {
+    width: 18px;
+    height: 18px;
+}
+
+.rkm-admin-payment-terms-field {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+}
+
+.rkm-admin-payment-terms-field--compact {
+    max-width: 320px;
+}
+
+.rkm-admin-payment-terms-field span {
+    color: #344054;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.rkm-admin-payment-terms-field input,
+.rkm-admin-payment-terms-field textarea {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid #d5dee8;
+    border-radius: 14px;
+    background: #fff;
+    color: #0f172a;
+    font-size: 14px;
+    line-height: 1.4;
+    padding: 0 14px;
+}
+
+.rkm-admin-payment-terms-field textarea {
+    min-height: 132px;
+    padding-top: 12px;
+    resize: vertical;
+}
+
+.rkm-admin-payment-terms-field small {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.rkm-admin-payment-terms-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+@media (max-width: 980px) {
+    .rkm-admin-payment-terms-page__header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .rkm-admin-payment-terms-grid {
+        grid-template-columns: 1fr;
+    }
+}

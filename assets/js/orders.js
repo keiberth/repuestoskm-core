@@ -11,6 +11,10 @@ document.addEventListener("DOMContentLoaded", function () {
         ? `${String(window.rkmOrders.current_user_id)}_${activeCustomerId}`
         : "0";
     const ORDER_DRAFT_STORAGE_KEY = `rkm_order_draft_${storageScope}`;
+    const paymentMethods = Array.isArray(window.rkmPaymentMethods) ? window.rkmPaymentMethods : [];
+    const paymentTermsConfig = window.rkmPaymentTerms || {};
+    const paymentTerms = Array.isArray(paymentTermsConfig.terms) ? paymentTermsConfig.terms : [];
+    const cashDiscountPercent = Number(paymentTermsConfig.cash_discount_percent || 0);
 
     let orderItems = {};
     let pendingHighlightItemId = null;
@@ -26,6 +30,15 @@ document.addEventListener("DOMContentLoaded", function () {
             currency: "ARS",
             minimumFractionDigits: 0,
         }).format(value);
+    }
+
+    function escapeHtml(value) {
+        return String(value || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
     function getVisibleStock(card) {
@@ -116,6 +129,228 @@ document.addEventListener("DOMContentLoaded", function () {
                 ${customerEmail ? `<p>${customerEmail}</p>` : ""}
             </div>
         `;
+    }
+
+    function getPaymentState() {
+        const select = document.getElementById("rkmPaymentMethod");
+        const note = document.getElementById("rkmPaymentNote");
+
+        return {
+            methodId: select ? select.value : "",
+            note: note ? note.value : "",
+        };
+    }
+
+    function getPaymentTermState() {
+        const checked = document.querySelector('[data-rkm-payment-term-input]:checked');
+        const upfrontInput = document.getElementById("rkmUpfrontAmount");
+
+        return {
+            term: checked ? checked.value : "",
+            upfrontAmount: upfrontInput ? Number(upfrontInput.value || 0) : 0,
+        };
+    }
+
+    function getTermLabel(termKey) {
+        const term = paymentTerms.find((item) => item.key === termKey);
+
+        return term ? term.label : "";
+    }
+
+    function getPaymentCalculations(subtotal) {
+        const termState = getPaymentTermState();
+        const discountPercent = termState.term === "cash" ? Math.max(0, cashDiscountPercent) : 0;
+        const discountAmount = Math.min(subtotal, subtotal * discountPercent / 100);
+        const finalTotal = Math.max(0, subtotal - discountAmount);
+        const upfrontAmount = termState.term === "mixed"
+            ? Math.max(0, Math.min(finalTotal, Number(termState.upfrontAmount || 0)))
+            : 0;
+        const creditBalance = termState.term === "credit"
+            ? finalTotal
+            : (termState.term === "mixed" ? Math.max(0, finalTotal - upfrontAmount) : 0);
+
+        return {
+            term: termState.term,
+            discountPercent,
+            discountAmount,
+            finalTotal,
+            upfrontAmount,
+            creditBalance,
+        };
+    }
+
+    function renderPaymentTermSection(subtotal) {
+        const termState = getPaymentTermState();
+        const calculations = getPaymentCalculations(subtotal);
+
+        if (!paymentTerms.length) {
+            return `
+                <div class="rkm-order-payment-term" data-rkm-payment-terms>
+                    <div class="rkm-order-payment-term__header">
+                        <span class="rkm-order-payment-term__eyebrow">Condicion</span>
+                        <strong>Condicion de pago</strong>
+                    </div>
+                    <div class="rkm-order-payment-term__empty">
+                        No hay condiciones de pago activas. Contacta al administrador para confirmar pedidos.
+                    </div>
+                </div>
+            `;
+        }
+
+        const options = paymentTerms.map((term) => {
+            const checked = termState.term === term.key ? "checked" : "";
+            const instructions = term.instructions
+                ? `<small>${escapeHtml(term.instructions)}</small>`
+                : "";
+
+            return `
+                <label class="rkm-order-payment-term__option">
+                    <input type="radio" name="rkm_payment_term" value="${escapeHtml(term.key)}" data-rkm-payment-term-input ${checked}>
+                    <span>
+                        <strong>${escapeHtml(term.label)}</strong>
+                        ${instructions}
+                    </span>
+                </label>
+            `;
+        }).join("");
+
+        let details = "";
+
+        if (calculations.term === "cash") {
+            details = `
+                <div class="rkm-order-payment-term__details" data-rkm-payment-term-details>
+                    <strong>Descuento contado: ${cashDiscountPercent}%</strong>
+                    <span>Descuento aplicado: ${formatPrice(calculations.discountAmount)}</span>
+                </div>
+            `;
+        } else if (calculations.term === "credit") {
+            details = `
+                <div class="rkm-order-payment-term__details" data-rkm-payment-term-details>
+                    <strong>El pedido quedara sujeto a aprobacion de credito.</strong>
+                    <span>Saldo pendiente estimado: ${formatPrice(calculations.creditBalance)}</span>
+                </div>
+            `;
+        } else if (calculations.term === "mixed") {
+            details = `
+                <div class="rkm-order-payment-term__details" data-rkm-payment-term-details>
+                    <label class="rkm-order-payment-term__field" for="rkmUpfrontAmount">
+                        <span>Monto a pagar ahora</span>
+                        <input id="rkmUpfrontAmount" type="number" min="0" step="0.01" value="${termState.upfrontAmount || ""}" data-rkm-upfront-amount>
+                    </label>
+                    <span>Saldo restante a credito: ${formatPrice(calculations.creditBalance)}</span>
+                </div>
+            `;
+        } else {
+            details = '<div class="rkm-order-payment-term__details" data-rkm-payment-term-details hidden></div>';
+        }
+
+        return `
+            <div class="rkm-order-payment-term" data-rkm-payment-terms>
+                <div class="rkm-order-payment-term__header">
+                    <span class="rkm-order-payment-term__eyebrow">Condicion</span>
+                    <strong>Condicion de pago</strong>
+                </div>
+                <div class="rkm-order-payment-term__options">${options}</div>
+                ${details}
+            </div>
+        `;
+    }
+
+    function renderPaymentSection() {
+        const paymentState = getPaymentState();
+        const termState = getPaymentTermState();
+
+        if (!paymentTerms.length || !termState.term) {
+            return "";
+        }
+
+        if (termState.term === "credit") {
+            return "";
+        }
+
+        if (!paymentMethods.length) {
+            return `
+                <div class="rkm-order-payment" data-rkm-payment-methods>
+                    <div class="rkm-order-payment__header">
+                        <span class="rkm-order-payment__eyebrow">Pago</span>
+                        <strong>Forma de pago</strong>
+                    </div>
+                    <div class="rkm-order-payment__empty">
+                        No hay formas de pago activas por ahora. El pedido se puede crear sin seleccion.
+                    </div>
+                </div>
+            `;
+        }
+
+        const options = paymentMethods.map((method) => {
+            const id = escapeHtml(method.id || "");
+            const name = escapeHtml(method.name || "Forma de pago");
+            const description = escapeHtml(method.description || "");
+            const selected = paymentState.methodId === (method.id || "") ? "selected" : "";
+
+            return `<option value="${id}" data-description="${description}" ${selected}>${name}</option>`;
+        }).join("");
+
+        return `
+            <div class="rkm-order-payment" data-rkm-payment-methods>
+                <div class="rkm-order-payment__header">
+                    <span class="rkm-order-payment__eyebrow">Pago</span>
+                    <strong>${termState.term === "mixed" ? "Forma de pago inicial" : "Forma de pago"}</strong>
+                </div>
+
+                <label class="rkm-order-payment__field" for="rkmPaymentMethod">
+                    <span>Selecciona una opcion</span>
+                    <select id="rkmPaymentMethod" data-rkm-payment-method-select>
+                        <option value="">Seleccionar forma de pago</option>
+                        ${options}
+                    </select>
+                </label>
+
+                <div id="rkmPaymentMethodDescription" class="rkm-order-payment__description" data-rkm-payment-method-description hidden></div>
+
+                <label class="rkm-order-payment__field" for="rkmPaymentNote">
+                    <span>Observacion de pago</span>
+                    <textarea id="rkmPaymentNote" data-rkm-payment-note rows="3" placeholder="Referencia, banco, condiciones o comentario opcional.">${escapeHtml(paymentState.note)}</textarea>
+                </label>
+            </div>
+        `;
+    }
+
+    function updatePaymentDescription() {
+        const select = document.getElementById("rkmPaymentMethod");
+        const description = document.getElementById("rkmPaymentMethodDescription");
+
+        if (!select || !description) {
+            return;
+        }
+
+        const selectedOption = select.options[select.selectedIndex];
+        const text = selectedOption ? selectedOption.getAttribute("data-description") || "" : "";
+
+        description.textContent = text;
+        description.hidden = text.trim() === "";
+    }
+
+    function bindPaymentSectionEvents() {
+        const select = document.getElementById("rkmPaymentMethod");
+
+        if (select) {
+            select.addEventListener("change", updatePaymentDescription);
+        }
+
+        updatePaymentDescription();
+    }
+
+    function bindPaymentTermEvents() {
+        document.querySelectorAll("[data-rkm-payment-term-input]").forEach((input) => {
+            input.addEventListener("change", renderSummary);
+        });
+
+        const upfrontInput = document.getElementById("rkmUpfrontAmount");
+
+        if (upfrontInput) {
+            upfrontInput.addEventListener("change", renderSummary);
+        }
     }
 
     // ========================
@@ -450,6 +685,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 ${renderActiveCustomerContext()}
 
+                ${renderPaymentTermSection(0)}
+
+                ${renderPaymentSection()}
+
                 <div class="rkm-order-summary__empty-state">
                     <p class="rkm-order-summary__empty">No hay productos en el pedido</p>
                     <p class="rkm-order-summary__empty-text">Agrega productos desde la grilla para ver cantidades y totales aca.</p>
@@ -469,6 +708,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 <button class="rkm-btn rkm-btn--primary rkm-btn-block" disabled>Continuar</button>
             `;
+            bindPaymentTermEvents();
+            bindPaymentSectionEvents();
             saveOrderDraft();
             return;
         }
@@ -510,6 +751,37 @@ document.addEventListener("DOMContentLoaded", function () {
                 </div>
             `;
         }).join("");
+        const paymentCalculations = getPaymentCalculations(subtotalGeneral);
+        const termRows = [];
+
+        if (paymentCalculations.discountAmount > 0) {
+            termRows.push(`
+                <div class="rkm-summary-total rkm-summary-total--discount">
+                    <span>Descuento contado (${paymentCalculations.discountPercent}%)</span>
+                    <strong>-${formatPrice(paymentCalculations.discountAmount)}</strong>
+                </div>
+            `);
+        }
+
+        if (paymentCalculations.term === "mixed") {
+            termRows.push(`
+                <div class="rkm-summary-total rkm-summary-total--subtle">
+                    <span>Monto inicial</span>
+                    <strong>${formatPrice(paymentCalculations.upfrontAmount)}</strong>
+                </div>
+                <div class="rkm-summary-total rkm-summary-total--credit">
+                    <span>Saldo a credito</span>
+                    <strong>${formatPrice(paymentCalculations.creditBalance)}</strong>
+                </div>
+            `);
+        } else if (paymentCalculations.term === "credit") {
+            termRows.push(`
+                <div class="rkm-summary-total rkm-summary-total--credit">
+                    <span>Saldo pendiente</span>
+                    <strong>${formatPrice(paymentCalculations.creditBalance)}</strong>
+                </div>
+            `);
+        }
 
         summaryCard.innerHTML = `
             <div class="rkm-order-summary__header">
@@ -522,6 +794,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
             ${renderActiveCustomerContext()}
 
+            ${renderPaymentTermSection(subtotalGeneral)}
+
+            ${renderPaymentSection()}
+
             <div class="rkm-summary-list">
                 ${rows}
             </div>
@@ -532,9 +808,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     <strong>${formatPrice(subtotalGeneral)}</strong>
                 </div>
 
+                ${termRows.join("")}
+
                 <div class="rkm-summary-total rkm-summary-total--grand">
                     <span>Total</span>
-                    <strong>${formatPrice(subtotalGeneral)}</strong>
+                    <strong>${formatPrice(paymentCalculations.finalTotal)}</strong>
                 </div>
             </div>
 
@@ -544,6 +822,7 @@ document.addEventListener("DOMContentLoaded", function () {
         `;
 
         bindSummaryEvents();
+        bindPaymentTermEvents();
         highlightSummaryItem(pendingHighlightItemId);
         pendingHighlightItemId = null;
         revealSummaryIfNeeded();
@@ -609,6 +888,38 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
 
+                const subtotal = items.reduce((total, item) => total + (Number(item.price || 0) * Number(item.quantity || 0)), 0);
+                const paymentState = getPaymentState();
+                const paymentTermState = getPaymentTermState();
+                const paymentCalculations = getPaymentCalculations(subtotal);
+                const selectedTermIsActive = paymentTerms.some((term) => term.key === paymentTermState.term);
+                const needsPaymentMethod = paymentTermState.term === "cash" || paymentTermState.term === "mixed";
+
+                if (!paymentTerms.length) {
+                    showInlineError("No hay condiciones de pago activas para confirmar pedidos.", "Condicion de pago no disponible");
+                    return;
+                }
+
+                if (!selectedTermIsActive) {
+                    showInlineError("Selecciona una condicion de pago valida antes de confirmar el pedido.", "Falta la condicion de pago");
+                    return;
+                }
+
+                if (paymentTermState.term === "mixed" && paymentCalculations.upfrontAmount <= 0) {
+                    showInlineError("Indica el monto inicial para la condicion de pago mixta.", "Falta el monto inicial");
+                    return;
+                }
+
+                if (paymentTermState.term === "mixed" && paymentCalculations.upfrontAmount > paymentCalculations.finalTotal) {
+                    showInlineError("El monto inicial no puede ser mayor al total del pedido.", "Monto inicial invalido");
+                    return;
+                }
+
+                if (needsPaymentMethod && paymentMethods.length && !paymentState.methodId) {
+                    showInlineError("Selecciona una forma de pago antes de confirmar el pedido.", "Falta la forma de pago");
+                    return;
+                }
+
                 confirmBtn.disabled = true;
                 confirmBtn.textContent = "Procesando...";
 
@@ -617,6 +928,11 @@ document.addEventListener("DOMContentLoaded", function () {
                     formData.append("action", "rkm_create_order");
                     formData.append("nonce", rkmOrders.nonce);
                     formData.append("items", JSON.stringify(items));
+                    formData.append("payment_term", paymentTermState.term);
+                    formData.append("cash_discount", String(paymentCalculations.discountPercent));
+                    formData.append("upfront_amount", String(paymentCalculations.upfrontAmount));
+                    formData.append("payment_method_id", needsPaymentMethod ? paymentState.methodId : "");
+                    formData.append("payment_note", needsPaymentMethod ? paymentState.note : "");
 
                     if (window.rkmOrderContext && window.rkmOrderContext.active_customer_id) {
                         formData.append("customer_id", String(window.rkmOrderContext.active_customer_id));
@@ -671,10 +987,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             });
         }
+
+        bindPaymentSectionEvents();
     }
 
     if (summaryCard) {
         cleanupLegacyStorageKeys();
+        bindPaymentTermEvents();
+        bindPaymentSectionEvents();
 
         cards.forEach((card) => {
             const btn = card.querySelector(".rkm-add-to-summary");

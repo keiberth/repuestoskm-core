@@ -78,6 +78,15 @@ class RKM_Orders {
             }
 
             $order->calculate_totals();
+            $payment_context = $this->resolve_payment_context_from_request($order);
+
+            if (is_wp_error($payment_context)) {
+                wp_send_json_error([
+                    'message' => $payment_context->get_error_message(),
+                ], 400);
+            }
+
+            $this->apply_payment_context_to_order($order, $payment_context);
             $order->update_status('pending', 'Pedido generado desde Portal del Cliente');
 
             if ($actor_user_id !== $order_customer_id && $actor_user instanceof WP_User) {
@@ -119,6 +128,184 @@ class RKM_Orders {
         }
 
         return $actor_user_id;
+    }
+
+    private function resolve_payment_context_from_request($order) {
+        if (!class_exists('RKM_Payment_Terms')) {
+            return new WP_Error('rkm_payment_terms_unavailable', 'Las condiciones de pago no estan disponibles.');
+        }
+
+        $active_terms = RKM_Payment_Terms::get_active_terms();
+
+        if (empty($active_terms)) {
+            return new WP_Error('rkm_payment_terms_empty', 'No hay condiciones de pago activas para confirmar pedidos.');
+        }
+
+        $payment_term_key = isset($_POST['payment_term'])
+            ? sanitize_key(wp_unslash($_POST['payment_term']))
+            : '';
+        $payment_term = RKM_Payment_Terms::get_active_term($payment_term_key);
+
+        if (!$payment_term) {
+            return new WP_Error('rkm_payment_term_invalid', 'Selecciona una condicion de pago valida.');
+        }
+
+        $original_total = (float) $order->get_total();
+        $cash_discount_percent = 0;
+        $cash_discount_amount = 0;
+        $upfront_amount = 0;
+        $credit_balance = 0;
+        $final_total = $original_total;
+
+        if ($payment_term_key === 'cash') {
+            $cash_discount_percent = RKM_Payment_Terms::get_cash_discount_percent();
+            $cash_discount_amount = $this->round_money($original_total * ($cash_discount_percent / 100));
+            $cash_discount_amount = min($original_total, max(0, $cash_discount_amount));
+            $final_total = max(0, $original_total - $cash_discount_amount);
+        }
+
+        if ($payment_term_key === 'mixed') {
+            $upfront_amount = isset($_POST['upfront_amount'])
+                ? $this->round_money((float) wc_clean(wp_unslash($_POST['upfront_amount'])))
+                : 0;
+
+            if ($upfront_amount <= 0) {
+                return new WP_Error('rkm_upfront_amount_required', 'Indica el monto inicial para la condicion de pago mixta.');
+            }
+
+            if ($upfront_amount > $final_total) {
+                return new WP_Error('rkm_upfront_amount_invalid', 'El monto inicial no puede ser mayor al total del pedido.');
+            }
+        }
+
+        if ($payment_term_key === 'credit') {
+            $credit_balance = $final_total;
+        } elseif ($payment_term_key === 'mixed') {
+            $credit_balance = max(0, $final_total - $upfront_amount);
+        }
+
+        $needs_payment_method = in_array($payment_term_key, ['cash', 'mixed'], true);
+        $payment_method = $needs_payment_method ? $this->resolve_payment_method_from_request() : null;
+
+        if (is_wp_error($payment_method)) {
+            return $payment_method;
+        }
+
+        return [
+            'term_key'              => $payment_term_key,
+            'term_label'            => $payment_term['label'],
+            'original_total'        => $original_total,
+            'final_total'           => $final_total,
+            'cash_discount_percent' => $cash_discount_percent,
+            'cash_discount_amount'  => $cash_discount_amount,
+            'upfront_amount'        => $upfront_amount,
+            'credit_balance'        => $credit_balance,
+            'payment_method'        => $payment_method,
+            'payment_note'          => $this->get_payment_note_from_request(),
+        ];
+    }
+
+    private function resolve_payment_method_from_request() {
+        if (!class_exists('RKM_Payment_Methods')) {
+            return null;
+        }
+
+        $active_methods = RKM_Payment_Methods::get_active_methods();
+
+        if (empty($active_methods)) {
+            return null;
+        }
+
+        $payment_method_id = isset($_POST['payment_method_id'])
+            ? sanitize_key(wp_unslash($_POST['payment_method_id']))
+            : '';
+
+        if ($payment_method_id === '') {
+            return new WP_Error('rkm_payment_method_required', 'Selecciona una forma de pago para confirmar el pedido.');
+        }
+
+        $payment_method = RKM_Payment_Methods::get_active_method($payment_method_id);
+
+        if (!$payment_method) {
+            return new WP_Error('rkm_payment_method_invalid', 'La forma de pago seleccionada no esta disponible.');
+        }
+
+        return $payment_method;
+    }
+
+    private function get_payment_note_from_request() {
+        return isset($_POST['payment_note'])
+            ? sanitize_textarea_field(wp_unslash($_POST['payment_note']))
+            : '';
+    }
+
+    private function apply_payment_context_to_order($order, $payment_context) {
+        $payment_method = isset($payment_context['payment_method']) && is_array($payment_context['payment_method'])
+            ? $payment_context['payment_method']
+            : null;
+        $payment_note = isset($payment_context['payment_note']) ? $payment_context['payment_note'] : '';
+        $method_id = $payment_method && isset($payment_method['id']) ? sanitize_key($payment_method['id']) : '';
+        $method_label = $payment_method && isset($payment_method['name']) ? sanitize_text_field($payment_method['name']) : '';
+
+        if (!empty($payment_context['cash_discount_amount'])) {
+            $fee = new WC_Order_Item_Fee();
+            $fee->set_name('Descuento pago contado');
+            $fee->set_amount(-1 * (float) $payment_context['cash_discount_amount']);
+            $fee->set_total(-1 * (float) $payment_context['cash_discount_amount']);
+            $order->add_item($fee);
+            $order->calculate_totals();
+            $payment_context['final_total'] = (float) $order->get_total();
+        }
+
+        $order->update_meta_data('_rkm_payment_term', $payment_context['term_key']);
+        $order->update_meta_data('_rkm_payment_term_label', $payment_context['term_label']);
+        $order->update_meta_data('_rkm_cash_discount_percent', $payment_context['cash_discount_percent']);
+        $order->update_meta_data('_rkm_cash_discount_amount', $payment_context['cash_discount_amount']);
+        $order->update_meta_data('_rkm_original_total', $payment_context['original_total']);
+        $order->update_meta_data('_rkm_final_total', $payment_context['final_total']);
+        $order->update_meta_data('_rkm_upfront_amount', $payment_context['upfront_amount']);
+        $order->update_meta_data('_rkm_credit_balance', $payment_context['credit_balance']);
+
+        $order->update_meta_data('_rkm_payment_method_id', $method_id);
+        $order->update_meta_data('_rkm_payment_method_label', $method_label);
+        $order->update_meta_data('_rkm_payment_note', $payment_note);
+
+        $note_lines = [
+            sprintf('Condicion de pago: %s.', $payment_context['term_label']),
+        ];
+
+        if (!empty($payment_context['cash_discount_amount'])) {
+            $note_lines[] = sprintf(
+                'Descuento contado: %s%% (%s).',
+                $payment_context['cash_discount_percent'],
+                wc_price($payment_context['cash_discount_amount'])
+            );
+        }
+
+        if (!empty($payment_context['upfront_amount'])) {
+            $note_lines[] = sprintf('Monto inicial: %s.', wc_price($payment_context['upfront_amount']));
+        }
+
+        if (!empty($payment_context['credit_balance'])) {
+            $note_lines[] = sprintf('Saldo a credito: %s.', wc_price($payment_context['credit_balance']));
+        }
+
+        if ($method_label !== '') {
+            $note_lines[] = sprintf('Forma de pago seleccionada: %s.', $method_label);
+        }
+
+        if ($payment_note !== '') {
+            $note_lines[] = 'Observacion de pago: ' . $payment_note;
+        }
+
+        $order->add_order_note(implode("\n", $note_lines));
+        $order->save();
+    }
+
+    private function round_money($amount) {
+        $decimals = function_exists('wc_get_price_decimals') ? wc_get_price_decimals() : 2;
+
+        return round((float) $amount, $decimals);
     }
 
     private function get_customer_billing_address($customer_id, $customer) {

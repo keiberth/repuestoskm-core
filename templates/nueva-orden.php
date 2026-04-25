@@ -190,6 +190,9 @@ $shipping_address = [
     'address'  => get_user_meta($user_id, 'shipping_address_1', true),
     'city'     => get_user_meta($user_id, 'shipping_city', true),
 ];
+$active_payment_methods = class_exists('RKM_Payment_Methods') ? RKM_Payment_Methods::get_active_methods() : [];
+$payment_terms_settings = class_exists('RKM_Payment_Terms') ? RKM_Payment_Terms::get_settings() : [];
+$active_payment_terms = class_exists('RKM_Payment_Terms') ? RKM_Payment_Terms::get_active_terms() : [];
 
 if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
     $repeat_order_id = absint($_GET['repeat_order']);
@@ -498,6 +501,82 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
                         </div>
                     <?php endif; ?>
 
+                    <div class="rkm-order-payment-term" data-rkm-payment-terms>
+                        <div class="rkm-order-payment-term__header">
+                            <span class="rkm-order-payment-term__eyebrow">Condicion</span>
+                            <strong>Condicion de pago</strong>
+                        </div>
+
+                        <?php if (!empty($active_payment_terms)) : ?>
+                            <div class="rkm-order-payment-term__options">
+                                <?php foreach ($active_payment_terms as $term) : ?>
+                                    <label class="rkm-order-payment-term__option">
+                                        <input
+                                            type="radio"
+                                            name="rkm_payment_term"
+                                            value="<?php echo esc_attr($term['key']); ?>"
+                                            data-rkm-payment-term-input
+                                        >
+                                        <span>
+                                            <strong><?php echo esc_html($term['label']); ?></strong>
+                                            <?php if (!empty($term['instructions'])) : ?>
+                                                <small><?php echo esc_html($term['instructions']); ?></small>
+                                            <?php endif; ?>
+                                        </span>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+
+                            <div class="rkm-order-payment-term__details" data-rkm-payment-term-details hidden></div>
+                        <?php else : ?>
+                            <div class="rkm-order-payment-term__empty">
+                                No hay condiciones de pago activas. Contacta al administrador para confirmar pedidos.
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if (!empty($active_payment_terms)) : ?>
+                        <div class="rkm-order-payment" data-rkm-payment-methods hidden>
+                            <div class="rkm-order-payment__header">
+                                <span class="rkm-order-payment__eyebrow">Pago</span>
+                                <strong>Forma de pago</strong>
+                            </div>
+
+                            <?php if (!empty($active_payment_methods)) : ?>
+                                <label class="rkm-order-payment__field" for="rkmPaymentMethod">
+                                    <span>Selecciona una opcion</span>
+                                    <select id="rkmPaymentMethod" data-rkm-payment-method-select>
+                                        <option value="">Seleccionar forma de pago</option>
+                                        <?php foreach ($active_payment_methods as $method) : ?>
+                                            <option
+                                                value="<?php echo esc_attr($method['id']); ?>"
+                                                data-description="<?php echo esc_attr($method['description']); ?>"
+                                            >
+                                                <?php echo esc_html($method['name']); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </label>
+
+                                <div
+                                    id="rkmPaymentMethodDescription"
+                                    class="rkm-order-payment__description"
+                                    data-rkm-payment-method-description
+                                    hidden
+                                ></div>
+
+                                <label class="rkm-order-payment__field" for="rkmPaymentNote">
+                                    <span>Observacion de pago</span>
+                                    <textarea id="rkmPaymentNote" data-rkm-payment-note rows="3" placeholder="Referencia, banco, condiciones o comentario opcional."></textarea>
+                                </label>
+                            <?php else : ?>
+                                <div class="rkm-order-payment__empty">
+                                    No hay formas de pago activas por ahora. El pedido se puede crear sin seleccion.
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    <?php endif; ?>
+
                     <div class="rkm-order-summary__empty-state">
                         <p class="rkm-order-summary__empty">No hay productos en el pedido</p>
                         <p class="rkm-order-summary__empty-text">Agrega productos desde la grilla para ver cantidades y totales aca.</p>
@@ -639,6 +718,11 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
             'active_customer_name' => $active_customer_name,
             'active_customer_email' => $active_customer_email,
             'is_vendor_customer_context' => $is_vendor_customer_context,
+        ]); ?>;
+        window.rkmPaymentMethods = <?php echo wp_json_encode($active_payment_methods); ?>;
+        window.rkmPaymentTerms = <?php echo wp_json_encode([
+            'cash_discount_percent' => isset($payment_terms_settings['cash_discount_percent']) ? (float) $payment_terms_settings['cash_discount_percent'] : 0,
+            'terms' => $active_payment_terms,
         ]); ?>;
     </script>
 </div>

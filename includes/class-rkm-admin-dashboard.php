@@ -92,6 +92,16 @@ class RKM_Admin_Dashboard {
                     'url'         => class_exists('RKM_Assignments') ? RKM_Assignments::get_section_url() : home_url('/mi-cuenta/panel/'),
                 ],
                 [
+                    'label'       => 'Formas de pago',
+                    'description' => 'Administrar los metodos disponibles al crear pedidos.',
+                    'url'         => class_exists('RKM_Payment_Methods') ? RKM_Payment_Methods::get_section_url() : home_url('/mi-cuenta/panel/'),
+                ],
+                [
+                    'label'       => 'Condiciones de pago',
+                    'description' => 'Configurar contado, credito, mixto y descuento comercial.',
+                    'url'         => class_exists('RKM_Payment_Terms') ? RKM_Payment_Terms::get_section_url() : home_url('/mi-cuenta/panel/'),
+                ],
+                [
                     'label'       => 'Mi cuenta',
                     'description' => 'Gestionar los datos personales del usuario actual.',
                     'url'         => home_url('/mi-cuenta/panel/?section=mi-cuenta'),

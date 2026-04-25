@@ -30,6 +30,8 @@ $module_labels = [
     'admin'          => 'Administracion',
     'usuarios'       => 'Usuarios',
     'asignaciones'   => 'Asignaciones',
+    'formas-pago'    => 'Formas de pago',
+    'condiciones-pago' => 'Condiciones de pago',
     'mi-cuenta'      => 'Mi perfil',
 ];
 $module_label = isset($module_labels[$section]) ? $module_labels[$section] : 'Sistema RKM';
@@ -100,6 +102,12 @@ $module_label = isset($module_labels[$section]) ? $module_labels[$section] : 'Si
                     <?php endif; ?>
                     <?php if (class_exists('RKM_Assignments') && RKM_Assignments::can_access()) : ?>
                         <a href="<?php echo esc_url(RKM_Assignments::get_section_url()); ?>">Asignaciones</a>
+                    <?php endif; ?>
+                    <?php if (class_exists('RKM_Payment_Methods') && RKM_Payment_Methods::can_access()) : ?>
+                        <a href="<?php echo esc_url(RKM_Payment_Methods::get_section_url()); ?>">Formas de pago</a>
+                    <?php endif; ?>
+                    <?php if (class_exists('RKM_Payment_Terms') && RKM_Payment_Terms::can_access()) : ?>
+                        <a href="<?php echo esc_url(RKM_Payment_Terms::get_section_url()); ?>">Condiciones de pago</a>
                     <?php endif; ?>
                     <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=mi-cuenta')); ?>">Mi perfil</a>
                     <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=pedidos')); ?>">Pedidos</a>

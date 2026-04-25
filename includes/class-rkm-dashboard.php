@@ -219,6 +219,24 @@ class RKM_Dashboard {
                 $template = RKM_CORE_PATH . 'templates/dashboard.php';
                 break;
 
+            case 'formas-pago':
+                if (class_exists('RKM_Payment_Methods')) {
+                    (new RKM_Payment_Methods())->render_page($data);
+                    return;
+                }
+
+                $template = RKM_CORE_PATH . 'templates/dashboard.php';
+                break;
+
+            case 'condiciones-pago':
+                if (class_exists('RKM_Payment_Terms')) {
+                    (new RKM_Payment_Terms())->render_page($data);
+                    return;
+                }
+
+                $template = RKM_CORE_PATH . 'templates/dashboard.php';
+                break;
+
             case 'panel':
             default:
                 if (class_exists('RKM_Admin_Dashboard') && RKM_Admin_Dashboard::can_access($user)) {
