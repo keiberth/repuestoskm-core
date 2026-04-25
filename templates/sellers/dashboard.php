@@ -15,6 +15,7 @@ if (!defined('ABSPATH')) {
 
         <?php include plugin_dir_path(__FILE__) . '../partials/subnav.php'; ?>
 
+        <div class="rkm-sellers-shell">
         <section class="rkm-card rkm-sellers-dashboard">
             <div class="rkm-sellers-dashboard__hero">
                 <span class="rkm-sellers-dashboard__eyebrow">Panel comercial</span>
@@ -232,5 +233,6 @@ if (!defined('ABSPATH')) {
                 </div>
             <?php endif; ?>
         </section>
+        </div>
     </div>
 </div>
