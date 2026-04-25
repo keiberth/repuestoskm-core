@@ -102,6 +102,87 @@ if (!defined('ABSPATH')) {
             </section>
         </div>
 
+        <section class="rkm-card rkm-sellers-panel rkm-sellers-panel--history">
+            <div class="rkm-sellers-panel__header rkm-sellers-panel__header--split">
+                <div>
+                    <h3>Historial por cliente</h3>
+                    <p>Consulta pedidos de un cliente asignado a tu cartera comercial.</p>
+                </div>
+            </div>
+
+            <?php if (!empty($data['seller_customer_options'])) : ?>
+                <form class="rkm-sellers-history-form" method="get" action="<?php echo esc_url(home_url('/mi-cuenta/panel/')); ?>">
+                    <input type="hidden" name="section" value="<?php echo esc_attr($current); ?>">
+
+                    <label class="rkm-sellers-history-form__field" for="rkmSellerHistoryCustomerId">
+                        <span>Cliente</span>
+                        <select id="rkmSellerHistoryCustomerId" name="customer_id" data-rkm-sellers-history-select>
+                            <option value="">Selecciona un cliente para ver su historial</option>
+                            <?php foreach ($data['seller_customer_options'] as $customer_option) : ?>
+                                <option
+                                    value="<?php echo esc_attr((string) $customer_option['id']); ?>"
+                                    <?php selected((int) $data['seller_history_selected_customer_id'], (int) $customer_option['id']); ?>
+                                >
+                                    <?php echo esc_html($customer_option['name'] . ' - ' . $customer_option['email']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+
+                    <button type="submit" class="rkm-btn rkm-btn--primary">
+                        Ver historial
+                    </button>
+                </form>
+
+                <?php if (!empty($data['seller_history_customer_denied'])) : ?>
+                    <div class="rkm-sellers-empty-state rkm-sellers-empty-state--warning">
+                        <p>No tenes acceso para consultar el historial de ese cliente.</p>
+                    </div>
+                <?php elseif (empty($data['seller_history_selected_customer_id'])) : ?>
+                    <div class="rkm-sellers-empty-state">
+                        <p>Selecciona un cliente asignado para ver sus pedidos anteriores.</p>
+                    </div>
+                <?php elseif (!empty($data['seller_history_orders'])) : ?>
+                    <div class="rkm-sellers-orders-table-wrap">
+                        <table class="rkm-sellers-orders-table rkm-sellers-orders-table--history">
+                            <thead>
+                                <tr>
+                                    <th>Pedido</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                    <th>Total</th>
+                                    <th>Productos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($data['seller_history_orders'] as $order) : ?>
+                                    <tr>
+                                        <td data-label="Pedido">#<?php echo esc_html($order['number']); ?></td>
+                                        <td data-label="Fecha"><?php echo esc_html($order['date']); ?></td>
+                                        <td data-label="Estado">
+                                            <span class="rkm-sellers-status rkm-sellers-status--<?php echo esc_attr($order['status_slug']); ?>">
+                                                <?php echo esc_html($order['status']); ?>
+                                            </span>
+                                        </td>
+                                        <td data-label="Total"><?php echo esc_html($order['total']); ?></td>
+                                        <td data-label="Productos"><?php echo esc_html((string) $order['product_count']); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php else : ?>
+                    <div class="rkm-sellers-empty-state">
+                        <p>Este cliente no tiene pedidos registrados.</p>
+                    </div>
+                <?php endif; ?>
+            <?php else : ?>
+                <div class="rkm-sellers-empty-state">
+                    <p><?php echo esc_html($data['seller_empty_message'] ?? 'No tenes clientes asignados'); ?></p>
+                </div>
+            <?php endif; ?>
+        </section>
+
         <section class="rkm-card rkm-sellers-panel rkm-sellers-panel--orders">
             <div class="rkm-sellers-panel__header">
                 <h3>Pedidos recientes</h3>

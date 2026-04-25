@@ -9,6 +9,7 @@ class RKM_Sellers {
     const SECTION_KEY = 'panel-vendedor';
     const RECENT_ORDERS_LIMIT = 6;
     const RECENT_CUSTOMERS_LIMIT = 8;
+    const CUSTOMER_HISTORY_LIMIT = 20;
 
     private $assigned_customer_ids_cache = null;
 
@@ -95,11 +96,15 @@ class RKM_Sellers {
 
     private function get_dashboard_data() {
         $assigned_customer_ids = $this->get_assigned_customer_ids();
+        $selected_customer_id = $this->get_selected_history_customer_id($assigned_customer_ids);
 
         return [
             'seller_has_assigned_customers' => !empty($assigned_customer_ids),
             'seller_empty_message' => 'No tenes clientes asignados',
             'seller_customer_options' => $this->get_assigned_customer_options(),
+            'seller_history_selected_customer_id' => $selected_customer_id,
+            'seller_history_customer_denied' => $this->has_denied_history_customer($assigned_customer_ids),
+            'seller_history_orders' => $this->get_customer_history_orders($selected_customer_id),
             'seller_metrics' => $this->get_metrics(),
             'seller_quick_actions' => $this->get_quick_actions(),
             'seller_recent_orders' => $this->get_recent_orders(),
@@ -164,7 +169,27 @@ class RKM_Sellers {
             'status_slug'   => sanitize_html_class($order->get_status()),
             'total'         => wp_strip_all_tags($order->get_formatted_order_total()),
             'date'          => $date_created ? $date_created->date_i18n('d/m/Y') : 'Sin fecha',
+            'product_count' => (int) $order->get_item_count(),
         ];
+    }
+
+    private function get_customer_history_orders($customer_id) {
+        if (!function_exists('wc_get_orders') || $customer_id <= 0) {
+            return [];
+        }
+
+        $orders = wc_get_orders([
+            'customer_id' => $customer_id,
+            'limit'       => self::CUSTOMER_HISTORY_LIMIT,
+            'orderby'     => 'date',
+            'order'       => 'DESC',
+        ]);
+
+        if (empty($orders)) {
+            return [];
+        }
+
+        return array_map([$this, 'format_order_row'], $orders);
     }
 
     private function get_recent_customers() {
@@ -280,5 +305,29 @@ class RKM_Sellers {
         return array_merge([
             'customer_id' => $this->get_assigned_customer_ids(),
         ], $args);
+    }
+
+    private function get_requested_history_customer_id() {
+        if (!isset($_GET['customer_id'])) {
+            return 0;
+        }
+
+        return absint(wp_unslash($_GET['customer_id']));
+    }
+
+    private function get_selected_history_customer_id($assigned_customer_ids) {
+        $requested_customer_id = $this->get_requested_history_customer_id();
+
+        if ($requested_customer_id <= 0) {
+            return 0;
+        }
+
+        return in_array($requested_customer_id, $assigned_customer_ids, true) ? $requested_customer_id : 0;
+    }
+
+    private function has_denied_history_customer($assigned_customer_ids) {
+        $requested_customer_id = $this->get_requested_history_customer_id();
+
+        return $requested_customer_id > 0 && !in_array($requested_customer_id, $assigned_customer_ids, true);
     }
 }
