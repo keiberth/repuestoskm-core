@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) {
 }
 ?>
 
-<div class="rkm-app">
+<div class="rkm-app rkm-module-app">
     <div class="rkm-container">
         <?php include plugin_dir_path(__FILE__) . 'partials/private-header.php'; ?>
         <div class="rkm-page-header">
@@ -15,6 +15,7 @@ if (!defined('ABSPATH')) {
             include plugin_dir_path(__FILE__) . 'partials/subnav.php';
         ?>
 
+        <div class="rkm-module-shell">
         <?php if (empty($orders)) : ?>
             <div class="rkm-card">
                 <p>No tenés pedidos todavía.</p>
@@ -127,6 +128,7 @@ if (!defined('ABSPATH')) {
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
+        </div>
     </div>
     <div class="rkm-modal" id="rkmOrderModal">
         <div class="rkm-modal__overlay"></div>

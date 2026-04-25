@@ -7,7 +7,7 @@ $panel_url = home_url('/mi-cuenta/panel/');
 $current_section = 'panel';
 ?>
 
-<div class="rkm-app">
+<div class="rkm-app rkm-module-app">
     <div class="rkm-container rkm-dashboard-wrapper">
         <?php include plugin_dir_path(__FILE__) . 'partials/private-header.php'; ?>
 
@@ -18,6 +18,7 @@ $current_section = 'panel';
             </div>
         </div>
 
+        <div class="rkm-module-shell">
         <div class="rkm-dashboard">
             <aside class="rkm-sidebar-card">
                 <div class="rkm-sidebar-card__header">
@@ -81,6 +82,7 @@ $current_section = 'panel';
                     </div>
                 <?php endforeach; ?>
             </div>
+        </div>
         </div>
     </div>
 </div>

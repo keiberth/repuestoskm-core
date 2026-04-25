@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) {
 }
 ?>
 
-<div class="rkm-app">
+<div class="rkm-app rkm-module-app">
     <div class="rkm-container rkm-admin-dashboard-page">
         <?php include plugin_dir_path(__FILE__) . '../partials/private-header.php'; ?>
 
@@ -13,6 +13,7 @@ if (!defined('ABSPATH')) {
             <p><?php echo esc_html($page_subtitle); ?></p>
         </div>
 
+        <div class="rkm-module-shell">
         <section class="rkm-admin-dashboard__hero">
             <div class="rkm-admin-dashboard__hero-copy">
                 <span class="rkm-admin-dashboard__eyebrow">Vision ejecutiva</span>
@@ -79,5 +80,6 @@ if (!defined('ABSPATH')) {
                 <?php endforeach; ?>
             </div>
         </section>
+        </div>
     </div>
 </div>

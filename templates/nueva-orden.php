@@ -215,7 +215,7 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
 }
 ?>
 
-<div class="rkm-app">
+<div class="rkm-app rkm-module-app">
     <div class="rkm-container">
         <?php include plugin_dir_path(__FILE__) . 'partials/private-header.php'; ?>
 
@@ -237,6 +237,7 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
 
         <?php include plugin_dir_path(__FILE__) . 'partials/subnav.php'; ?>
 
+        <div class="rkm-module-shell rkm-module-shell--order">
         <div id="rkm-order-feedback" class="rkm-order-feedback" style="display:none;"></div>
 
         <div class="rkm-toolbar rkm-catalog-toolbar">
@@ -555,6 +556,7 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
                 </div>
             </aside>
 
+        </div>
         </div>
         <div class="rkm-product-quick-view" id="rkmProductQuickView" aria-hidden="true">
             <div class="rkm-product-quick-view__overlay" data-rkm-product-quick-view-close></div>

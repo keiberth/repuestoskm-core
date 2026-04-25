@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) {
 }
 ?>
 
-<div class="rkm-app rkm-sellers-app">
+<div class="rkm-app rkm-module-app rkm-sellers-app">
     <div class="rkm-container">
         <?php include plugin_dir_path(__FILE__) . '../partials/private-header.php'; ?>
 
@@ -15,7 +15,7 @@ if (!defined('ABSPATH')) {
 
         <?php include plugin_dir_path(__FILE__) . '../partials/subnav.php'; ?>
 
-        <div class="rkm-sellers-shell">
+        <div class="rkm-module-shell rkm-sellers-shell">
         <section class="rkm-card rkm-sellers-dashboard">
             <div class="rkm-sellers-dashboard__hero">
                 <span class="rkm-sellers-dashboard__eyebrow">Panel comercial</span>
