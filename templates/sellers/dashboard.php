@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) {
 }
 ?>
 
-<div class="rkm-app">
+<div class="rkm-app rkm-sellers-app">
     <div class="rkm-container">
         <?php include plugin_dir_path(__FILE__) . '../partials/private-header.php'; ?>
 
@@ -39,6 +39,7 @@ if (!defined('ABSPATH')) {
         <div class="rkm-sellers-dashboard__layout">
             <section class="rkm-card rkm-sellers-panel">
                 <div class="rkm-sellers-panel__header">
+                    <span class="rkm-sellers-panel__badge">Operacion</span>
                     <h3>Acciones rapidas</h3>
                     <p>Atajos directos a los flujos comerciales ya existentes.</p>
                 </div>
@@ -81,6 +82,7 @@ if (!defined('ABSPATH')) {
 
             <section class="rkm-card rkm-sellers-panel">
                 <div class="rkm-sellers-panel__header">
+                    <span class="rkm-sellers-panel__badge">Cartera</span>
                     <h3>Clientes</h3>
                     <p>Clientes asignados al vendedor actual desde el modulo de asignaciones.</p>
                 </div>
@@ -105,6 +107,7 @@ if (!defined('ABSPATH')) {
         <section id="rkm-seller-customer-history" class="rkm-card rkm-sellers-panel rkm-sellers-panel--history">
             <div class="rkm-sellers-panel__header rkm-sellers-panel__header--split">
                 <div>
+                    <span class="rkm-sellers-panel__badge">Consulta</span>
                     <h3>Historial por cliente</h3>
                     <p>Consulta pedidos de un cliente asignado a tu cartera comercial.</p>
                 </div>
@@ -185,6 +188,7 @@ if (!defined('ABSPATH')) {
 
         <section class="rkm-card rkm-sellers-panel rkm-sellers-panel--orders">
             <div class="rkm-sellers-panel__header">
+                <span class="rkm-sellers-panel__badge">Seguimiento</span>
                 <h3>Pedidos recientes</h3>
                 <p>Solo se muestran pedidos relacionados con los clientes asignados a esta cartera.</p>
             </div>
