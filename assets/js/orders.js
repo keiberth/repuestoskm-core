@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", function () {
     let orderItems = {};
     let pendingHighlightItemId = null;
     let shouldScrollSummaryIntoView = false;
+    let checkoutModalOpen = false;
 
     // ========================
     // UTILIDADES
@@ -343,13 +344,27 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function bindPaymentTermEvents() {
         document.querySelectorAll("[data-rkm-payment-term-input]").forEach((input) => {
-            input.addEventListener("change", renderSummary);
+            input.addEventListener("change", () => {
+                if (checkoutModalOpen) {
+                    renderCheckoutModal();
+                    return;
+                }
+
+                renderSummary();
+            });
         });
 
         const upfrontInput = document.getElementById("rkmUpfrontAmount");
 
         if (upfrontInput) {
-            upfrontInput.addEventListener("change", renderSummary);
+            upfrontInput.addEventListener("change", () => {
+                if (checkoutModalOpen) {
+                    renderCheckoutModal();
+                    return;
+                }
+
+                renderSummary();
+            });
         }
     }
 
@@ -637,6 +652,10 @@ document.addEventListener("DOMContentLoaded", function () {
         return `${count} productos seleccionados`;
     }
 
+    function getOrderItemsSubtotal(items = Object.values(orderItems)) {
+        return items.reduce((total, item) => total + (Number(item.price || 0) * Number(item.quantity || 0)), 0);
+    }
+
     function highlightSummaryItem(itemId) {
         if (!itemId) return;
 
@@ -667,6 +686,292 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    function renderPaymentTotals(subtotal) {
+        const calculations = getPaymentCalculations(subtotal);
+        const rows = [];
+
+        rows.push(`
+            <div class="rkm-summary-total rkm-summary-total--subtle">
+                <span>Subtotal</span>
+                <strong>${formatPrice(subtotal)}</strong>
+            </div>
+        `);
+
+        if (calculations.discountAmount > 0) {
+            rows.push(`
+                <div class="rkm-summary-total rkm-summary-total--discount">
+                    <span>Descuento contado (${calculations.discountPercent}%)</span>
+                    <strong>-${formatPrice(calculations.discountAmount)}</strong>
+                </div>
+            `);
+        }
+
+        if (calculations.term === "mixed") {
+            rows.push(`
+                <div class="rkm-summary-total rkm-summary-total--subtle">
+                    <span>Monto inicial</span>
+                    <strong>${formatPrice(calculations.upfrontAmount)}</strong>
+                </div>
+                <div class="rkm-summary-total rkm-summary-total--credit">
+                    <span>Saldo a credito</span>
+                    <strong>${formatPrice(calculations.creditBalance)}</strong>
+                </div>
+            `);
+        } else if (calculations.term === "credit") {
+            rows.push(`
+                <div class="rkm-summary-total rkm-summary-total--credit">
+                    <span>Saldo pendiente</span>
+                    <strong>${formatPrice(calculations.creditBalance)}</strong>
+                </div>
+            `);
+        }
+
+        rows.push(`
+            <div class="rkm-summary-total rkm-summary-total--grand">
+                <span>Total</span>
+                <strong>${formatPrice(calculations.finalTotal)}</strong>
+            </div>
+        `);
+
+        return rows.join("");
+    }
+
+    function getCheckoutModal() {
+        let modal = document.getElementById("rkmCheckoutModal");
+
+        if (!modal) {
+            modal = document.createElement("div");
+            modal.id = "rkmCheckoutModal";
+            document.body.appendChild(modal);
+        }
+
+        return modal;
+    }
+
+    function openCheckoutModal() {
+        checkoutModalOpen = true;
+        renderCheckoutModal();
+        document.body.classList.add("rkm-checkout-modal-open");
+
+        const modal = getCheckoutModal();
+        const closeBtn = modal.querySelector("[data-rkm-checkout-close]");
+
+        if (closeBtn) {
+            closeBtn.focus({ preventScroll: true });
+        }
+    }
+
+    function closeCheckoutModal() {
+        const modal = document.getElementById("rkmCheckoutModal");
+
+        checkoutModalOpen = false;
+        document.body.classList.remove("rkm-checkout-modal-open");
+
+        if (modal) {
+            modal.innerHTML = "";
+            modal.classList.remove("is-active");
+        }
+    }
+
+    function renderCheckoutModal() {
+        if (!checkoutModalOpen) {
+            return;
+        }
+
+        const items = Object.values(orderItems);
+        const subtotal = getOrderItemsSubtotal(items);
+        const modal = getCheckoutModal();
+
+        modal.className = "rkm-checkout-modal is-active";
+        modal.innerHTML = `
+            <div class="rkm-checkout-modal__overlay" data-rkm-checkout-close></div>
+
+            <div class="rkm-checkout-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="rkmCheckoutModalTitle">
+                <div class="rkm-checkout-modal__header">
+                    <div>
+                        <span class="rkm-checkout-modal__eyebrow">Paso final</span>
+                        <h2 id="rkmCheckoutModalTitle">Confirmar pedido</h2>
+                        <p>${getSelectedProductsLabel(items.length)} en esta orden.</p>
+                    </div>
+                    <button type="button" class="rkm-checkout-modal__close" data-rkm-checkout-close aria-label="Cerrar">&times;</button>
+                </div>
+
+                <div class="rkm-checkout-modal__body">
+                    <section class="rkm-checkout-modal__summary">
+                        <div class="rkm-checkout-modal__summary-row">
+                            <span>Productos</span>
+                            <strong>${items.length}</strong>
+                        </div>
+                        <div class="rkm-checkout-modal__summary-row">
+                            <span>Total de productos</span>
+                            <strong>${items.reduce((total, item) => total + Number(item.quantity || 0), 0)}</strong>
+                        </div>
+                    </section>
+
+                    ${renderPaymentTermSection(subtotal)}
+                    ${renderPaymentSection()}
+
+                    <div class="rkm-checkout-modal__error" id="rkmCheckoutModalError" hidden></div>
+
+                    <section class="rkm-summary-totals rkm-checkout-modal__totals">
+                        ${renderPaymentTotals(subtotal)}
+                    </section>
+                </div>
+
+                <div class="rkm-checkout-modal__footer">
+                    <button type="button" class="rkm-btn rkm-btn--secondary" data-rkm-checkout-close>Volver</button>
+                    <button type="button" class="rkm-btn rkm-btn--primary" id="rkm-submit-order">
+                        Enviar pedido
+                    </button>
+                </div>
+            </div>
+        `;
+
+        bindCheckoutModalEvents();
+        bindPaymentTermEvents();
+        bindPaymentSectionEvents();
+    }
+
+    function bindCheckoutModalEvents() {
+        const modal = getCheckoutModal();
+
+        modal.querySelectorAll("[data-rkm-checkout-close]").forEach((button) => {
+            button.addEventListener("click", closeCheckoutModal);
+        });
+
+        const submitBtn = document.getElementById("rkm-submit-order");
+
+        if (submitBtn) {
+            submitBtn.addEventListener("click", () => submitOrder(submitBtn));
+        }
+    }
+
+    function showCheckoutModalError(message) {
+        const errorBox = document.getElementById("rkmCheckoutModalError");
+
+        if (!errorBox) {
+            showInlineError(message);
+            return;
+        }
+
+        errorBox.textContent = message;
+        errorBox.hidden = false;
+        errorBox.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+
+    async function submitOrder(submitBtn) {
+        if (submitBtn.disabled) {
+            return;
+        }
+
+        const items = Object.values(orderItems);
+
+        if (!items.length) {
+            closeCheckoutModal();
+            showInlineError("No hay productos en el pedido.", "Pedido vacio");
+            return;
+        }
+
+        const subtotal = getOrderItemsSubtotal(items);
+        const paymentState = getPaymentState();
+        const paymentTermState = getPaymentTermState();
+        const paymentCalculations = getPaymentCalculations(subtotal);
+        const rawUpfrontAmount = Number(paymentTermState.upfrontAmount || 0);
+        const selectedTermIsActive = paymentTerms.some((term) => term.key === paymentTermState.term);
+        const needsPaymentMethod = paymentTermState.term === "cash" || paymentTermState.term === "mixed";
+
+        if (!paymentTerms.length) {
+            showCheckoutModalError("No hay condiciones de pago activas para confirmar pedidos.");
+            return;
+        }
+
+        if (!selectedTermIsActive) {
+            showCheckoutModalError("Selecciona una condicion de pago valida antes de confirmar el pedido.");
+            return;
+        }
+
+        if (paymentTermState.term === "mixed" && rawUpfrontAmount <= 0) {
+            showCheckoutModalError("Indica el monto inicial para la condicion de pago mixta.");
+            return;
+        }
+
+        if (paymentTermState.term === "mixed" && rawUpfrontAmount > paymentCalculations.finalTotal) {
+            showCheckoutModalError("El monto inicial no puede ser mayor al total del pedido.");
+            return;
+        }
+
+        if (needsPaymentMethod && paymentMethods.length && !paymentState.methodId) {
+            showCheckoutModalError("Selecciona una forma de pago antes de confirmar el pedido.");
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Enviando...";
+
+        try {
+            const formData = new FormData();
+            formData.append("action", "rkm_create_order");
+            formData.append("nonce", rkmOrders.nonce);
+            formData.append("items", JSON.stringify(items));
+            formData.append("payment_term", paymentTermState.term);
+            formData.append("cash_discount", String(paymentCalculations.discountPercent));
+            formData.append("upfront_amount", String(paymentCalculations.upfrontAmount));
+            formData.append("payment_method_id", needsPaymentMethod ? paymentState.methodId : "");
+            formData.append("payment_note", needsPaymentMethod ? paymentState.note : "");
+
+            if (window.rkmOrderContext && window.rkmOrderContext.active_customer_id) {
+                formData.append("customer_id", String(window.rkmOrderContext.active_customer_id));
+            }
+
+            const response = await fetch(rkmOrders.ajax_url, {
+                method: "POST",
+                body: formData,
+                credentials: "same-origin",
+            });
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.data?.message || "No se pudo generar el pedido.");
+            }
+
+            closeCheckoutModal();
+            orderItems = {};
+            clearOrderDraft();
+            renderSummary();
+
+            showFeedback({
+                icon: "&#10003;",
+                eyebrow: "Pedido confirmado",
+                title: result.data?.success_title || "Pedido enviado correctamente",
+                text: result.data?.message || `Tu pedido #${result.data.order_id} fue enviado con exito y ya esta disponible en la seccion Pedidos.`,
+                actionsHtml: `
+                    <div class="rkm-order-feedback__actions">
+                        <a href="${result.data.redirect}" class="rkm-btn rkm-btn--primary">
+                            ${result.data?.redirect_label || "Ver mis pedidos"}
+                        </a>
+                        <button type="button" class="rkm-btn rkm-btn--secondary" id="rkm-new-order-again">
+                            Crear otra orden
+                        </button>
+                    </div>
+                `,
+            });
+
+            const newOrderBtn = document.getElementById("rkm-new-order-again");
+            if (newOrderBtn) {
+                newOrderBtn.addEventListener("click", () => {
+                    hideFeedback();
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                });
+            }
+        } catch (error) {
+            console.error(error);
+            showCheckoutModalError(error.message || "Ocurrio un error al generar el pedido.");
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Enviar pedido";
+        }
+    }
+
     function renderSummary() {
         if (!summaryCard) return;
 
@@ -684,10 +989,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 </div>
 
                 ${renderActiveCustomerContext()}
-
-                ${renderPaymentTermSection(0)}
-
-                ${renderPaymentSection()}
 
                 <div class="rkm-order-summary__empty-state">
                     <p class="rkm-order-summary__empty">No hay productos en el pedido</p>
@@ -708,8 +1009,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 <button class="rkm-btn rkm-btn--primary rkm-btn-block" disabled>Continuar</button>
             `;
-            bindPaymentTermEvents();
-            bindPaymentSectionEvents();
             saveOrderDraft();
             return;
         }
@@ -751,38 +1050,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 </div>
             `;
         }).join("");
-        const paymentCalculations = getPaymentCalculations(subtotalGeneral);
-        const termRows = [];
-
-        if (paymentCalculations.discountAmount > 0) {
-            termRows.push(`
-                <div class="rkm-summary-total rkm-summary-total--discount">
-                    <span>Descuento contado (${paymentCalculations.discountPercent}%)</span>
-                    <strong>-${formatPrice(paymentCalculations.discountAmount)}</strong>
-                </div>
-            `);
-        }
-
-        if (paymentCalculations.term === "mixed") {
-            termRows.push(`
-                <div class="rkm-summary-total rkm-summary-total--subtle">
-                    <span>Monto inicial</span>
-                    <strong>${formatPrice(paymentCalculations.upfrontAmount)}</strong>
-                </div>
-                <div class="rkm-summary-total rkm-summary-total--credit">
-                    <span>Saldo a credito</span>
-                    <strong>${formatPrice(paymentCalculations.creditBalance)}</strong>
-                </div>
-            `);
-        } else if (paymentCalculations.term === "credit") {
-            termRows.push(`
-                <div class="rkm-summary-total rkm-summary-total--credit">
-                    <span>Saldo pendiente</span>
-                    <strong>${formatPrice(paymentCalculations.creditBalance)}</strong>
-                </div>
-            `);
-        }
-
         summaryCard.innerHTML = `
             <div class="rkm-order-summary__header">
                 <div>
@@ -794,10 +1061,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
             ${renderActiveCustomerContext()}
 
-            ${renderPaymentTermSection(subtotalGeneral)}
-
-            ${renderPaymentSection()}
-
             <div class="rkm-summary-list">
                 ${rows}
             </div>
@@ -808,21 +1071,18 @@ document.addEventListener("DOMContentLoaded", function () {
                     <strong>${formatPrice(subtotalGeneral)}</strong>
                 </div>
 
-                ${termRows.join("")}
-
                 <div class="rkm-summary-total rkm-summary-total--grand">
                     <span>Total</span>
-                    <strong>${formatPrice(paymentCalculations.finalTotal)}</strong>
+                    <strong>${formatPrice(subtotalGeneral)}</strong>
                 </div>
             </div>
 
             <button class="rkm-btn rkm-btn--primary rkm-btn-block" id="rkm-confirm-order">
-                Confirmar pedido
+                Continuar
             </button>
         `;
 
         bindSummaryEvents();
-        bindPaymentTermEvents();
         highlightSummaryItem(pendingHighlightItemId);
         pendingHighlightItemId = null;
         revealSummaryIfNeeded();
@@ -876,7 +1136,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         const confirmBtn = document.getElementById("rkm-confirm-order");
         if (confirmBtn) {
-            confirmBtn.addEventListener("click", async () => {
+            confirmBtn.addEventListener("click", () => {
                 if (confirmBtn.disabled) {
                     return;
                 }
@@ -888,113 +1148,13 @@ document.addEventListener("DOMContentLoaded", function () {
                     return;
                 }
 
-                const subtotal = items.reduce((total, item) => total + (Number(item.price || 0) * Number(item.quantity || 0)), 0);
-                const paymentState = getPaymentState();
-                const paymentTermState = getPaymentTermState();
-                const paymentCalculations = getPaymentCalculations(subtotal);
-                const selectedTermIsActive = paymentTerms.some((term) => term.key === paymentTermState.term);
-                const needsPaymentMethod = paymentTermState.term === "cash" || paymentTermState.term === "mixed";
-
-                if (!paymentTerms.length) {
-                    showInlineError("No hay condiciones de pago activas para confirmar pedidos.", "Condicion de pago no disponible");
-                    return;
-                }
-
-                if (!selectedTermIsActive) {
-                    showInlineError("Selecciona una condicion de pago valida antes de confirmar el pedido.", "Falta la condicion de pago");
-                    return;
-                }
-
-                if (paymentTermState.term === "mixed" && paymentCalculations.upfrontAmount <= 0) {
-                    showInlineError("Indica el monto inicial para la condicion de pago mixta.", "Falta el monto inicial");
-                    return;
-                }
-
-                if (paymentTermState.term === "mixed" && paymentCalculations.upfrontAmount > paymentCalculations.finalTotal) {
-                    showInlineError("El monto inicial no puede ser mayor al total del pedido.", "Monto inicial invalido");
-                    return;
-                }
-
-                if (needsPaymentMethod && paymentMethods.length && !paymentState.methodId) {
-                    showInlineError("Selecciona una forma de pago antes de confirmar el pedido.", "Falta la forma de pago");
-                    return;
-                }
-
-                confirmBtn.disabled = true;
-                confirmBtn.textContent = "Procesando...";
-
-                try {
-                    const formData = new FormData();
-                    formData.append("action", "rkm_create_order");
-                    formData.append("nonce", rkmOrders.nonce);
-                    formData.append("items", JSON.stringify(items));
-                    formData.append("payment_term", paymentTermState.term);
-                    formData.append("cash_discount", String(paymentCalculations.discountPercent));
-                    formData.append("upfront_amount", String(paymentCalculations.upfrontAmount));
-                    formData.append("payment_method_id", needsPaymentMethod ? paymentState.methodId : "");
-                    formData.append("payment_note", needsPaymentMethod ? paymentState.note : "");
-
-                    if (window.rkmOrderContext && window.rkmOrderContext.active_customer_id) {
-                        formData.append("customer_id", String(window.rkmOrderContext.active_customer_id));
-                    }
-
-                    const response = await fetch(rkmOrders.ajax_url, {
-                        method: "POST",
-                        body: formData,
-                        credentials: "same-origin",
-                    });
-
-                    const result = await response.json();
-
-                    if (!result.success) {
-                        throw new Error(result.data?.message || "No se pudo generar el pedido.");
-                    }
-
-                    orderItems = {};
-                    clearOrderDraft();
-                    renderSummary();
-
-                    showFeedback({
-                        icon: "&#10003;",
-                        eyebrow: "Pedido confirmado",
-                        title: result.data?.success_title || "Pedido enviado correctamente",
-                        text: result.data?.message || `Tu pedido #${result.data.order_id} fue enviado con exito y ya esta disponible en la seccion Pedidos.`,
-                        actionsHtml: `
-                            <div class="rkm-order-feedback__actions">
-                                <a href="${result.data.redirect}" class="rkm-btn rkm-btn--primary">
-                                    ${result.data?.redirect_label || "Ver mis pedidos"}
-                                </a>
-                                <button type="button" class="rkm-btn rkm-btn--secondary" id="rkm-new-order-again">
-                                    Crear otra orden
-                                </button>
-                            </div>
-                        `,
-                    });
-
-                    const newOrderBtn = document.getElementById("rkm-new-order-again");
-                    if (newOrderBtn) {
-                        newOrderBtn.addEventListener("click", () => {
-                            hideFeedback();
-                            window.scrollTo({ top: 0, behavior: "smooth" });
-                        });
-                    }
-                } catch (error) {
-                    console.error(error);
-                    showInlineError(error.message || "Ocurrio un error al generar el pedido.", "No se pudo enviar el pedido");
-                } finally {
-                    confirmBtn.disabled = false;
-                    confirmBtn.textContent = "Confirmar pedido";
-                }
+                openCheckoutModal();
             });
         }
-
-        bindPaymentSectionEvents();
     }
 
     if (summaryCard) {
         cleanupLegacyStorageKeys();
-        bindPaymentTermEvents();
-        bindPaymentSectionEvents();
 
         cards.forEach((card) => {
             const btn = card.querySelector(".rkm-add-to-summary");
@@ -1056,6 +1216,12 @@ document.addEventListener("DOMContentLoaded", function () {
             loadOrderDraftIfExists();
         }
     }
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && checkoutModalOpen) {
+            closeCheckoutModal();
+        }
+    });
 
     // ========================
     // MODALES DIRECCIONES
