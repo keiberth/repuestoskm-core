@@ -54,14 +54,14 @@
     color: #166534;
 }
 
-.rkm-admin-products-publication__actions .rkm-admin-products-action,
-.rkm-admin-products-publication__actions a.rkm-admin-products-action,
-.rkm-admin-products-publication__actions button.rkm-admin-products-action {
+.rkm-app .rkm-admin-products-page .rkm-admin-products-publication__actions .rkm-admin-products-action,
+.rkm-app .rkm-admin-products-page .rkm-admin-products-publication__actions a.rkm-admin-products-action,
+.rkm-app .rkm-admin-products-page .rkm-admin-products-publication__actions button.rkm-admin-products-action {
     appearance: none;
     align-items: center;
     border: 1px solid transparent;
     border-radius: 8px;
-    box-shadow: none;
+    box-shadow: none !important;
     cursor: pointer;
     display: inline-flex;
     font: inherit;
@@ -77,52 +77,68 @@
     white-space: nowrap;
 }
 
-.rkm-admin-products-action--edit {
-    background: #eff6ff;
-    border-color: #bfdbfe;
-    color: #1d4ed8;
+.rkm-app .rkm-admin-products-page .rkm-admin-products-publication__actions .rkm-admin-products-action--edit {
+    background: #dbeafe !important;
+    border-color: #93c5fd !important;
+    box-shadow: 0 1px 2px rgba(30, 64, 175, 0.10) !important;
+    color: #1d4ed8 !important;
 }
 
-.rkm-admin-products-action--edit:hover {
-    background: #dbeafe;
-    border-color: #93c5fd;
-    color: #1e40af;
+.rkm-app .rkm-admin-products-page .rkm-admin-products-publication__actions .rkm-admin-products-action--edit:hover,
+.rkm-app .rkm-admin-products-page .rkm-admin-products-publication__actions .rkm-admin-products-action--edit:focus-visible {
+    background: #bfdbfe !important;
+    border-color: #60a5fa !important;
+    box-shadow: 0 6px 14px rgba(30, 64, 175, 0.14) !important;
+    color: #1e40af !important;
 }
 
-.rkm-admin-products-action--view {
-    background: #f8fafc;
-    border-color: #cbd5e1;
-    color: #334155;
+.rkm-app .rkm-admin-products-page .rkm-admin-products-publication__actions .rkm-admin-products-action--view {
+    background: #e2e8f0 !important;
+    border-color: #94a3b8 !important;
+    box-shadow: 0 1px 2px rgba(51, 65, 85, 0.10) !important;
+    color: #334155 !important;
 }
 
-.rkm-admin-products-action--view:hover {
-    background: #eef2ff;
-    border-color: #c7d2fe;
-    color: #3730a3;
+.rkm-app .rkm-admin-products-page .rkm-admin-products-publication__actions .rkm-admin-products-action--view:hover,
+.rkm-app .rkm-admin-products-page .rkm-admin-products-publication__actions .rkm-admin-products-action--view:focus-visible {
+    background: #cbd5e1 !important;
+    border-color: #64748b !important;
+    box-shadow: 0 6px 14px rgba(51, 65, 85, 0.14) !important;
+    color: #1e293b !important;
 }
 
-.rkm-admin-products-action--pause {
-    background: #fff7ed;
-    border-color: #fed7aa;
-    color: #9a3412;
+.rkm-app .rkm-admin-products-page .rkm-admin-products-publication__actions .rkm-admin-products-action--pause {
+    background: #ffedd5 !important;
+    border-color: #fdba74 !important;
+    box-shadow: 0 1px 2px rgba(154, 52, 18, 0.10) !important;
+    color: #9a3412 !important;
 }
 
-.rkm-admin-products-action--pause:hover {
-    background: #ffedd5;
-    border-color: #fdba74;
-    color: #7c2d12;
+.rkm-app .rkm-admin-products-page .rkm-admin-products-publication__actions .rkm-admin-products-action--pause:hover,
+.rkm-app .rkm-admin-products-page .rkm-admin-products-publication__actions .rkm-admin-products-action--pause:focus-visible {
+    background: #fed7aa !important;
+    border-color: #fb923c !important;
+    box-shadow: 0 6px 14px rgba(154, 52, 18, 0.14) !important;
+    color: #7c2d12 !important;
 }
 
-.rkm-admin-products-action--activate {
-    background: #ecfdf5;
-    border-color: #a7f3d0;
-    color: #047857;
+.rkm-app .rkm-admin-products-page .rkm-admin-products-publication__actions button.rkm-admin-products-action--activate,
+.rkm-app .rkm-admin-products-page .rkm-admin-products-publication__actions .rkm-admin-products-action--activate {
+    background: #d1fae5 !important;
+    border-color: #6ee7b7 !important;
+    box-shadow: 0 1px 2px rgba(4, 120, 87, 0.10) !important;
+    color: #047857 !important;
 }
 
-.rkm-admin-products-action--activate:hover {
-    background: #d1fae5;
-    border-color: #6ee7b7;
-    color: #065f46;
+.rkm-app .rkm-admin-products-page .rkm-admin-products-publication__actions button.rkm-admin-products-action--activate:hover,
+.rkm-app .rkm-admin-products-page .rkm-admin-products-publication__actions button.rkm-admin-products-action--activate:focus,
+.rkm-app .rkm-admin-products-page .rkm-admin-products-publication__actions button.rkm-admin-products-action--activate:focus-visible,
+.rkm-app .rkm-admin-products-page .rkm-admin-products-publication__actions .rkm-admin-products-action--activate:hover,
+.rkm-app .rkm-admin-products-page .rkm-admin-products-publication__actions .rkm-admin-products-action--activate:focus-visible {
+    background: #a7f3d0 !important;
+    border-color: #34d399 !important;
+    box-shadow: 0 6px 14px rgba(4, 120, 87, 0.14) !important;
+    color: #065f46 !important;
 }
 
 .rkm-admin-products-shell {
