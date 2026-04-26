@@ -8,6 +8,9 @@ $product_form_data = isset($data['product_form_data']) && is_array($data['produc
 $categories = isset($data['categories']) && is_array($data['categories']) ? $data['categories'] : [];
 $status_options = isset($data['status_options']) && is_array($data['status_options']) ? $data['status_options'] : [];
 $section_url = $data['section_url'] ?? home_url('/mi-cuenta/panel/?section=productos');
+$list_url = $data['list_url'] ?? $section_url;
+$form_action = 'update_product';
+$is_edit = true;
 ?>
 
 <section class="rkm-card rkm-admin-products-form-card rkm-admin-products-editor">

@@ -351,7 +351,7 @@ class RKM_Products {
             'name' => $product->get_name(),
             'sku' => $product->get_sku(),
             'category_ids' => $product->get_category_ids(),
-            'short_description' => $product->get_short_description(),
+            'short_description' => wp_strip_all_tags($product->get_short_description()),
             'description' => $product->get_description(),
             'regular_price' => $product->get_regular_price(),
             'cost_price' => $product->get_meta('_rkm_cost_price', true),

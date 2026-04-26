@@ -3,23 +3,31 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-$is_edit = ($data['view'] ?? '') === 'edit';
-$form_action = $data['form_action'] ?? 'create_product';
-$product_form_data = $is_edit && isset($data['product_form_data']) && is_array($data['product_form_data'])
-    ? $data['product_form_data']
-    : [
-        'id' => 0,
-        'name' => '',
-        'sku' => '',
-        'category_ids' => [],
-        'short_description' => '',
-        'description' => '',
-        'regular_price' => '',
-        'cost_price' => '',
-        'stock' => 0,
-        'status' => 'publish',
-        'image_id' => 0,
-    ];
+$is_edit = isset($is_edit) ? (bool) $is_edit : (($data['view'] ?? '') === 'edit');
+$form_action = isset($form_action) ? $form_action : ($data['form_action'] ?? 'create_product');
+$section_url = isset($section_url) ? $section_url : ($data['section_url'] ?? home_url('/mi-cuenta/panel/?section=productos'));
+$list_url = isset($list_url) ? $list_url : ($data['list_url'] ?? $section_url);
+$categories = isset($categories) && is_array($categories) ? $categories : (isset($data['categories']) && is_array($data['categories']) ? $data['categories'] : []);
+$status_options = isset($status_options) && is_array($status_options) ? $status_options : (isset($data['status_options']) && is_array($data['status_options']) ? $data['status_options'] : []);
+$default_product_form_data = [
+    'id' => 0,
+    'name' => '',
+    'sku' => '',
+    'category_ids' => [],
+    'short_description' => '',
+    'description' => '',
+    'regular_price' => '',
+    'cost_price' => '',
+    'stock' => 0,
+    'status' => 'publish',
+    'image_id' => 0,
+];
+$product_form_data = isset($product_form_data) && is_array($product_form_data)
+    ? $product_form_data
+    : (isset($data['product_form_data']) && is_array($data['product_form_data']) ? $data['product_form_data'] : []);
+$product_form_data = array_merge($default_product_form_data, $product_form_data);
+$product_form_data['category_ids'] = array_map('intval', (array) $product_form_data['category_ids']);
+$short_description_value = wp_strip_all_tags((string) $product_form_data['short_description']);
 $image_url = !empty($product_form_data['image_id']) ? wp_get_attachment_image_url((int) $product_form_data['image_id'], 'medium') : '';
 ?>
 
@@ -62,7 +70,7 @@ $image_url = !empty($product_form_data['image_id']) ? wp_get_attachment_image_ur
                 <select name="category_ids[]" <?php echo empty($categories) ? 'disabled' : ''; ?>>
                     <option value="">Sin categoria</option>
                     <?php foreach ($categories as $category) : ?>
-                        <option value="<?php echo esc_attr((string) $category->term_id); ?>" <?php echo in_array((int) $category->term_id, array_map('intval', $product_form_data['category_ids']), true) ? 'selected' : ''; ?>>
+                        <option value="<?php echo esc_attr((string) $category->term_id); ?>" <?php echo in_array((int) $category->term_id, $product_form_data['category_ids'], true) ? 'selected' : ''; ?>>
                             <?php echo esc_html($category->name); ?>
                         </option>
                     <?php endforeach; ?>
@@ -99,7 +107,7 @@ $image_url = !empty($product_form_data['image_id']) ? wp_get_attachment_image_ur
 
             <label class="rkm-admin-products-field">
                 <span>Descripcion corta</span>
-                <textarea name="short_description" rows="4" placeholder="Resumen visible en listados"><?php echo esc_textarea($product_form_data['short_description']); ?></textarea>
+                <textarea name="short_description" rows="4" placeholder="Resumen visible en listados"><?php echo esc_textarea($short_description_value); ?></textarea>
             </label>
 
             <label class="rkm-admin-products-field">
@@ -132,6 +140,6 @@ $image_url = !empty($product_form_data['image_id']) ? wp_get_attachment_image_ur
         <button type="submit" class="rkm-btn rkm-btn--primary">
             <?php echo $is_edit ? 'Guardar cambios' : 'Crear publicacion'; ?>
         </button>
-        <a class="rkm-admin-products-link" href="<?php echo esc_url($data['list_url'] ?? $section_url); ?>">Cancelar</a>
+        <a class="rkm-admin-products-link" href="<?php echo esc_url($list_url); ?>">Cancelar</a>
     </div>
 </form>

@@ -6,6 +6,10 @@ if (!defined('ABSPATH')) {
 $categories = isset($data['categories']) && is_array($data['categories']) ? $data['categories'] : [];
 $status_options = isset($data['status_options']) && is_array($data['status_options']) ? $data['status_options'] : [];
 $section_url = $data['section_url'] ?? home_url('/mi-cuenta/panel/?section=productos');
+$list_url = $data['list_url'] ?? $section_url;
+$form_action = 'create_product';
+$is_edit = false;
+$product_form_data = [];
 ?>
 
 <section class="rkm-card rkm-admin-products-form-card rkm-admin-products-editor">
