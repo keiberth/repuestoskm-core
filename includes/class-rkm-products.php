@@ -24,8 +24,8 @@ class RKM_Products {
         return self::SECTION_KEY;
     }
 
-    public static function get_section_url() {
-        return home_url('/mi-cuenta/panel/?section=' . self::SECTION_KEY);
+    public static function get_section_url($args = []) {
+        return add_query_arg(array_merge(['section' => self::SECTION_KEY], $args), home_url('/mi-cuenta/panel/'));
     }
 
     public static function get_page_title() {
@@ -33,7 +33,7 @@ class RKM_Products {
     }
 
     public static function get_page_subtitle() {
-        return 'Gestiona productos WooCommerce desde el panel RKM sin entrar al administrador de WordPress.';
+        return 'Gestiona publicaciones WooCommerce desde el panel RKM sin entrar al administrador de WordPress.';
     }
 
     public function enqueue_assets() {
@@ -63,23 +63,53 @@ class RKM_Products {
             exit;
         }
 
-        $page = isset($_GET['products_page']) ? max(1, absint($_GET['products_page'])) : 1;
-        $search = isset($_GET['product_search']) ? sanitize_text_field(wp_unslash($_GET['product_search'])) : '';
-        $products_data = $this->get_products_data($page, $search);
-
+        $view = $this->get_current_view();
         $view_data = array_merge($data, [
             'page_title' => self::get_page_title(),
             'page_subtitle' => self::get_page_subtitle(),
             'current_section' => self::get_section_key(),
             'products_notice' => $this->consume_flash_notice(),
-            'products' => $products_data['products'],
-            'products_total' => $products_data['total'],
-            'products_max_pages' => $products_data['max_num_pages'],
-            'products_page' => $page,
-            'product_search' => $search,
             'section_url' => self::get_section_url(),
+            'list_url' => self::get_section_url(),
+            'create_url' => self::get_section_url(['view' => 'create']),
+            'view' => $view,
             'status_options' => $this->get_status_options(),
+            'categories' => $this->get_product_categories(),
         ]);
+
+        if ($view === 'create') {
+            $view_data['form_action'] = 'create_product';
+            $view_data['product'] = null;
+        } elseif ($view === 'edit') {
+            $product_id = isset($_GET['product_id']) ? absint($_GET['product_id']) : 0;
+            $product = $this->get_editable_product($product_id);
+
+            if (!$product) {
+                $this->set_flash_notice('error', 'No se encontro el producto seleccionado.');
+                wp_safe_redirect(self::get_section_url());
+                exit;
+            }
+
+            $view_data['form_action'] = 'update_product';
+            $view_data['product'] = $product;
+            $view_data['product_form_data'] = $this->get_product_form_data($product);
+        } else {
+            $page = isset($_GET['products_page']) ? max(1, absint($_GET['products_page'])) : 1;
+            $search = isset($_GET['product_search']) ? sanitize_text_field(wp_unslash($_GET['product_search'])) : '';
+            $status = isset($_GET['product_status']) ? sanitize_key(wp_unslash($_GET['product_status'])) : '';
+            $category_id = isset($_GET['product_cat']) ? absint($_GET['product_cat']) : 0;
+            $products_data = $this->get_products_data($page, $search, $status, $category_id);
+
+            $view_data = array_merge($view_data, [
+                'products' => $products_data['products'],
+                'products_total' => $products_data['total'],
+                'products_max_pages' => $products_data['max_num_pages'],
+                'products_page' => $page,
+                'product_search' => $search,
+                'product_status' => $status,
+                'product_cat' => $category_id,
+            ]);
+        }
 
         $template = RKM_CORE_PATH . 'templates/admin/products.php';
 
@@ -96,24 +126,33 @@ class RKM_Products {
 
         if (!isset($_POST['rkm_products_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['rkm_products_nonce'])), 'rkm_products_update')) {
             $this->set_flash_notice('error', 'La solicitud no es valida. Recarga la pagina e intenta nuevamente.');
-            $this->redirect_back();
+            $this->redirect_to(self::get_section_url());
         }
 
         $action = isset($_POST['rkm_products_action']) ? sanitize_key(wp_unslash($_POST['rkm_products_action'])) : '';
 
         if ($action === 'create_product') {
-            $this->create_product();
+            $this->save_product(null);
         }
 
         if ($action === 'update_product') {
-            $this->update_product();
+            $product_id = isset($_POST['product_id']) ? absint($_POST['product_id']) : 0;
+            $this->save_product($product_id);
+        }
+
+        if ($action === 'pause_product') {
+            $this->change_product_status('draft');
+        }
+
+        if ($action === 'activate_product') {
+            $this->change_product_status('publish');
         }
 
         $this->set_flash_notice('error', 'Accion no reconocida.');
-        $this->redirect_back();
+        $this->redirect_to(self::get_section_url());
     }
 
-    private function get_products_data($page, $search) {
+    private function get_products_data($page, $search, $status, $category_id) {
         if (!function_exists('wc_get_products')) {
             return [
                 'products' => [],
@@ -129,11 +168,19 @@ class RKM_Products {
             'paginate' => true,
             'orderby' => 'date',
             'order' => 'DESC',
-            'status' => ['publish', 'draft', 'pending', 'private'],
+            'status' => $status !== '' ? [$this->sanitize_product_status($status)] : ['publish', 'draft', 'private'],
         ];
 
         if ($search !== '') {
             $args['s'] = $search;
+        }
+
+        if ($category_id > 0) {
+            $term = get_term($category_id, 'product_cat');
+
+            if ($term && !is_wp_error($term)) {
+                $args['category'] = [$term->slug];
+            }
         }
 
         $result = wc_get_products($args);
@@ -153,31 +200,26 @@ class RKM_Products {
         ];
     }
 
-    private function create_product() {
+    private function save_product($product_id = null) {
         if (!class_exists('WC_Product_Simple')) {
-            $this->set_flash_notice('error', 'WooCommerce no esta disponible para crear productos.');
-            $this->redirect_back();
+            $this->set_flash_notice('error', 'WooCommerce no esta disponible para guardar productos.');
+            $this->redirect_to(self::get_section_url());
         }
 
-        $name = isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : '';
-        $price = $this->parse_price($_POST['price'] ?? '');
-        $stock = isset($_POST['stock']) ? max(0, absint($_POST['stock'])) : 0;
-        $description = isset($_POST['description']) ? wp_kses_post(wp_unslash($_POST['description'])) : '';
-        $status = $this->sanitize_product_status($_POST['status'] ?? 'publish');
+        $is_edit = $product_id !== null;
+        $product = $is_edit ? $this->get_editable_product($product_id) : new WC_Product_Simple();
 
-        if ($name === '') {
-            $this->set_flash_notice('error', 'El nombre del producto es obligatorio.');
-            $this->redirect_back();
+        if (!$product) {
+            $this->set_flash_notice('error', 'No se encontro el producto seleccionado.');
+            $this->redirect_to(self::get_section_url());
         }
 
-        if ($price < 0) {
-            $this->set_flash_notice('error', 'El precio no puede ser negativo.');
-            $this->redirect_back();
-        }
+        $form_data = $this->get_submitted_product_data();
+        $validation = $this->validate_product_data($form_data, $is_edit ? (int) $product->get_id() : 0);
 
-        if ($this->product_name_exists($name)) {
-            $this->set_flash_notice('error', 'Ya existe un producto con ese nombre.');
-            $this->redirect_back();
+        if (is_wp_error($validation)) {
+            $this->set_flash_notice('error', $validation->get_error_message());
+            $this->redirect_to($is_edit ? self::get_section_url(['view' => 'edit', 'product_id' => (int) $product->get_id()]) : self::get_section_url(['view' => 'create']));
         }
 
         $image_id = 0;
@@ -187,67 +229,191 @@ class RKM_Products {
 
             if (is_wp_error($image_id)) {
                 $this->set_flash_notice('error', $image_id->get_error_message());
-                $this->redirect_back();
+                $this->redirect_to($is_edit ? self::get_section_url(['view' => 'edit', 'product_id' => (int) $product->get_id()]) : self::get_section_url(['view' => 'create']));
             }
         }
 
-        $product = new WC_Product_Simple();
-        $product->set_name($name);
-        $product->set_status($status);
-        $product->set_regular_price((string) $price);
-        $product->set_price((string) $price);
-        $product->set_manage_stock(true);
-        $product->set_stock_quantity($stock);
-        $product->set_stock_status($stock > 0 ? 'instock' : 'outofstock');
-        $product->set_description($description);
+        try {
+            $product->set_name($form_data['name']);
+            $product->set_sku($form_data['sku']);
+            $product->set_status($form_data['status']);
+            $product->set_regular_price((string) $form_data['regular_price']);
+            $product->set_price((string) $form_data['regular_price']);
+            $product->set_manage_stock(true);
+            $product->set_stock_quantity($form_data['stock']);
+            $product->set_stock_status($form_data['stock'] > 0 ? 'instock' : 'outofstock');
+            $product->set_short_description($form_data['short_description']);
+            $product->set_description($form_data['description']);
+            $product->set_category_ids($form_data['category_ids']);
+            $product->update_meta_data('_rkm_cost_price', $form_data['cost_price']);
 
-        if ($image_id > 0) {
-            $product->set_image_id($image_id);
-        }
+            if ($image_id > 0) {
+                $product->set_image_id($image_id);
+            }
 
-        $product_id = $product->save();
-
-        if (!$product_id) {
+            $saved_id = $product->save();
+        } catch (Exception $exception) {
             if ($image_id > 0) {
                 wp_delete_attachment($image_id, true);
             }
 
-            $this->set_flash_notice('error', 'No se pudo crear el producto.');
-            $this->redirect_back();
+            $this->set_flash_notice('error', 'No se pudo guardar el producto: ' . $exception->getMessage());
+            $this->redirect_to($is_edit ? self::get_section_url(['view' => 'edit', 'product_id' => (int) $product->get_id()]) : self::get_section_url(['view' => 'create']));
         }
 
-        $this->set_flash_notice('success', 'Producto creado correctamente.');
-        $this->redirect_back();
+        if (!$saved_id) {
+            if ($image_id > 0) {
+                wp_delete_attachment($image_id, true);
+            }
+
+            $this->set_flash_notice('error', 'No se pudo guardar el producto.');
+            $this->redirect_to($is_edit ? self::get_section_url(['view' => 'edit', 'product_id' => (int) $product->get_id()]) : self::get_section_url(['view' => 'create']));
+        }
+
+        $this->set_flash_notice('success', $is_edit ? 'Producto actualizado correctamente.' : 'Producto creado correctamente.');
+        $this->redirect_to(self::get_section_url());
     }
 
-    private function update_product() {
+    private function change_product_status($status) {
         $product_id = isset($_POST['product_id']) ? absint($_POST['product_id']) : 0;
+        $product = $this->get_editable_product($product_id);
+
+        if (!$product) {
+            $this->set_flash_notice('error', 'No se encontro el producto seleccionado.');
+            $this->redirect_to(self::get_section_url());
+        }
+
+        $product->set_status($this->sanitize_product_status($status));
+        $product->save();
+
+        $this->set_flash_notice('success', $status === 'publish' ? 'Publicacion activada correctamente.' : 'Publicacion pausada correctamente.');
+        $this->redirect_to(self::get_section_url());
+    }
+
+    private function get_submitted_product_data() {
+        $category_ids = isset($_POST['category_ids']) ? array_map('absint', (array) wp_unslash($_POST['category_ids'])) : [];
+        $category_ids = array_values(array_filter($category_ids));
+
+        return [
+            'name' => isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : '',
+            'sku' => isset($_POST['sku']) ? sanitize_text_field(wp_unslash($_POST['sku'])) : '',
+            'category_ids' => $category_ids,
+            'short_description' => isset($_POST['short_description']) ? wp_kses_post(wp_unslash($_POST['short_description'])) : '',
+            'description' => isset($_POST['description']) ? wp_kses_post(wp_unslash($_POST['description'])) : '',
+            'regular_price' => $this->parse_price($_POST['regular_price'] ?? ''),
+            'cost_price' => $this->parse_price($_POST['cost_price'] ?? ''),
+            'stock' => isset($_POST['stock']) ? max(0, absint($_POST['stock'])) : 0,
+            'status' => $this->sanitize_product_status($_POST['status'] ?? 'publish'),
+        ];
+    }
+
+    private function validate_product_data($data, $current_product_id = 0) {
+        if ($data['name'] === '') {
+            return new WP_Error('rkm_product_name_required', 'El nombre del producto es obligatorio.');
+        }
+
+        if ($data['sku'] === '') {
+            return new WP_Error('rkm_product_sku_required', 'El SKU es obligatorio.');
+        }
+
+        if ($this->sku_exists($data['sku'], $current_product_id)) {
+            return new WP_Error('rkm_product_sku_exists', 'Ya existe un producto con ese SKU.');
+        }
+
+        if ($data['regular_price'] < 0 || $data['cost_price'] < 0) {
+            return new WP_Error('rkm_product_price_invalid', 'Los precios no pueden ser negativos.');
+        }
+
+        foreach ($data['category_ids'] as $category_id) {
+            $term = get_term($category_id, 'product_cat');
+
+            if (!$term || is_wp_error($term)) {
+                return new WP_Error('rkm_product_category_invalid', 'Selecciona una categoria valida.');
+            }
+        }
+
+        return true;
+    }
+
+    private function get_editable_product($product_id) {
         $product = $product_id > 0 && function_exists('wc_get_product') ? wc_get_product($product_id) : null;
 
         if (!$product || !is_a($product, 'WC_Product')) {
-            $this->set_flash_notice('error', 'No se encontro el producto seleccionado.');
-            $this->redirect_back();
+            return null;
         }
 
-        $price = $this->parse_price($_POST['price'] ?? '');
-        $stock = isset($_POST['stock']) ? max(0, absint($_POST['stock'])) : 0;
-        $status = $this->sanitize_product_status($_POST['status'] ?? $product->get_status());
+        return $product;
+    }
 
-        if ($price < 0) {
-            $this->set_flash_notice('error', 'El precio no puede ser negativo.');
-            $this->redirect_back();
+    private function get_product_form_data($product) {
+        return [
+            'id' => $product->get_id(),
+            'name' => $product->get_name(),
+            'sku' => $product->get_sku(),
+            'category_ids' => $product->get_category_ids(),
+            'short_description' => $product->get_short_description(),
+            'description' => $product->get_description(),
+            'regular_price' => $product->get_regular_price(),
+            'cost_price' => $product->get_meta('_rkm_cost_price', true),
+            'stock' => $product->get_manage_stock() ? (int) $product->get_stock_quantity() : 0,
+            'status' => $product->get_status(),
+            'image_id' => $product->get_image_id(),
+        ];
+    }
+
+    private function get_product_categories() {
+        $terms = get_terms([
+            'taxonomy' => 'product_cat',
+            'hide_empty' => false,
+            'orderby' => 'name',
+            'order' => 'ASC',
+        ]);
+
+        return is_wp_error($terms) ? [] : $terms;
+    }
+
+    private function get_product_category_label($product) {
+        $category_ids = $product instanceof WC_Product ? $product->get_category_ids() : [];
+
+        if (empty($category_ids)) {
+            return 'Sin categoria';
         }
 
-        $product->set_regular_price((string) $price);
-        $product->set_price((string) $price);
-        $product->set_manage_stock(true);
-        $product->set_stock_quantity($stock);
-        $product->set_stock_status($stock > 0 ? 'instock' : 'outofstock');
-        $product->set_status($status);
-        $product->save();
+        $term = get_term((int) $category_ids[0], 'product_cat');
 
-        $this->set_flash_notice('success', 'Producto actualizado correctamente.');
-        $this->redirect_back();
+        return $term && !is_wp_error($term) ? $term->name : 'Sin categoria';
+    }
+
+    public function get_publication_row($product) {
+        if (!$product instanceof WC_Product) {
+            return null;
+        }
+
+        $image_id = $product->get_image_id();
+
+        return [
+            'id' => $product->get_id(),
+            'name' => $product->get_name(),
+            'sku' => $product->get_sku(),
+            'category' => $this->get_product_category_label($product),
+            'regular_price' => $product->get_regular_price(),
+            'cost_price' => $product->get_meta('_rkm_cost_price', true),
+            'stock' => $product->get_manage_stock() ? (int) $product->get_stock_quantity() : 0,
+            'status' => $product->get_status(),
+            'image_url' => $image_id ? wp_get_attachment_image_url($image_id, 'thumbnail') : '',
+            'edit_url' => self::get_section_url(['view' => 'edit', 'product_id' => $product->get_id()]),
+            'view_url' => get_permalink($product->get_id()),
+        ];
+    }
+
+    private function sku_exists($sku, $current_product_id = 0) {
+        if (!function_exists('wc_get_product_id_by_sku')) {
+            return false;
+        }
+
+        $existing_id = wc_get_product_id_by_sku($sku);
+
+        return $existing_id > 0 && (int) $existing_id !== (int) $current_product_id;
     }
 
     private function has_uploaded_image() {
@@ -308,27 +474,6 @@ class RKM_Products {
         return true;
     }
 
-    private function product_name_exists($name) {
-        if (!function_exists('wc_get_products')) {
-            return false;
-        }
-
-        $products = wc_get_products([
-            'limit' => 10,
-            's' => $name,
-            'status' => ['publish', 'draft', 'pending', 'private'],
-            'return' => 'objects',
-        ]);
-
-        foreach ((array) $products as $product) {
-            if ($product instanceof WC_Product && mb_strtolower($product->get_name()) === mb_strtolower($name)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private function parse_price($value) {
         if (function_exists('wc_format_decimal')) {
             return (float) wc_format_decimal(wp_unslash($value));
@@ -348,10 +493,16 @@ class RKM_Products {
 
     private function get_status_options() {
         return [
-            'publish' => 'Publicado',
-            'draft' => 'Borrador',
-            'private' => 'Privado',
+            'publish' => 'Activa',
+            'draft' => 'Pausada',
+            'private' => 'Privada',
         ];
+    }
+
+    private function get_current_view() {
+        $view = isset($_GET['view']) ? sanitize_key(wp_unslash($_GET['view'])) : 'list';
+
+        return in_array($view, ['list', 'create', 'edit'], true) ? $view : 'list';
     }
 
     private function is_active_section() {
@@ -393,8 +544,8 @@ class RKM_Products {
         return is_array($notice) ? $notice : null;
     }
 
-    private function redirect_back() {
-        wp_safe_redirect(self::get_section_url());
+    private function redirect_to($url) {
+        wp_safe_redirect($url);
         exit;
     }
 }
