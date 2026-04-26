@@ -112,11 +112,17 @@ $products_module = class_exists('RKM_Products') ? new RKM_Products() : null;
                         <div class="rkm-admin-products-publication__metrics">
                             <div>
                                 <span>Venta</span>
-                                <strong><?php echo function_exists('wc_price') ? wp_kses_post(wc_price((float) $row['regular_price'])) : esc_html((string) $row['regular_price']); ?></strong>
+                                <strong class="rkm-admin-products-money">
+                                    <span class="rkm-admin-products-money__symbol">$</span>
+                                    <span class="rkm-admin-products-money__amount"><?php echo esc_html(number_format((float) $row['regular_price'], 2, ',', '.')); ?></span>
+                                </strong>
                             </div>
                             <div>
                                 <span>Costo</span>
-                                <strong><?php echo function_exists('wc_price') ? wp_kses_post(wc_price((float) $row['cost_price'])) : esc_html((string) $row['cost_price']); ?></strong>
+                                <strong class="rkm-admin-products-money">
+                                    <span class="rkm-admin-products-money__symbol">$</span>
+                                    <span class="rkm-admin-products-money__amount"><?php echo esc_html(number_format((float) $row['cost_price'], 2, ',', '.')); ?></span>
+                                </strong>
                             </div>
                             <div>
                                 <span>Stock</span>
@@ -126,10 +132,10 @@ $products_module = class_exists('RKM_Products') ? new RKM_Products() : null;
                     </div>
 
                     <div class="rkm-admin-products-publication__actions">
-                        <a class="rkm-admin-products-link" href="<?php echo esc_url($row['edit_url']); ?>">Editar</a>
+                        <a class="rkm-admin-products-action rkm-admin-products-action--edit" href="<?php echo esc_url($row['edit_url']); ?>">Editar</a>
 
                         <?php if ($row['view_url']) : ?>
-                            <a class="rkm-admin-products-link" href="<?php echo esc_url($row['view_url']); ?>" target="_blank" rel="noopener">Ver</a>
+                            <a class="rkm-admin-products-action rkm-admin-products-action--view" href="<?php echo esc_url($row['view_url']); ?>" target="_blank" rel="noopener">Ver</a>
                         <?php endif; ?>
 
                         <form method="post" action="<?php echo esc_url($section_url); ?>">
@@ -138,10 +144,10 @@ $products_module = class_exists('RKM_Products') ? new RKM_Products() : null;
 
                             <?php if ($row['status'] === 'publish') : ?>
                                 <input type="hidden" name="rkm_products_action" value="pause_product">
-                                <button type="submit" class="rkm-admin-products-link rkm-admin-products-link--warning">Pausar</button>
+                                <button type="submit" class="rkm-admin-products-action rkm-admin-products-action--pause">Pausar</button>
                             <?php else : ?>
                                 <input type="hidden" name="rkm_products_action" value="activate_product">
-                                <button type="submit" class="rkm-admin-products-link rkm-admin-products-link--success">Activar</button>
+                                <button type="submit" class="rkm-admin-products-action rkm-admin-products-action--activate">Activar</button>
                             <?php endif; ?>
                         </form>
                     </div>

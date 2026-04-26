@@ -54,6 +54,77 @@
     color: #166534;
 }
 
+.rkm-admin-products-publication__actions .rkm-admin-products-action,
+.rkm-admin-products-publication__actions a.rkm-admin-products-action,
+.rkm-admin-products-publication__actions button.rkm-admin-products-action {
+    appearance: none;
+    align-items: center;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    box-shadow: none;
+    cursor: pointer;
+    display: inline-flex;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 850;
+    justify-content: center;
+    line-height: 1;
+    min-height: 38px;
+    padding: 0 14px;
+    text-decoration: none;
+    text-transform: none;
+    transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease;
+    white-space: nowrap;
+}
+
+.rkm-admin-products-action--edit {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+}
+
+.rkm-admin-products-action--edit:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
+    color: #1e40af;
+}
+
+.rkm-admin-products-action--view {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #334155;
+}
+
+.rkm-admin-products-action--view:hover {
+    background: #eef2ff;
+    border-color: #c7d2fe;
+    color: #3730a3;
+}
+
+.rkm-admin-products-action--pause {
+    background: #fff7ed;
+    border-color: #fed7aa;
+    color: #9a3412;
+}
+
+.rkm-admin-products-action--pause:hover {
+    background: #ffedd5;
+    border-color: #fdba74;
+    color: #7c2d12;
+}
+
+.rkm-admin-products-action--activate {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    color: #047857;
+}
+
+.rkm-admin-products-action--activate:hover {
+    background: #d1fae5;
+    border-color: #6ee7b7;
+    color: #065f46;
+}
+
 .rkm-admin-products-shell {
     display: grid;
     gap: 20px;
@@ -320,6 +391,28 @@
 .rkm-admin-products-publication__metrics strong {
     color: #0f172a;
     font-size: 15px;
+}
+
+.rkm-admin-products-money {
+    align-items: baseline;
+    display: inline-flex;
+    font-variant-numeric: tabular-nums;
+    gap: 4px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.rkm-admin-products-money__symbol {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 850;
+    transform: translateY(-1px);
+}
+
+.rkm-admin-products-money__amount {
+    color: #0f172a;
+    font-size: 16px;
+    font-weight: 850;
 }
 
 .rkm-admin-products-publication__actions {
