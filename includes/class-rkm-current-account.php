@@ -11,6 +11,7 @@ class RKM_Current_Account {
     const NOTICE_TRANSIENT_PREFIX = 'rkm_current_account_notice_';
     const TABLE_SCHEMA_VERSION = '1.0.0';
     const TABLE_SCHEMA_OPTION = 'rkm_payment_reports_schema_version';
+    const MIGRATION_OPTION = 'rkm_payment_reports_migrated';
     const STATUS_PENDING = 'pending';
     const STATUS_APPROVED = 'approved';
     const STATUS_REJECTED = 'rejected';
@@ -19,6 +20,7 @@ class RKM_Current_Account {
 
     public function init() {
         add_action('init', [$this, 'maybe_install_schema']);
+        add_action('init', [$this, 'maybe_migrate_cpt_payment_reports'], 20);
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
         add_action('template_redirect', [$this, 'handle_submission'], 5);
         add_action('wp_ajax_rkm_current_account_receipt', [$this, 'serve_receipt']);
@@ -109,6 +111,25 @@ class RKM_Current_Account {
     public function maybe_install_schema() {
         if (get_option(self::TABLE_SCHEMA_OPTION) !== self::TABLE_SCHEMA_VERSION) {
             self::install_schema();
+        }
+    }
+
+    public function maybe_migrate_cpt_payment_reports() {
+        if (get_option(self::MIGRATION_OPTION) === '1') {
+            return;
+        }
+
+        self::install_schema();
+        $result = $this->migrate_cpt_payment_reports();
+        update_option(self::MIGRATION_OPTION, '1', false);
+
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(sprintf(
+                '[RKM Current Account] Migracion CPT ejecutada. Migrados: %d. Omitidos: %d. Errores: %d.',
+                $result['migrated'],
+                $result['skipped'],
+                $result['failed']
+            ));
         }
     }
 
@@ -326,17 +347,6 @@ class RKM_Current_Account {
 
         if ($action === 'reject_payment') {
             $this->reject_payment_report($report_id);
-        }
-
-        if ($action === 'migrate_cpt_reports') {
-            $result = $this->migrate_cpt_payment_reports();
-            $this->set_flash_notice('success', sprintf(
-                'Migracion finalizada. Migrados: %d. Omitidos: %d. Errores: %d.',
-                $result['migrated'],
-                $result['skipped'],
-                $result['failed']
-            ));
-            $this->redirect_to(self::get_admin_section_url());
         }
 
         $this->set_flash_notice('error', 'Accion no reconocida.');

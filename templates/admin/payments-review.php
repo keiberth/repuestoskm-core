@@ -39,21 +39,6 @@ $pending_count = count(array_filter($payment_reports, static function ($report) 
                 </div>
             </section>
 
-            <section class="rkm-card rkm-current-account-panel rkm-payments-review-migration">
-                <div class="rkm-current-account-panel__header">
-                    <h2>Migracion desde CPT</h2>
-                    <p>Mueve pagos anteriores desde <code>rkm_payment_report</code> a la tabla propia sin borrar los posts originales.</p>
-                </div>
-
-                <form method="post" action="<?php echo esc_url($section_url); ?>">
-                    <input type="hidden" name="rkm_current_account_action" value="migrate_cpt_reports">
-                    <?php wp_nonce_field('rkm_current_account_review', 'rkm_current_account_nonce'); ?>
-                    <button type="submit" class="rkm-current-account-action rkm-current-account-action--approve">
-                        Migrar pagos existentes
-                    </button>
-                </form>
-            </section>
-
             <?php if (!empty($notice['message'])) : ?>
                 <div class="rkm-current-account-notice rkm-current-account-notice--<?php echo esc_attr($notice['type']); ?>">
                     <p><?php echo esc_html($notice['message']); ?></p>
