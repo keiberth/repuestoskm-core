@@ -15,6 +15,8 @@ if ($view === 'create') {
     $subtemplate = RKM_CORE_PATH . 'templates/admin/products/create.php';
 } elseif ($view === 'edit') {
     $subtemplate = RKM_CORE_PATH . 'templates/admin/products/edit.php';
+} elseif ($view === 'detail') {
+    $subtemplate = RKM_CORE_PATH . 'templates/admin/products/detail.php';
 }
 ?>
 

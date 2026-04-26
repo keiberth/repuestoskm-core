@@ -9,6 +9,7 @@ class RKM_Products {
     const SECTION_KEY = 'productos';
     const NOTICE_TRANSIENT_PREFIX = 'rkm_products_notice_';
     const IMAGE_FIELD = 'product_image';
+    const GALLERY_FIELD = 'gallery_images';
     const IMAGE_MAX_BYTES = 5242880;
 
     public function init() {
@@ -96,19 +97,22 @@ class RKM_Products {
         if ($view === 'create') {
             $view_data['form_action'] = 'create_product';
             $view_data['product'] = null;
-        } elseif ($view === 'edit') {
+        } elseif ($view === 'edit' || $view === 'detail') {
             $product_id = isset($_GET['product_id']) ? absint($_GET['product_id']) : 0;
             $product = $this->get_editable_product($product_id);
 
             if (!$product) {
                 $this->set_flash_notice('error', 'No se encontro el producto seleccionado.');
-                wp_safe_redirect(self::get_section_url());
+                wp_safe_redirect(self::get_list_url());
                 exit;
             }
 
-            $view_data['form_action'] = 'update_product';
             $view_data['product'] = $product;
             $view_data['product_form_data'] = $this->get_product_form_data($product);
+
+            if ($view === 'edit') {
+                $view_data['form_action'] = 'update_product';
+            }
         } else {
             $page = isset($_GET['products_page']) ? max(1, absint($_GET['products_page'])) : 1;
             $search = isset($_GET['product_search']) ? sanitize_text_field(wp_unslash($_GET['product_search'])) : '';
@@ -243,6 +247,7 @@ class RKM_Products {
         }
 
         $image_id = 0;
+        $gallery_image_ids = [];
 
         if ($this->has_uploaded_image()) {
             $image_id = $this->handle_product_image_upload();
@@ -253,7 +258,24 @@ class RKM_Products {
             }
         }
 
+        if ($this->has_uploaded_gallery_images()) {
+            $gallery_image_ids = $this->handle_gallery_image_uploads();
+
+            if (is_wp_error($gallery_image_ids)) {
+                if ($image_id > 0) {
+                    wp_delete_attachment($image_id, true);
+                }
+
+                $this->set_flash_notice('error', $gallery_image_ids->get_error_message());
+                $this->redirect_to($is_edit ? self::get_section_url(['view' => 'edit', 'product_id' => (int) $product->get_id()]) : self::get_section_url(['view' => 'create']));
+            }
+        }
+
         try {
+            $current_gallery_ids = $is_edit ? array_map('absint', (array) $product->get_gallery_image_ids()) : [];
+            $gallery_ids = array_values(array_diff($current_gallery_ids, $form_data['remove_gallery_image_ids']));
+            $gallery_ids = array_values(array_unique(array_merge($gallery_ids, $gallery_image_ids)));
+
             $product->set_name($form_data['name']);
             $product->set_sku($form_data['sku']);
             $product->set_status($form_data['status']);
@@ -265,6 +287,7 @@ class RKM_Products {
             $product->set_short_description($form_data['short_description']);
             $product->set_description($form_data['description']);
             $product->set_category_ids($form_data['category_ids']);
+            $product->set_gallery_image_ids($gallery_ids);
             $product->update_meta_data('_rkm_cost_price', $form_data['cost_price']);
 
             if ($image_id > 0) {
@@ -277,6 +300,7 @@ class RKM_Products {
                 wp_delete_attachment($image_id, true);
             }
 
+            $this->delete_attachments($gallery_image_ids);
             $this->set_flash_notice('error', 'No se pudo guardar el producto: ' . $exception->getMessage());
             $this->redirect_to($is_edit ? self::get_section_url(['view' => 'edit', 'product_id' => (int) $product->get_id()]) : self::get_section_url(['view' => 'create']));
         }
@@ -286,6 +310,7 @@ class RKM_Products {
                 wp_delete_attachment($image_id, true);
             }
 
+            $this->delete_attachments($gallery_image_ids);
             $this->set_flash_notice('error', 'No se pudo guardar el producto.');
             $this->redirect_to($is_edit ? self::get_section_url(['view' => 'edit', 'product_id' => (int) $product->get_id()]) : self::get_section_url(['view' => 'create']));
         }
@@ -324,6 +349,7 @@ class RKM_Products {
             'cost_price' => $this->parse_price($_POST['cost_price'] ?? ''),
             'stock' => isset($_POST['stock']) ? max(0, absint($_POST['stock'])) : 0,
             'status' => $this->sanitize_product_status($_POST['status'] ?? 'publish'),
+            'remove_gallery_image_ids' => $this->get_submitted_gallery_remove_ids(),
         ];
     }
 
@@ -378,6 +404,7 @@ class RKM_Products {
             'stock' => $product->get_manage_stock() ? (int) $product->get_stock_quantity() : 0,
             'status' => $product->get_status(),
             'image_id' => $product->get_image_id(),
+            'gallery_image_ids' => $product->get_gallery_image_ids(),
         ];
     }
 
@@ -422,7 +449,7 @@ class RKM_Products {
             'status' => $product->get_status(),
             'image_url' => $image_id ? wp_get_attachment_image_url($image_id, 'thumbnail') : '',
             'edit_url' => self::get_section_url(['view' => 'edit', 'product_id' => $product->get_id()]),
-            'view_url' => get_permalink($product->get_id()),
+            'view_url' => self::get_section_url(['view' => 'detail', 'product_id' => $product->get_id()]),
         ];
     }
 
@@ -440,6 +467,20 @@ class RKM_Products {
         return !empty($_FILES[self::IMAGE_FIELD])
             && is_array($_FILES[self::IMAGE_FIELD])
             && !empty($_FILES[self::IMAGE_FIELD]['name']);
+    }
+
+    private function has_uploaded_gallery_images() {
+        if (empty($_FILES[self::GALLERY_FIELD]) || !is_array($_FILES[self::GALLERY_FIELD])) {
+            return false;
+        }
+
+        $names = $_FILES[self::GALLERY_FIELD]['name'] ?? [];
+
+        if (!is_array($names)) {
+            return !empty($names);
+        }
+
+        return count(array_filter($names)) > 0;
     }
 
     private function handle_product_image_upload() {
@@ -494,6 +535,138 @@ class RKM_Products {
         return true;
     }
 
+    private function handle_gallery_image_uploads() {
+        $files = $this->normalize_uploaded_gallery_files();
+        $attachment_ids = [];
+
+        if (empty($files)) {
+            return [];
+        }
+
+        if (!function_exists('wp_handle_upload')) {
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+        }
+
+        if (!function_exists('wp_generate_attachment_metadata')) {
+            require_once ABSPATH . 'wp-admin/includes/image.php';
+        }
+
+        foreach ($files as $file) {
+            $validation = $this->validate_gallery_image_file($file);
+
+            if (is_wp_error($validation)) {
+                $this->delete_attachments($attachment_ids);
+                return $validation;
+            }
+
+            $upload = wp_handle_upload($file, [
+                'test_form' => false,
+                'mimes' => $this->get_allowed_image_mimes(),
+            ]);
+
+            if (!empty($upload['error']) || empty($upload['file'])) {
+                $this->delete_attachments($attachment_ids);
+                return new WP_Error('rkm_product_gallery_save_failed', 'No se pudo guardar una imagen de la galeria.');
+            }
+
+            $attachment_id = wp_insert_attachment([
+                'post_mime_type' => $upload['type'] ?? $file['type'],
+                'post_title' => sanitize_file_name(pathinfo($upload['file'], PATHINFO_FILENAME)),
+                'post_content' => '',
+                'post_status' => 'inherit',
+            ], $upload['file']);
+
+            if (is_wp_error($attachment_id) || !$attachment_id) {
+                wp_delete_file($upload['file']);
+                $this->delete_attachments($attachment_ids);
+                return new WP_Error('rkm_product_gallery_attachment_failed', 'No se pudo registrar una imagen de la galeria.');
+            }
+
+            $metadata = wp_generate_attachment_metadata((int) $attachment_id, $upload['file']);
+
+            if (!is_wp_error($metadata) && !empty($metadata)) {
+                wp_update_attachment_metadata((int) $attachment_id, $metadata);
+            }
+
+            $attachment_ids[] = (int) $attachment_id;
+        }
+
+        return $attachment_ids;
+    }
+
+    private function normalize_uploaded_gallery_files() {
+        $gallery = $_FILES[self::GALLERY_FIELD] ?? [];
+        $names = $gallery['name'] ?? [];
+
+        if (!is_array($names)) {
+            return [];
+        }
+
+        $files = [];
+
+        foreach ($names as $index => $name) {
+            if ($name === '') {
+                continue;
+            }
+
+            $files[] = [
+                'name' => $name,
+                'type' => $gallery['type'][$index] ?? '',
+                'tmp_name' => $gallery['tmp_name'][$index] ?? '',
+                'error' => $gallery['error'][$index] ?? UPLOAD_ERR_NO_FILE,
+                'size' => $gallery['size'][$index] ?? 0,
+            ];
+        }
+
+        return $files;
+    }
+
+    private function validate_gallery_image_file($file) {
+        if (!is_array($file) || empty($file['name'])) {
+            return new WP_Error('rkm_product_gallery_empty_file', 'Selecciona imagenes validas para la galeria.');
+        }
+
+        if (!empty($file['error'])) {
+            return new WP_Error('rkm_product_gallery_upload_error', 'No se pudo leer una imagen de la galeria.');
+        }
+
+        if ((int) ($file['size'] ?? 0) > self::IMAGE_MAX_BYTES) {
+            return new WP_Error('rkm_product_gallery_too_large', 'Cada imagen de galeria debe pesar como maximo 5 MB.');
+        }
+
+        $filetype = wp_check_filetype_and_ext($file['tmp_name'], $file['name'], $this->get_allowed_image_mimes());
+
+        if (empty($filetype['ext']) || empty($filetype['type']) || !in_array($filetype['type'], $this->get_allowed_image_mimes(), true)) {
+            return new WP_Error('rkm_product_gallery_invalid_type', 'Las imagenes de galeria deben ser JPG, PNG o WEBP.');
+        }
+
+        return true;
+    }
+
+    private function get_submitted_gallery_remove_ids() {
+        $ids = isset($_POST['remove_gallery_image_ids']) ? (array) wp_unslash($_POST['remove_gallery_image_ids']) : [];
+        $ids = array_map('absint', $ids);
+
+        return array_values(array_filter($ids));
+    }
+
+    private function delete_attachments($attachment_ids) {
+        foreach ((array) $attachment_ids as $attachment_id) {
+            if ((int) $attachment_id > 0) {
+                wp_delete_attachment((int) $attachment_id, true);
+            }
+        }
+    }
+
+    private function get_allowed_image_mimes() {
+        return [
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'webp' => 'image/webp',
+        ];
+    }
+
     private function parse_price($value) {
         if (function_exists('wc_format_decimal')) {
             return (float) wc_format_decimal(wp_unslash($value));
@@ -522,7 +695,7 @@ class RKM_Products {
     private function get_current_view() {
         $view = isset($_GET['view']) ? sanitize_key(wp_unslash($_GET['view'])) : 'list';
 
-        return in_array($view, ['list', 'create', 'edit'], true) ? $view : 'list';
+        return in_array($view, ['list', 'create', 'edit', 'detail'], true) ? $view : 'list';
     }
 
     private function is_active_section() {

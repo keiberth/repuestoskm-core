@@ -22,14 +22,28 @@ $default_product_form_data = [
     'stock' => 0,
     'status' => 'publish',
     'image_id' => 0,
+    'gallery_image_ids' => [],
 ];
 $product_form_data = isset($product_form_data) && is_array($product_form_data)
     ? $product_form_data
     : (isset($data['product_form_data']) && is_array($data['product_form_data']) ? $data['product_form_data'] : []);
 $product_form_data = array_merge($default_product_form_data, $product_form_data);
 $product_form_data['category_ids'] = array_map('intval', (array) $product_form_data['category_ids']);
+$product_form_data['gallery_image_ids'] = array_values(array_filter(array_map('intval', (array) $product_form_data['gallery_image_ids'])));
 $short_description_value = wp_strip_all_tags((string) $product_form_data['short_description']);
 $image_url = !empty($product_form_data['image_id']) ? wp_get_attachment_image_url((int) $product_form_data['image_id'], 'medium') : '';
+$gallery_images = [];
+
+foreach ($product_form_data['gallery_image_ids'] as $gallery_image_id) {
+    $gallery_image_url = wp_get_attachment_image_url($gallery_image_id, 'thumbnail');
+
+    if ($gallery_image_url) {
+        $gallery_images[] = [
+            'id' => $gallery_image_id,
+            'url' => $gallery_image_url,
+        ];
+    }
+}
 ?>
 
 <form method="post" action="<?php echo esc_url($form_url); ?>" enctype="multipart/form-data" class="rkm-admin-products-form rkm-admin-products-form--wide" data-rkm-products-form>
@@ -131,6 +145,30 @@ $image_url = !empty($product_form_data['image_id']) ? wp_get_attachment_image_ur
                 <span><?php echo $is_edit ? 'Reemplazar imagen' : 'Imagen'; ?></span>
                 <input type="file" name="product_image" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" data-rkm-product-image>
                 <small data-rkm-product-image-label>JPG, PNG o WEBP. Maximo 5 MB.</small>
+            </label>
+        </section>
+
+        <section class="rkm-admin-products-editor-section">
+            <h4>Galeria</h4>
+
+            <?php if (!empty($gallery_images)) : ?>
+                <div class="rkm-admin-products-gallery-preview">
+                    <?php foreach ($gallery_images as $gallery_image) : ?>
+                        <label class="rkm-admin-products-gallery-preview__item">
+                            <img src="<?php echo esc_url($gallery_image['url']); ?>" alt="">
+                            <span>
+                                <input type="checkbox" name="remove_gallery_image_ids[]" value="<?php echo esc_attr((string) $gallery_image['id']); ?>">
+                                Quitar de galeria
+                            </span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <label class="rkm-admin-products-field rkm-admin-products-file">
+                <span>Agregar imagenes</span>
+                <input type="file" name="gallery_images[]" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple data-rkm-product-gallery>
+                <small data-rkm-product-gallery-label>JPG, PNG o WEBP. Maximo 5 MB por imagen.</small>
             </label>
         </section>
     </div>

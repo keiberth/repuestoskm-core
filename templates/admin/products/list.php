@@ -135,7 +135,7 @@ $products_module = class_exists('RKM_Products') ? new RKM_Products() : null;
                         <a class="rkm-admin-products-action rkm-admin-products-action--edit" href="<?php echo esc_url($row['edit_url']); ?>">Editar</a>
 
                         <?php if ($row['view_url']) : ?>
-                            <a class="rkm-admin-products-action rkm-admin-products-action--view" href="<?php echo esc_url($row['view_url']); ?>" target="_blank" rel="noopener">Ver</a>
+                            <a class="rkm-admin-products-action rkm-admin-products-action--view" href="<?php echo esc_url($row['view_url']); ?>">Ver</a>
                         <?php endif; ?>
 
                         <form method="post" action="<?php echo esc_url($section_url); ?>">
