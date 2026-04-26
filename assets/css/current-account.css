@@ -100,6 +100,10 @@
     width: 100%;
 }
 
+.rkm-current-account-field input[type="file"] {
+    padding: 9px 12px;
+}
+
 .rkm-current-account-field textarea {
     min-height: 104px;
     resize: vertical;
@@ -179,7 +183,7 @@
 
 .rkm-current-account-table {
     border-collapse: collapse;
-    min-width: 820px;
+    min-width: 1040px;
     width: 100%;
 }
 
@@ -283,6 +287,17 @@
 .rkm-current-account-reviewed {
     background: #f3f4f6;
     color: #6b7280;
+}
+
+.rkm-current-account-receipt-link {
+    color: #0f766e;
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.rkm-current-account-receipt-link:hover {
+    text-decoration: underline;
 }
 
 @media (max-width: 900px) {

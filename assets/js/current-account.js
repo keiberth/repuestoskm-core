@@ -7,8 +7,11 @@
 
     const orderSelect = form.querySelector('[data-rkm-payment-order]');
     const amountInput = form.querySelector('[data-rkm-payment-amount]');
+    const receiptInput = form.querySelector('[data-rkm-payment-receipt]');
     const balanceHint = form.querySelector('[data-rkm-payment-balance]');
     const feedback = form.querySelector('[data-rkm-current-account-feedback]');
+    const maxReceiptSize = 5 * 1024 * 1024;
+    const allowedReceiptTypes = ['image/jpeg', 'image/png', 'application/pdf'];
 
     const formatAmount = (value) => {
         const amount = Number(value || 0);
@@ -60,6 +63,7 @@
     form.addEventListener('submit', (event) => {
         const balance = getSelectedBalance();
         const amount = Number(amountInput ? amountInput.value : 0);
+        const receipt = receiptInput && receiptInput.files.length ? receiptInput.files[0] : null;
 
         if (balance <= 0) {
             event.preventDefault();
@@ -70,6 +74,24 @@
         if (amount <= 0) {
             event.preventDefault();
             setFeedback('Ingresa un monto mayor a cero.');
+            return;
+        }
+
+        if (!receipt) {
+            event.preventDefault();
+            setFeedback('Adjunta el comprobante de pago.');
+            return;
+        }
+
+        if (!allowedReceiptTypes.includes(receipt.type)) {
+            event.preventDefault();
+            setFeedback('El comprobante debe ser JPG, PNG o PDF.');
+            return;
+        }
+
+        if (receipt.size > maxReceiptSize) {
+            event.preventDefault();
+            setFeedback('El comprobante no puede superar 5 MB.');
             return;
         }
 

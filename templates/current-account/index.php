@@ -13,6 +13,8 @@ $section_url = $data['section_url'] ?? home_url('/mi-cuenta/panel/?section=cuent
 $status_labels = isset($data['status_labels']) && is_array($data['status_labels']) ? $data['status_labels'] : [];
 $current_account = class_exists('RKM_Current_Account') ? new RKM_Current_Account() : null;
 $pending_total = $data['pending_total'] ?? 0;
+$is_vendor_context = !empty($data['is_vendor_context']);
+$today = function_exists('wp_date') ? wp_date('Y-m-d', current_time('timestamp')) : date('Y-m-d');
 ?>
 
 <div class="rkm-app rkm-module-app">
@@ -64,7 +66,7 @@ $pending_total = $data['pending_total'] ?? 0;
                             <p>Administracion debe activar al menos una forma de pago para registrar informes.</p>
                         </div>
                     <?php else : ?>
-                        <form method="post" action="<?php echo esc_url($section_url); ?>" class="rkm-current-account-form" data-rkm-current-account-form>
+                        <form method="post" action="<?php echo esc_url($section_url); ?>" enctype="multipart/form-data" class="rkm-current-account-form" data-rkm-current-account-form>
                             <input type="hidden" name="rkm_current_account_action" value="report_payment">
                             <?php wp_nonce_field('rkm_current_account_report', 'rkm_current_account_nonce'); ?>
 
@@ -76,9 +78,10 @@ $pending_total = $data['pending_total'] ?? 0;
                                         <?php
                                         $balance = $current_account ? $current_account->get_order_credit_balance($order) : 0;
                                         $date = $order->get_date_created() ? $order->get_date_created()->date_i18n('d/m/Y') : '-';
+                                        $customer_label = $current_account ? $current_account->get_order_customer_label($order) : '';
                                         ?>
                                         <option value="<?php echo esc_attr((string) $order->get_id()); ?>" data-balance="<?php echo esc_attr((string) $balance); ?>">
-                                            #<?php echo esc_html($order->get_order_number()); ?> - <?php echo esc_html($date); ?> - saldo <?php echo esc_html($current_account ? wp_strip_all_tags($current_account->format_money($balance)) : (string) $balance); ?>
+                                            #<?php echo esc_html($order->get_order_number()); ?><?php echo $is_vendor_context && $customer_label !== '' ? ' - ' . esc_html($customer_label) : ''; ?> - <?php echo esc_html($date); ?> - saldo <?php echo esc_html($current_account ? wp_strip_all_tags($current_account->format_money($balance)) : (string) $balance); ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -91,6 +94,13 @@ $pending_total = $data['pending_total'] ?? 0;
                                     <input type="number" name="amount" min="0.01" step="0.01" required placeholder="0,00" data-rkm-payment-amount>
                                 </label>
 
+                                <label class="rkm-current-account-field">
+                                    <span>Fecha de pago</span>
+                                    <input type="date" name="payment_date" max="<?php echo esc_attr($today); ?>" value="<?php echo esc_attr($today); ?>" required>
+                                </label>
+                            </div>
+
+                            <div class="rkm-current-account-form__row">
                                 <label class="rkm-current-account-field">
                                     <span>Forma de pago</span>
                                     <select name="payment_method_id" required>
@@ -105,6 +115,18 @@ $pending_total = $data['pending_total'] ?? 0;
                             <label class="rkm-current-account-field">
                                 <span>Referencia / comprobante</span>
                                 <input type="text" name="reference" maxlength="160" placeholder="Ej: numero de transferencia o captura enviada">
+                            </label>
+
+                            <label class="rkm-current-account-field rkm-current-account-file">
+                                <span>Comprobante adjunto</span>
+                                <input
+                                    type="file"
+                                    name="receipt"
+                                    required
+                                    accept="<?php echo esc_attr($current_account ? $current_account->get_receipt_accept_attribute() : '.jpg,.jpeg,.png,.pdf'); ?>"
+                                    data-rkm-payment-receipt
+                                >
+                                <small>Formatos permitidos: JPG, PNG o PDF. Tamano maximo: 5 MB.</small>
                             </label>
 
                             <label class="rkm-current-account-field">
@@ -168,8 +190,10 @@ $pending_total = $data['pending_total'] ?? 0;
                                 <tr>
                                     <th>Pedido</th>
                                     <th>Monto</th>
+                                    <th>Fecha pago</th>
                                     <th>Forma</th>
                                     <th>Referencia</th>
+                                    <th>Comprobante</th>
                                     <th>Estado</th>
                                     <th>Fecha</th>
                                 </tr>
@@ -180,8 +204,16 @@ $pending_total = $data['pending_total'] ?? 0;
                                     <tr>
                                         <td>#<?php echo esc_html($report['order_number']); ?></td>
                                         <td><?php echo $current_account ? wp_kses_post($current_account->format_money($report['amount'])) : esc_html((string) $report['amount']); ?></td>
+                                        <td><?php echo esc_html($current_account ? $current_account->format_payment_date($report['payment_date']) : $report['payment_date']); ?></td>
                                         <td><?php echo esc_html($report['payment_method_label']); ?></td>
                                         <td><?php echo esc_html($report['reference'] !== '' ? $report['reference'] : '-'); ?></td>
+                                        <td>
+                                            <?php if (!empty($report['receipt_url'])) : ?>
+                                                <a class="rkm-current-account-receipt-link" href="<?php echo esc_url($report['receipt_url']); ?>" target="_blank" rel="noopener">Ver comprobante</a>
+                                            <?php else : ?>
+                                                -
+                                            <?php endif; ?>
+                                        </td>
                                         <td>
                                             <span class="rkm-current-account-badge rkm-current-account-badge--<?php echo esc_attr($status); ?>">
                                                 <?php echo esc_html($status_labels[$status] ?? ucfirst($status)); ?>

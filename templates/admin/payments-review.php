@@ -39,6 +39,21 @@ $pending_count = count(array_filter($payment_reports, static function ($report) 
                 </div>
             </section>
 
+            <section class="rkm-card rkm-current-account-panel rkm-payments-review-migration">
+                <div class="rkm-current-account-panel__header">
+                    <h2>Migracion desde CPT</h2>
+                    <p>Mueve pagos anteriores desde <code>rkm_payment_report</code> a la tabla propia sin borrar los posts originales.</p>
+                </div>
+
+                <form method="post" action="<?php echo esc_url($section_url); ?>">
+                    <input type="hidden" name="rkm_current_account_action" value="migrate_cpt_reports">
+                    <?php wp_nonce_field('rkm_current_account_review', 'rkm_current_account_nonce'); ?>
+                    <button type="submit" class="rkm-current-account-action rkm-current-account-action--approve">
+                        Migrar pagos existentes
+                    </button>
+                </form>
+            </section>
+
             <?php if (!empty($notice['message'])) : ?>
                 <div class="rkm-current-account-notice rkm-current-account-notice--<?php echo esc_attr($notice['type']); ?>">
                     <p><?php echo esc_html($notice['message']); ?></p>
@@ -64,8 +79,11 @@ $pending_count = count(array_filter($payment_reports, static function ($report) 
                                     <th>Cliente</th>
                                     <th>Pedido</th>
                                     <th>Monto</th>
+                                    <th>Fecha pago</th>
                                     <th>Forma</th>
+                                    <th>Informado por</th>
                                     <th>Referencia</th>
+                                    <th>Comprobante</th>
                                     <th>Estado</th>
                                     <th>Fecha</th>
                                     <th>Acciones</th>
@@ -83,11 +101,23 @@ $pending_count = count(array_filter($payment_reports, static function ($report) 
                                             <small>Saldo: <?php echo esc_html($current_account ? wp_strip_all_tags($current_account->format_money($report['order_balance'])) : (string) $report['order_balance']); ?></small>
                                         </td>
                                         <td><?php echo $current_account ? wp_kses_post($current_account->format_money($report['amount'])) : esc_html((string) $report['amount']); ?></td>
+                                        <td><?php echo esc_html($current_account ? $current_account->format_payment_date($report['payment_date']) : $report['payment_date']); ?></td>
                                         <td><?php echo esc_html($report['payment_method_label']); ?></td>
+                                        <td>
+                                            <?php echo esc_html($report['reported_by_name']); ?>
+                                            <small><?php echo esc_html($report['reported_by_role'] === 'vendor' ? 'Vendedor' : 'Cliente'); ?></small>
+                                        </td>
                                         <td>
                                             <?php echo esc_html($report['reference'] !== '' ? $report['reference'] : '-'); ?>
                                             <?php if ($report['note'] !== '') : ?>
                                                 <small><?php echo esc_html($report['note']); ?></small>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if (!empty($report['receipt_url'])) : ?>
+                                                <a class="rkm-current-account-receipt-link" href="<?php echo esc_url($report['receipt_url']); ?>" target="_blank" rel="noopener">Ver comprobante</a>
+                                            <?php else : ?>
+                                                -
                                             <?php endif; ?>
                                         </td>
                                         <td>

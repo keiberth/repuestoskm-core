@@ -29,8 +29,10 @@ add_action('plugins_loaded', 'rkm_core_init');
 
 function rkm_core_activate() {
     require_once RKM_CORE_PATH . 'includes/class-rkm-routes.php';
+    require_once RKM_CORE_PATH . 'includes/class-rkm-current-account.php';
     $routes = new RKM_Routes();
     $routes->register_endpoints();
+    RKM_Current_Account::install_schema();
     flush_rewrite_rules();
 }
 register_activation_hook(__FILE__, 'rkm_core_activate');
