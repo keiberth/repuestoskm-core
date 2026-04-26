@@ -246,6 +246,15 @@ class RKM_Dashboard {
                 $template = RKM_CORE_PATH . 'templates/dashboard.php';
                 break;
 
+            case 'productos':
+                if (class_exists('RKM_Products')) {
+                    (new RKM_Products())->render_page($data);
+                    return;
+                }
+
+                $template = RKM_CORE_PATH . 'templates/dashboard.php';
+                break;
+
             case 'pagos-clientes':
                 if (class_exists('RKM_Current_Account')) {
                     (new RKM_Current_Account())->render_admin_page($data);

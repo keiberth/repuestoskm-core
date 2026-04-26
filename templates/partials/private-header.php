@@ -33,6 +33,7 @@ $module_labels = [
     'asignaciones'   => 'Asignaciones',
     'formas-pago'    => 'Formas de pago',
     'condiciones-pago' => 'Condiciones de pago',
+    'productos'      => 'Productos',
     'pagos-clientes' => 'Pagos clientes',
     'mi-cuenta'      => 'Mi perfil',
 ];
@@ -110,6 +111,9 @@ $module_label = isset($module_labels[$section]) ? $module_labels[$section] : 'Si
                     <?php endif; ?>
                     <?php if (class_exists('RKM_Payment_Terms') && RKM_Payment_Terms::can_access()) : ?>
                         <a href="<?php echo esc_url(RKM_Payment_Terms::get_section_url()); ?>">Condiciones de pago</a>
+                    <?php endif; ?>
+                    <?php if (class_exists('RKM_Products') && RKM_Products::can_access()) : ?>
+                        <a href="<?php echo esc_url(RKM_Products::get_section_url()); ?>">Productos</a>
                     <?php endif; ?>
                     <?php if (class_exists('RKM_Current_Account') && RKM_Current_Account::can_admin_access()) : ?>
                         <a href="<?php echo esc_url(RKM_Current_Account::get_admin_section_url()); ?>">Pagos clientes</a>

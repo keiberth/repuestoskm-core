@@ -17,6 +17,7 @@ class RKM_Loader {
         require_once RKM_CORE_PATH . 'includes/class-rkm-assignments.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-payment-methods.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-payment-terms.php';
+        require_once RKM_CORE_PATH . 'includes/class-rkm-products.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-sellers.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-orders.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-redirects.php';
@@ -32,6 +33,7 @@ class RKM_Loader {
         (new RKM_Assignments())->init();
         (new RKM_Payment_Methods())->init();
         (new RKM_Payment_Terms())->init();
+        (new RKM_Products())->init();
         (new RKM_Sellers())->init();
         (new RKM_Orders())->init();
         $redirects = new RKM_Redirects();
