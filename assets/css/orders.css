@@ -386,15 +386,15 @@
 .rkm-order-summary .rkm-card {
     background: #fff;
     border: 1px solid #e6eaf0;
-    border-radius: 22px;
-    padding: 22px;
+    border-radius: 18px;
+    padding: 18px;
     box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
 }
 
 .rkm-order-summary__card {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 14px;
     position: static;
 }
 
@@ -408,12 +408,12 @@
 .rkm-order-summary__eyebrow {
     display: inline-flex;
     align-items: center;
-    min-height: 24px;
-    padding: 0 10px;
+    min-height: 22px;
+    padding: 0 9px;
     border-radius: 999px;
     background: #eff6ff;
     color: #1d4ed8;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 800;
     letter-spacing: .08em;
     text-transform: uppercase;
@@ -956,15 +956,15 @@ body.rkm-checkout-modal-open {
 }
 
 .rkm-order-summary .rkm-card h3 {
-    margin: 8px 0 0;
-    font-size: 20px;
+    margin: 7px 0 0;
+    font-size: 18px;
     color: #111827;
     line-height: 1.2;
 }
 
 .rkm-order-summary__count {
-    margin: 6px 0 0;
-    font-size: 13px;
+    margin: 5px 0 0;
+    font-size: 12px;
     font-weight: 600;
     line-height: 1.4;
     color: #64748b;
@@ -980,10 +980,10 @@ body.rkm-checkout-modal-open {
 .rkm-order-summary__empty-state {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 18px;
+    gap: 5px;
+    padding: 14px;
     border: 1px dashed #cbd5e1;
-    border-radius: 18px;
+    border-radius: 14px;
     background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
 }
 
@@ -997,8 +997,8 @@ body.rkm-checkout-modal-open {
 .rkm-summary-list {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    max-height: min(52vh, 460px);
+    gap: 10px;
+    max-height: min(44vh, 360px);
     overflow-y: auto;
     padding-right: 4px;
     scrollbar-width: thin;
@@ -1007,11 +1007,11 @@ body.rkm-checkout-modal-open {
 .rkm-summary-item {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 14px 12px;
+    gap: 10px;
     align-items: start;
-    padding: 16px;
+    padding: 12px;
     border: 1px solid #dbe4ee;
-    border-radius: 18px;
+    border-radius: 14px;
     background:
         radial-gradient(circle at top, rgba(37, 99, 235, 0.06), transparent 40%),
         linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
@@ -1036,31 +1036,31 @@ body.rkm-checkout-modal-open {
 
 .rkm-summary-item__info strong {
     display: block;
-    font-size: 14px;
+    font-size: 13px;
     color: #1f2937;
     line-height: 1.35;
 }
 
 .rkm-summary-meta {
-    margin-top: 4px;
-    font-size: 12px;
+    margin-top: 3px;
+    font-size: 11px;
     color: #667085;
 }
 
 .rkm-summary-item__meta-actions {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
-    gap: 10px;
+    gap: 8px;
     align-items: start;
-    margin-top: 12px;
+    margin-top: 9px;
 }
 
 .rkm-summary-pricing {
     display: grid;
-    gap: 8px;
-    padding: 12px 14px;
+    gap: 6px;
+    padding: 9px 10px;
     border: 1px solid #e2e8f0;
-    border-radius: 14px;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.8);
 }
 
@@ -1069,34 +1069,34 @@ body.rkm-checkout-modal-open {
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    font-size: 12px;
+    font-size: 11px;
     color: #64748b;
 }
 
 .rkm-summary-pricing__row strong {
-    font-size: 13px;
+    font-size: 12px;
     color: #0f172a;
 }
 
 .rkm-summary-item__controls {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     justify-self: start;
 }
 
 .rkm-summary-item__controls span {
-    min-width: 28px;
+    min-width: 24px;
     text-align: center;
     font-weight: 700;
     color: #111827;
-    font-size: 14px;
+    font-size: 13px;
 }
 
 .rkm-qty-minus,
 .rkm-qty-plus {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     border: 1px solid #d0d5dd;
     border-radius: 10px;
     background: #fff;
@@ -1116,7 +1116,7 @@ body.rkm-checkout-modal-open {
     justify-content: center;
     justify-self: end;
     align-self: stretch;
-    width: 32px;
+    width: 30px;
     min-height: 100%;
     border: none;
     background: #fee4e2;
@@ -1147,23 +1147,23 @@ body.rkm-checkout-modal-open {
 
 .rkm-summary-totals {
     display: grid;
-    gap: 10px;
+    gap: 8px;
 }
 
 .rkm-summary-total {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 14px 16px;
+    padding: 12px 14px;
     border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    font-size: 15px;
+    border-radius: 14px;
+    font-size: 13px;
     color: #111827;
     background: rgba(255, 255, 255, 0.88);
 }
 
 .rkm-summary-total strong {
-    font-size: 18px;
+    font-size: 16px;
 }
 
 .rkm-summary-total--subtle {
@@ -1179,7 +1179,7 @@ body.rkm-checkout-modal-open {
 .rkm-summary-total--grand {
     border-color: #bfdbfe;
     background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%);
-    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.08);
+    box-shadow: 0 12px 26px rgba(37, 99, 235, 0.12);
 }
 
 .rkm-summary-total--grand span {
@@ -1188,7 +1188,7 @@ body.rkm-checkout-modal-open {
 }
 
 .rkm-summary-total--grand strong {
-    font-size: 24px;
+    font-size: 28px;
     color: #1d4ed8;
 }
 
@@ -1214,7 +1214,10 @@ body.rkm-checkout-modal-open {
 
 .rkm-btn-block {
     width: 100%;
-    margin-top: 16px;
+    min-height: 50px;
+    margin-top: 12px;
+    font-size: 15px !important;
+    font-weight: 850 !important;
 }
 
 .rkm-toolbar {

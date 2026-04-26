@@ -92,14 +92,33 @@
 
 .rkm-catalog-toolbar {
     display: flex;
-    align-items: end;
+    align-items: stretch;
     justify-content: space-between;
-    gap: 16px;
+    gap: 12px;
     flex-wrap: wrap;
+    padding: 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.05);
 }
 
 .rkm-catalog-search-form {
-    flex: 1 1 480px;
+    flex: 1 1 620px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: stretch;
+}
+
+.rkm-catalog-search-form .rkm-input {
+    min-height: 50px;
+    border: 1px solid #cbd5e1;
+    border-radius: 15px;
+    background: #fff;
+    font-size: 15px;
+    font-weight: 650;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .rkm-app .rkm-catalog-toolbar .rkm-btn,
@@ -205,10 +224,15 @@
 }
 
 .rkm-catalog-filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    min-width: 190px;
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 6px 8px 6px 12px;
+    border: 1px solid #dbe4ee;
+    border-radius: 999px;
+    background: #fff;
 }
 
 .rkm-catalog-filter-group__label {
@@ -220,11 +244,11 @@
 }
 
 .rkm-catalog-filter-group__select {
-    min-height: 44px;
-    border: 1px solid #d5dee8;
-    border-radius: 14px;
-    padding: 0 14px;
-    background: rgba(255, 255, 255, 0.94);
+    min-height: 36px;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 0 12px;
+    background: #f8fafc;
     color: #0f172a;
     font-size: 14px;
     font-weight: 600;
@@ -238,8 +262,8 @@
 }
 
 .rkm-order-products .rkm-catalog-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
     align-items: stretch;
     grid-auto-rows: 1fr;
 }
@@ -249,21 +273,27 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 16px;
+    margin-bottom: 14px;
+    padding: 0 2px;
 }
 
 .rkm-order-products .rkm-catalog-meta__results {
     margin: 0;
-    font-size: 13px;
-    font-weight: 600;
-    color: #64748b;
+    font-size: 18px;
+    font-weight: 850;
+    color: #0f172a;
+    line-height: 1.25;
 }
 
 .rkm-order-products .rkm-catalog-meta__visible {
     margin: 0;
-    font-size: 13px;
+    padding: 6px 10px;
+    border: 1px solid #dbeafe;
+    border-radius: 999px;
+    background: #eff6ff;
+    font-size: 12px;
     font-weight: 700;
-    color: #334155;
+    color: #1d4ed8;
 }
 
 .rkm-order-products .rkm-product-card {
@@ -271,12 +301,12 @@
     display: grid;
     grid-template-rows: auto 1fr;
     min-height: 100%;
-    border: 2px solid #d4dfeb;
-    border-radius: 22px;
+    border: 1px solid #cfdbe8;
+    border-radius: 18px;
     background:
         radial-gradient(circle at top, rgba(37, 99, 235, 0.06), transparent 34%),
         linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.065);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.055);
     overflow: hidden;
 }
 
@@ -299,12 +329,12 @@
 
 .rkm-order-products .rkm-product-card--interactive:hover,
 .rkm-order-products .rkm-product-card--interactive:focus-visible {
-    transform: translateY(-5px);
+    transform: translateY(-3px);
     border-color: #8fb2d6;
     background:
         radial-gradient(circle at top, rgba(37, 99, 235, 0.1), transparent 36%),
         linear-gradient(180deg, #ffffff 0%, #f6faff 100%);
-    box-shadow: 0 20px 42px rgba(15, 23, 42, 0.13);
+    box-shadow: 0 18px 34px rgba(15, 23, 42, 0.12);
     outline: none;
 }
 
@@ -316,7 +346,7 @@
     justify-content: center;
     width: 100%;
     min-height: 0;
-    padding: 20px;
+    padding: 16px;
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(241, 245, 249, 0.96) 100%);
     border-bottom: 1px solid rgba(226, 232, 240, 0.9);
@@ -339,10 +369,10 @@
 
 .rkm-order-products .rkm-product-card__body {
     display: grid;
-    grid-template-rows: minmax(54px, auto) 45px 40px 32px minmax(68px, auto);
+    grid-template-rows: minmax(42px, auto) 43px 38px 34px minmax(62px, auto);
     flex: 1;
-    padding: 16px 16px 18px;
-    gap: 11px;
+    padding: 14px;
+    gap: 9px;
 }
 
 .rkm-order-products .rkm-product-card__meta-row {
@@ -350,7 +380,7 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 10px;
-    min-height: 54px;
+    min-height: 42px;
 }
 
 .rkm-order-products .rkm-product-card__meta {
@@ -363,7 +393,7 @@
 }
 
 .rkm-order-products .rkm-product-card__meta-label {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
     letter-spacing: .08em;
     text-transform: uppercase;
@@ -371,7 +401,7 @@
 }
 
 .rkm-order-products .rkm-product-card__meta-value {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: #475569;
     overflow-wrap: anywhere;
@@ -384,11 +414,11 @@
     gap: 6px;
     margin: 0;
     margin-left: auto;
-    min-height: 30px;
-    padding: 7px 11px;
+    min-height: 28px;
+    padding: 6px 9px;
     border: 1px solid transparent;
     border-radius: 999px;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 800;
     line-height: 1;
     white-space: nowrap;
@@ -417,10 +447,10 @@
 .rkm-order-products .rkm-product-card__title {
     display: -webkit-box;
     margin: 0;
-    min-height: 45px;
+    min-height: 43px;
     color: #0f172a;
-    font-size: 17px;
-    font-weight: 700;
+    font-size: 16px;
+    font-weight: 800;
     line-height: 1.32;
     letter-spacing: -.01em;
     overflow: hidden;
@@ -431,10 +461,10 @@
 .rkm-order-products .rkm-product-card__excerpt {
     display: -webkit-box;
     margin: 0;
-    min-height: 40px;
-    max-height: 40px;
-    font-size: 13px;
-    line-height: 1.55;
+    min-height: 38px;
+    max-height: 38px;
+    font-size: 12px;
+    line-height: 1.5;
     color: #64748b;
     overflow: hidden;
     -webkit-box-orient: vertical;
@@ -445,8 +475,8 @@
     margin: 0;
     display: flex;
     align-items: center;
-    min-height: 32px;
-    font-size: 24px;
+    min-height: 34px;
+    font-size: 25px;
     font-weight: 900;
     line-height: 1.1;
     color: #0b1220;
@@ -455,12 +485,12 @@
 
 .rkm-order-products .rkm-product-card__controls {
     display: grid;
-    grid-template-columns: 78px minmax(0, 1fr);
-    gap: 10px;
+    grid-template-columns: 70px minmax(0, 1fr);
+    gap: 8px;
     align-items: end;
     margin-top: 0;
     padding-top: 4px;
-    min-height: 68px;
+    min-height: 62px;
 }
 
 .rkm-order-products .rkm-product-card__qty {
@@ -480,7 +510,7 @@
 
 .rkm-order-products .rkm-qty-input {
     width: 100%;
-    height: 44px;
+    height: 42px;
     border: 1px solid #d5dee8;
     border-radius: 13px;
     padding: 0 12px;
@@ -498,7 +528,7 @@
 }
 
 .rkm-order-products .rkm-add-to-summary {
-    min-height: 44px;
+    min-height: 42px;
     width: 100%;
     border-radius: 13px;
     box-shadow: 0 10px 22px rgba(37, 99, 235, 0.2);
@@ -921,11 +951,14 @@ body.rkm-product-quick-view-open {
 @media (max-width: 640px) {
     .rkm-catalog-search-form {
         flex-basis: 100%;
+        grid-template-columns: 1fr;
     }
 
     .rkm-catalog-filter-group {
         width: 100%;
         min-width: 0;
+        justify-content: space-between;
+        border-radius: 16px;
     }
 
     .rkm-order-products .rkm-catalog-meta {

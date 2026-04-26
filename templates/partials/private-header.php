@@ -26,12 +26,14 @@ $module_labels = [
     'nueva-orden'    => 'Nueva orden',
     'pedidos'        => 'Pedidos',
     'historial'      => 'Historial',
+    'cuenta-corriente' => 'Cuenta corriente',
     'panel-vendedor' => 'Panel vendedor',
     'admin'          => 'Administracion',
     'usuarios'       => 'Usuarios',
     'asignaciones'   => 'Asignaciones',
     'formas-pago'    => 'Formas de pago',
     'condiciones-pago' => 'Condiciones de pago',
+    'pagos-clientes' => 'Pagos clientes',
     'mi-cuenta'      => 'Mi perfil',
 ];
 $module_label = isset($module_labels[$section]) ? $module_labels[$section] : 'Sistema RKM';
@@ -108,6 +110,12 @@ $module_label = isset($module_labels[$section]) ? $module_labels[$section] : 'Si
                     <?php endif; ?>
                     <?php if (class_exists('RKM_Payment_Terms') && RKM_Payment_Terms::can_access()) : ?>
                         <a href="<?php echo esc_url(RKM_Payment_Terms::get_section_url()); ?>">Condiciones de pago</a>
+                    <?php endif; ?>
+                    <?php if (class_exists('RKM_Current_Account') && RKM_Current_Account::can_admin_access()) : ?>
+                        <a href="<?php echo esc_url(RKM_Current_Account::get_admin_section_url()); ?>">Pagos clientes</a>
+                    <?php endif; ?>
+                    <?php if (class_exists('RKM_Current_Account') && RKM_Current_Account::can_customer_access()) : ?>
+                        <a href="<?php echo esc_url(RKM_Current_Account::get_customer_section_url()); ?>">Cuenta corriente</a>
                     <?php endif; ?>
                     <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=mi-cuenta')); ?>">Mi perfil</a>
                     <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=pedidos')); ?>">Pedidos</a>

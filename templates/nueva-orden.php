@@ -294,12 +294,11 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
                 <?php if (!empty($products)) : ?>
                     <div class="rkm-catalog-meta">
                         <p class="rkm-catalog-meta__results">
-                            Mostrando <?php echo esc_html($products_start); ?>-<?php echo esc_html($products_end); ?>
-                            de <?php echo esc_html($total_products); ?> productos
+                            <?php echo esc_html($total_products); ?> productos encontrados
                         </p>
 
                         <p class="rkm-catalog-meta__visible" data-rkm-visible-count>
-                            <?php echo esc_html(count($products)); ?> productos visibles en esta página
+                            Mostrando <?php echo esc_html($products_start); ?>-<?php echo esc_html($products_end); ?>
                         </p>
                     </div>
 

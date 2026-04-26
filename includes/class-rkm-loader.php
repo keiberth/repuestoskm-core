@@ -22,6 +22,7 @@ class RKM_Loader {
         require_once RKM_CORE_PATH . 'includes/class-rkm-redirects.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-orders-actions.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-account.php';
+        require_once RKM_CORE_PATH . 'includes/class-rkm-current-account.php';
 
         (new RKM_Routes())->init();
         (new RKM_Auth())->init();
@@ -38,6 +39,7 @@ class RKM_Loader {
         $order_actions = new RKM_Orders_Actions();
         $order_actions->init();
         $account = new RKM_Account();
+        (new RKM_Current_Account())->init();
         
     }
 }

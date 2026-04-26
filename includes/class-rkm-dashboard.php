@@ -192,6 +192,15 @@ class RKM_Dashboard {
                 $template = RKM_CORE_PATH . 'templates/historial.php';
                 break;
 
+            case 'cuenta-corriente':
+                if (class_exists('RKM_Current_Account')) {
+                    (new RKM_Current_Account())->render_customer_page($data);
+                    return;
+                }
+
+                $template = RKM_CORE_PATH . 'templates/dashboard.php';
+                break;
+
             case 'panel-vendedor':
                 if (class_exists('RKM_Sellers')) {
                     (new RKM_Sellers())->render_dashboard($data);
@@ -231,6 +240,15 @@ class RKM_Dashboard {
             case 'condiciones-pago':
                 if (class_exists('RKM_Payment_Terms')) {
                     (new RKM_Payment_Terms())->render_page($data);
+                    return;
+                }
+
+                $template = RKM_CORE_PATH . 'templates/dashboard.php';
+                break;
+
+            case 'pagos-clientes':
+                if (class_exists('RKM_Current_Account')) {
+                    (new RKM_Current_Account())->render_admin_page($data);
                     return;
                 }
 

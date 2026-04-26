@@ -1,0 +1,297 @@
+.rkm-current-account-page__header {
+    align-items: flex-start;
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+}
+
+.rkm-current-account-shell {
+    display: grid;
+    gap: 20px;
+}
+
+.rkm-current-account-summary {
+    background: linear-gradient(135deg, #0f766e 0%, #164e63 100%);
+    border-radius: 8px;
+    color: #ffffff;
+    padding: 24px;
+}
+
+.rkm-current-account-summary__eyebrow {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.rkm-current-account-summary strong {
+    display: block;
+    font-size: 34px;
+    line-height: 1.1;
+    margin-bottom: 8px;
+}
+
+.rkm-current-account-summary p {
+    color: rgba(255, 255, 255, .82);
+    margin: 0;
+}
+
+.rkm-current-account-grid {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr);
+}
+
+.rkm-current-account-panel {
+    border-radius: 8px;
+    padding: 22px;
+}
+
+.rkm-current-account-panel__header {
+    margin-bottom: 18px;
+}
+
+.rkm-current-account-panel__header h2 {
+    color: #111827;
+    font-size: 20px;
+    line-height: 1.2;
+    margin: 0 0 6px;
+}
+
+.rkm-current-account-panel__header p {
+    color: #6b7280;
+    margin: 0;
+}
+
+.rkm-current-account-form,
+.rkm-current-account-field {
+    display: grid;
+    gap: 10px;
+}
+
+.rkm-current-account-form {
+    gap: 16px;
+}
+
+.rkm-current-account-form__row {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.rkm-current-account-field span {
+    color: #374151;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.rkm-current-account-field input,
+.rkm-current-account-field select,
+.rkm-current-account-field textarea {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    color: #111827;
+    font: inherit;
+    min-height: 44px;
+    padding: 10px 12px;
+    width: 100%;
+}
+
+.rkm-current-account-field textarea {
+    min-height: 104px;
+    resize: vertical;
+}
+
+.rkm-current-account-field small,
+.rkm-payments-review-table small {
+    color: #6b7280;
+    display: block;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.rkm-current-account-form__feedback {
+    border-radius: 8px;
+    color: #991b1b;
+    display: none;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 12px;
+}
+
+.rkm-current-account-form__feedback.is-visible {
+    background: #fee2e2;
+    display: block;
+}
+
+.rkm-current-account-order-list {
+    display: grid;
+    gap: 12px;
+}
+
+.rkm-current-account-order {
+    align-items: center;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    padding: 14px;
+}
+
+.rkm-current-account-order span,
+.rkm-current-account-order strong {
+    color: #111827;
+    display: block;
+}
+
+.rkm-current-account-order small {
+    color: #6b7280;
+    display: block;
+    margin-top: 4px;
+}
+
+.rkm-current-account-empty {
+    background: #f9fafb;
+    border: 1px dashed #d1d5db;
+    border-radius: 8px;
+    padding: 18px;
+}
+
+.rkm-current-account-empty strong {
+    color: #111827;
+    display: block;
+    margin-bottom: 6px;
+}
+
+.rkm-current-account-empty p {
+    color: #6b7280;
+    margin: 0;
+}
+
+.rkm-current-account-table-wrap {
+    overflow-x: auto;
+}
+
+.rkm-current-account-table {
+    border-collapse: collapse;
+    min-width: 820px;
+    width: 100%;
+}
+
+.rkm-current-account-table th,
+.rkm-current-account-table td {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 14px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.rkm-current-account-table th {
+    color: #6b7280;
+    font-size: 12px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.rkm-current-account-badge {
+    border-radius: 999px;
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1;
+    padding: 7px 10px;
+}
+
+.rkm-current-account-badge--pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.rkm-current-account-badge--approved {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.rkm-current-account-badge--rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.rkm-current-account-notice {
+    border-radius: 8px;
+    padding: 14px 16px;
+}
+
+.rkm-current-account-notice p {
+    margin: 0;
+}
+
+.rkm-current-account-notice--success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.rkm-current-account-notice--error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.rkm-current-account-back,
+.rkm-current-account-action,
+.rkm-current-account-reviewed {
+    border-radius: 8px;
+    display: inline-flex;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1;
+    padding: 10px 12px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.rkm-current-account-back {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.rkm-payments-review-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.rkm-current-account-action {
+    border: 0;
+    cursor: pointer;
+}
+
+.rkm-current-account-action--approve {
+    background: #16a34a;
+    color: #ffffff;
+}
+
+.rkm-current-account-action--reject {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+.rkm-current-account-reviewed {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+@media (max-width: 900px) {
+    .rkm-current-account-grid,
+    .rkm-current-account-form__row {
+        grid-template-columns: 1fr;
+    }
+
+    .rkm-current-account-page__header {
+        display: grid;
+    }
+}

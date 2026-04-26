@@ -32,6 +32,13 @@ $is_vendor_user = class_exists('RKM_Permissions') && RKM_Permissions::is_rkm_ven
         Historial
     </a>
 
+    <?php if (class_exists('RKM_Current_Account') && RKM_Current_Account::can_customer_access()) : ?>
+        <a href="<?php echo esc_url(RKM_Current_Account::get_customer_section_url()); ?>"
+           class="rkm-subnav__link <?php echo ($current === 'cuenta-corriente') ? 'is-active' : ''; ?>">
+            Cuenta corriente
+        </a>
+    <?php endif; ?>
+
     <?php if (class_exists('RKM_Sellers') && RKM_Sellers::can_access()) : ?>
         <a href="<?php echo esc_url(RKM_Sellers::get_section_url()); ?>"
            class="rkm-subnav__link <?php echo ($current === RKM_Sellers::get_section_key()) ? 'is-active' : ''; ?>">

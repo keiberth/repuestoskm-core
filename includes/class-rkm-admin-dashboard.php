@@ -102,6 +102,11 @@ class RKM_Admin_Dashboard {
                     'url'         => class_exists('RKM_Payment_Terms') ? RKM_Payment_Terms::get_section_url() : home_url('/mi-cuenta/panel/'),
                 ],
                 [
+                    'label'       => 'Pagos clientes',
+                    'description' => 'Revisar pagos informados y actualizar saldos pendientes.',
+                    'url'         => class_exists('RKM_Current_Account') ? RKM_Current_Account::get_admin_section_url() : home_url('/mi-cuenta/panel/'),
+                ],
+                [
                     'label'       => 'Mi cuenta',
                     'description' => 'Gestionar los datos personales del usuario actual.',
                     'url'         => home_url('/mi-cuenta/panel/?section=mi-cuenta'),
