@@ -25,7 +25,23 @@ class RKM_Products {
     }
 
     public static function get_section_url($args = []) {
-        return add_query_arg(array_merge(['section' => self::SECTION_KEY], $args), home_url('/mi-cuenta/panel/'));
+        return add_query_arg(array_merge(['section' => self::SECTION_KEY], $args), self::get_panel_base_url());
+    }
+
+    public static function get_list_url($args = []) {
+        return self::get_section_url(array_merge(['view' => 'list'], $args));
+    }
+
+    private static function get_panel_base_url() {
+        if (function_exists('wc_get_account_endpoint_url')) {
+            $panel_url = wc_get_account_endpoint_url('panel');
+
+            if (!empty($panel_url)) {
+                return trailingslashit($panel_url);
+            }
+        }
+
+        return home_url('/mi-cuenta/panel/');
     }
 
     public static function get_page_title() {
@@ -70,7 +86,7 @@ class RKM_Products {
             'current_section' => self::get_section_key(),
             'products_notice' => $this->consume_flash_notice(),
             'section_url' => self::get_section_url(),
-            'list_url' => self::get_section_url(),
+            'list_url' => self::get_list_url(),
             'create_url' => self::get_section_url(['view' => 'create']),
             'view' => $view,
             'status_options' => $this->get_status_options(),
@@ -120,8 +136,12 @@ class RKM_Products {
     }
 
     public function handle_submission() {
-        if (!$this->is_active_section() || !$this->is_post_request()) {
+        if (!$this->is_products_post_request()) {
             return;
+        }
+
+        if (!self::can_access()) {
+            $this->redirect_to(class_exists('RKM_Auth') ? RKM_Auth::get_redirect_url_for_user() : home_url('/mi-cuenta/panel/'));
         }
 
         if (!isset($_POST['rkm_products_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['rkm_products_nonce'])), 'rkm_products_update')) {
@@ -271,7 +291,7 @@ class RKM_Products {
         }
 
         $this->set_flash_notice('success', $is_edit ? 'Producto actualizado correctamente.' : 'Producto creado correctamente.');
-        $this->redirect_to(self::get_section_url());
+        $this->redirect_to(self::get_list_url(['updated' => 1]));
     }
 
     private function change_product_status($status) {
@@ -523,6 +543,20 @@ class RKM_Products {
         return strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST';
     }
 
+    private function is_products_post_request() {
+        if (!$this->is_post_request()) {
+            return false;
+        }
+
+        if (empty($_POST['rkm_products_action'])) {
+            return false;
+        }
+
+        $section = isset($_REQUEST['section']) ? sanitize_key(wp_unslash($_REQUEST['section'])) : '';
+
+        return $section === self::SECTION_KEY;
+    }
+
     private function get_notice_transient_key() {
         return self::NOTICE_TRANSIENT_PREFIX . get_current_user_id();
     }
@@ -545,7 +579,7 @@ class RKM_Products {
     }
 
     private function redirect_to($url) {
-        wp_safe_redirect($url);
+        wp_safe_redirect($url, 303);
         exit;
     }
 }

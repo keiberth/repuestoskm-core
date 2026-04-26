@@ -7,6 +7,7 @@ $categories = isset($data['categories']) && is_array($data['categories']) ? $dat
 $status_options = isset($data['status_options']) && is_array($data['status_options']) ? $data['status_options'] : [];
 $section_url = $data['section_url'] ?? home_url('/mi-cuenta/panel/?section=productos');
 $list_url = $data['list_url'] ?? $section_url;
+$form_url = class_exists('RKM_Products') ? RKM_Products::get_section_url(['view' => 'create']) : $section_url;
 $form_action = 'create_product';
 $is_edit = false;
 $product_form_data = [];

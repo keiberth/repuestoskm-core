@@ -6,6 +6,7 @@ if (!defined('ABSPATH')) {
 $is_edit = isset($is_edit) ? (bool) $is_edit : (($data['view'] ?? '') === 'edit');
 $form_action = isset($form_action) ? $form_action : ($data['form_action'] ?? 'create_product');
 $section_url = isset($section_url) ? $section_url : ($data['section_url'] ?? home_url('/mi-cuenta/panel/?section=productos'));
+$form_url = isset($form_url) ? $form_url : $section_url;
 $list_url = isset($list_url) ? $list_url : ($data['list_url'] ?? $section_url);
 $categories = isset($categories) && is_array($categories) ? $categories : (isset($data['categories']) && is_array($data['categories']) ? $data['categories'] : []);
 $status_options = isset($status_options) && is_array($status_options) ? $status_options : (isset($data['status_options']) && is_array($data['status_options']) ? $data['status_options'] : []);
@@ -31,7 +32,7 @@ $short_description_value = wp_strip_all_tags((string) $product_form_data['short_
 $image_url = !empty($product_form_data['image_id']) ? wp_get_attachment_image_url((int) $product_form_data['image_id'], 'medium') : '';
 ?>
 
-<form method="post" action="<?php echo esc_url($section_url); ?>" enctype="multipart/form-data" class="rkm-admin-products-form rkm-admin-products-form--wide" data-rkm-products-form>
+<form method="post" action="<?php echo esc_url($form_url); ?>" enctype="multipart/form-data" class="rkm-admin-products-form rkm-admin-products-form--wide" data-rkm-products-form>
     <input type="hidden" name="rkm_products_action" value="<?php echo esc_attr($form_action); ?>">
     <?php if ($is_edit) : ?>
         <input type="hidden" name="product_id" value="<?php echo esc_attr((string) $product_form_data['id']); ?>">
