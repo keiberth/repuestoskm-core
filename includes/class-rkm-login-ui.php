@@ -59,8 +59,14 @@ class RKM_Login_UI {
     }
 
     private function is_login_screen() {
-        return !is_user_logged_in()
-            && function_exists('is_account_page')
-            && is_account_page();
+        if (is_user_logged_in()) {
+            return false;
+        }
+
+        if (class_exists('RKM_Redirects') && RKM_Redirects::is_system_entry_request()) {
+            return true;
+        }
+
+        return function_exists('is_account_page') && is_account_page();
     }
 }

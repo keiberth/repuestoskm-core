@@ -62,7 +62,7 @@ class RKM_Auth {
     }
 
     public static function get_customer_redirect_url() {
-        return home_url('/mi-cuenta/panel');
+        return home_url('/mi-cuenta/panel/');
     }
 
     public static function get_admin_panel_url() {
@@ -103,7 +103,7 @@ class RKM_Auth {
     }
 
     public static function get_logout_redirect_url() {
-        return apply_filters('rkm_logout_redirect_url', self::get_login_url());
+        return apply_filters('rkm_logout_redirect_url', home_url('/'));
     }
 
     public static function get_logout_url() {

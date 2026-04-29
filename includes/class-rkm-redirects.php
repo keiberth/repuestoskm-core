@@ -11,25 +11,57 @@ class RKM_Redirects {
     }
 
     public function handle_home_redirect() {
-        if (is_admin()) {
+        if (!self::is_system_entry_request()) {
             return;
         }
 
-        if (is_front_page() || is_home()) {
-            $target = is_user_logged_in()
-                ? RKM_Auth::get_redirect_url_for_user()
-                : RKM_Auth::get_login_url();
-
-            $this->debug_log('Front/home redirect fired.', [
-                'is_front_page' => is_front_page(),
-                'is_home'       => is_home(),
-                'target'        => $target,
-            ]);
-
-            wp_safe_redirect($target);
-
+        if (!is_user_logged_in()) {
+            $this->debug_log('Front/home login rendered.');
+            $this->render_system_entry_login();
             exit;
         }
+
+        $target = RKM_Auth::get_redirect_url_for_user();
+
+        $this->debug_log('Front/home redirect fired.', [
+            'is_front_page' => is_front_page(),
+            'is_home'       => is_home(),
+            'target'        => $target,
+        ]);
+
+        wp_safe_redirect($target);
+        exit;
+    }
+
+    public static function is_system_entry_request() {
+        return !is_admin() && (is_front_page() || is_home());
+    }
+
+    private function render_system_entry_login() {
+        status_header(200);
+        nocache_headers();
+
+        get_header();
+
+        echo '<main id="primary" class="site-main rkm-system-entry">';
+
+        if (function_exists('wc_print_notices')) {
+            wc_print_notices();
+        }
+
+        if (function_exists('wc_get_template')) {
+            wc_get_template('myaccount/form-login.php');
+        } else {
+            $template = RKM_CORE_PATH . 'templates/auth/login.php';
+
+            if (file_exists($template)) {
+                include $template;
+            }
+        }
+
+        echo '</main>';
+
+        get_footer();
     }
 
     private function debug_log($message, $context = []) {
