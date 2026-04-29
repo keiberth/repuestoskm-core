@@ -12,7 +12,7 @@ class RKM_Admin_Users {
 
     public function init() {
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
-        add_action('template_redirect', [$this, 'handle_create_user_submission'], 5);
+        add_action('template_redirect', [$this, 'handle_user_submission'], 5);
     }
 
     public static function can_access($user = null) {
@@ -56,16 +56,27 @@ class RKM_Admin_Users {
         );
     }
 
-    public function handle_create_user_submission() {
-        if (!$this->is_active_section() || !$this->is_create_request()) {
+    public function handle_user_submission() {
+        if (!$this->is_active_section() || !$this->is_form_submission()) {
             return;
         }
 
-        if (!isset($_POST['rkm_admin_users_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['rkm_admin_users_nonce'])), 'rkm_admin_users_create')) {
+        $action = sanitize_key(wp_unslash($_POST['rkm_admin_users_action']));
+        $nonce_action = $action === 'update_user' ? 'rkm_admin_users_update' : 'rkm_admin_users_create';
+
+        if (!isset($_POST['rkm_admin_users_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['rkm_admin_users_nonce'])), $nonce_action)) {
             $this->set_flash_notice('error', 'La solicitud no es valida. Recarga la pagina e intenta nuevamente.');
             $this->redirect_back();
         }
 
+        if ($action === 'update_user') {
+            $this->handle_update_user_submission();
+        }
+
+        $this->handle_create_user_submission();
+    }
+
+    private function handle_create_user_submission() {
         $form_data = $this->sanitize_form_data($_POST);
         $validation = $this->validate_form_data($form_data);
 
@@ -96,6 +107,59 @@ class RKM_Admin_Users {
         $this->redirect_back();
     }
 
+    private function handle_update_user_submission() {
+        $user_id = isset($_POST['user_id']) ? absint($_POST['user_id']) : 0;
+        $user = $user_id > 0 ? get_user_by('id', $user_id) : false;
+
+        if (!$user instanceof WP_User) {
+            $this->set_flash_notice('error', 'No se encontro el usuario que queres editar.');
+            $this->redirect_back();
+        }
+
+        if (!current_user_can('edit_user', $user_id)) {
+            $this->set_flash_notice('error', 'No tenes permisos para editar ese usuario.');
+            $this->redirect_back();
+        }
+
+        $form_data = $this->sanitize_form_data($_POST);
+        $validation = $this->validate_update_form_data($form_data, $user);
+
+        if (is_wp_error($validation)) {
+            $this->set_flash_notice('error', $validation->get_error_message());
+            $this->redirect_to_edit($user_id);
+        }
+
+        $display_name = trim($form_data['first_name'] . ' ' . $form_data['last_name']);
+        $update_data = [
+            'ID'           => $user_id,
+            'user_email'   => $form_data['email'],
+            'first_name'   => $form_data['first_name'],
+            'last_name'    => $form_data['last_name'],
+            'display_name' => $display_name !== '' ? $display_name : $user->user_login,
+            'role'         => $form_data['role'],
+        ];
+
+        if ($form_data['password'] !== '') {
+            $update_data['user_pass'] = $form_data['password'];
+        }
+
+        $result = wp_update_user($update_data);
+
+        if (is_wp_error($result)) {
+            $this->set_flash_notice('error', $result->get_error_message());
+            $this->redirect_to_edit($user_id);
+        }
+
+        $updated_user = get_user_by('id', $user_id);
+
+        if ($updated_user instanceof WP_User) {
+            $updated_user->set_role($form_data['role']);
+        }
+
+        $this->set_flash_notice('success', sprintf('Usuario actualizado correctamente con rol %s.', RKM_Permissions::get_role_label($form_data['role'])));
+        $this->redirect_back();
+    }
+
     public function render_page($data = []) {
         if (!self::can_access()) {
             wp_safe_redirect(RKM_Auth::get_redirect_url_for_user());
@@ -110,6 +174,7 @@ class RKM_Admin_Users {
             'admin_users_roles'=> $this->get_role_options_for_view(),
             'admin_users_notice' => $this->consume_flash_notice(),
             'admin_users_form' => $this->consume_form_state(),
+            'admin_users_edit_user' => $this->get_edit_user_for_view(),
         ]);
 
         $template = RKM_CORE_PATH . 'templates/admin/users.php';
@@ -134,13 +199,16 @@ class RKM_Admin_Users {
         return $section === self::SECTION_KEY;
     }
 
-    private function is_create_request() {
+    private function is_form_submission() {
         if (strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
             return false;
         }
 
-        return isset($_POST['rkm_admin_users_action'])
-            && sanitize_key(wp_unslash($_POST['rkm_admin_users_action'])) === 'create_user';
+        if (!isset($_POST['rkm_admin_users_action'])) {
+            return false;
+        }
+
+        return in_array(sanitize_key(wp_unslash($_POST['rkm_admin_users_action'])), ['create_user', 'update_user'], true);
     }
 
     private function sanitize_form_data($source) {
@@ -173,6 +241,32 @@ class RKM_Admin_Users {
 
         if (!array_key_exists($form_data['role'], RKM_Permissions::get_assignable_user_roles())) {
             return new WP_Error('invalid_role', 'Selecciona un rol valido para el nuevo usuario.');
+        }
+
+        return true;
+    }
+
+    private function validate_update_form_data($form_data, $user) {
+        if ($form_data['first_name'] === '' || $form_data['last_name'] === '' || $form_data['email'] === '' || $form_data['role'] === '') {
+            return new WP_Error('missing_fields', 'Completa nombre, apellido, correo y rol antes de guardar.');
+        }
+
+        if (!is_email($form_data['email'])) {
+            return new WP_Error('invalid_email', 'Ingresa un correo electronico valido.');
+        }
+
+        $email_owner = email_exists($form_data['email']);
+
+        if ($email_owner && (int) $email_owner !== (int) $user->ID) {
+            return new WP_Error('duplicate_email', 'Ya existe otro usuario registrado con ese correo.');
+        }
+
+        if (!array_key_exists($form_data['role'], RKM_Permissions::get_assignable_user_roles())) {
+            return new WP_Error('invalid_role', 'Selecciona un rol valido para el usuario.');
+        }
+
+        if ((int) get_current_user_id() === (int) $user->ID && RKM_Permissions::is_rkm_admin($user) && $form_data['role'] !== 'administrator') {
+            return new WP_Error('self_demote', 'No podes quitarte tu propio rol de administrador desde esta pantalla.');
         }
 
         return true;
@@ -223,17 +317,57 @@ class RKM_Admin_Users {
             $name = trim($user->first_name . ' ' . $user->last_name);
 
             $rows[] = [
+                'id'         => $user->ID,
                 'name'       => $name !== '' ? $name : ($user->display_name ?: $user->user_login),
+                'first_name' => $user->first_name,
+                'last_name'  => $user->last_name,
                 'username'   => $user->user_login,
                 'email'      => $user->user_email,
                 'role'       => RKM_Permissions::get_role_label($primary_role),
                 'role_slug'  => $primary_role,
                 'status'     => ((int) $user->user_status === 0) ? 'Activo' : 'Inactivo',
                 'registered' => mysql2date('d/m/Y', $user->user_registered, true),
+                'edit_url'   => add_query_arg([
+                    'section' => self::SECTION_KEY,
+                    'edit_user' => $user->ID,
+                ], home_url('/mi-cuenta/panel/')),
             ];
         }
 
         return $rows;
+    }
+
+    private function get_edit_user_for_view() {
+        $user_id = isset($_GET['edit_user']) ? absint($_GET['edit_user']) : 0;
+
+        if ($user_id <= 0) {
+            return null;
+        }
+
+        $user = get_user_by('id', $user_id);
+
+        if (!$user instanceof WP_User) {
+            return null;
+        }
+
+        if (!current_user_can('edit_user', $user_id)) {
+            return null;
+        }
+
+        $primary_role = !empty($user->roles) ? $user->roles[0] : 'customer';
+
+        if (!array_key_exists($primary_role, RKM_Permissions::get_assignable_user_roles())) {
+            $primary_role = 'customer';
+        }
+
+        return [
+            'id'         => $user->ID,
+            'first_name' => $user->first_name,
+            'last_name'  => $user->last_name,
+            'email'      => $user->user_email,
+            'username'   => $user->user_login,
+            'role'       => $primary_role,
+        ];
     }
 
     private function get_notice_transient_key() {
@@ -290,6 +424,14 @@ class RKM_Admin_Users {
 
     private function redirect_back() {
         wp_safe_redirect(self::get_section_url());
+        exit;
+    }
+
+    private function redirect_to_edit($user_id) {
+        wp_safe_redirect(add_query_arg([
+            'section' => self::SECTION_KEY,
+            'edit_user' => absint($user_id),
+        ], home_url('/mi-cuenta/panel/')));
         exit;
     }
 }

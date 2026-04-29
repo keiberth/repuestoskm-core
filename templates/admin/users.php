@@ -9,6 +9,8 @@ $notice = isset($data['admin_users_notice']) ? $data['admin_users_notice'] : nul
 $form = isset($data['admin_users_form']) && is_array($data['admin_users_form']) ? $data['admin_users_form'] : [];
 $users = isset($data['admin_users_rows']) && is_array($data['admin_users_rows']) ? $data['admin_users_rows'] : [];
 $roles = isset($data['admin_users_roles']) && is_array($data['admin_users_roles']) ? $data['admin_users_roles'] : [];
+$edit_user = isset($data['admin_users_edit_user']) && is_array($data['admin_users_edit_user']) ? $data['admin_users_edit_user'] : null;
+$is_editing = !empty($edit_user);
 $selected_role = isset($form['role']) ? $form['role'] : 'customer';
 $selected_role_description = '';
 
@@ -58,7 +60,9 @@ foreach ($roles as $role_option) {
             <section class="rkm-card rkm-admin-users-panel">
                 <div class="rkm-admin-users-panel__header">
                     <h3>Crear usuario</h3>
-                    <p>El alta usa funciones nativas de WordPress y asigna el rol en el momento de crear la cuenta.</p>
+                    <p>
+                        El alta usa funciones nativas de WordPress y asigna el rol en el momento de crear la cuenta.
+                    </p>
                 </div>
 
                 <form class="rkm-admin-users-form" method="post" data-rkm-admin-users-form>
@@ -98,7 +102,7 @@ foreach ($roles as $role_option) {
                                     <option
                                         value="<?php echo esc_attr($role_option['value']); ?>"
                                         data-description="<?php echo esc_attr($role_option['description']); ?>"
-                                        <?php selected(($form['role'] ?? 'customer'), $role_option['value']); ?>
+                                        <?php selected($selected_role, $role_option['value']); ?>
                                     >
                                         <?php echo esc_html($role_option['label']); ?>
                                     </option>
@@ -138,12 +142,13 @@ foreach ($roles as $role_option) {
                                 <th>Email</th>
                                 <th>Rol</th>
                                 <th>Estado</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (!empty($users)) : ?>
                                 <?php foreach ($users as $row) : ?>
-                                    <tr>
+                                    <tr class="<?php echo $is_editing && (int) $edit_user['id'] === (int) $row['id'] ? 'is-editing' : ''; ?>">
                                         <td data-label="Nombre">
                                             <strong><?php echo esc_html($row['name']); ?></strong>
                                             <span>@<?php echo esc_html($row['username']); ?></span>
@@ -159,11 +164,26 @@ foreach ($roles as $role_option) {
                                                 <?php echo esc_html($row['status']); ?>
                                             </span>
                                         </td>
+                                        <td data-label="Acciones">
+                                            <button
+                                                type="button"
+                                                class="rkm-admin-users-table__action"
+                                                data-rkm-edit-user
+                                                data-user-id="<?php echo esc_attr($row['id']); ?>"
+                                                data-first-name="<?php echo esc_attr($row['first_name']); ?>"
+                                                data-last-name="<?php echo esc_attr($row['last_name']); ?>"
+                                                data-email="<?php echo esc_attr($row['email']); ?>"
+                                                data-username="<?php echo esc_attr($row['username']); ?>"
+                                                data-role="<?php echo esc_attr($row['role_slug']); ?>"
+                                            >
+                                                Editar
+                                            </button>
+                                        </td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php else : ?>
                                 <tr>
-                                    <td colspan="4" class="rkm-admin-users-table__empty">
+                                    <td colspan="5" class="rkm-admin-users-table__empty">
                                         Todavia no hay usuarios para mostrar en esta vista.
                                     </td>
                                 </tr>
@@ -173,5 +193,98 @@ foreach ($roles as $role_option) {
                 </div>
             </section>
         </div>
+    </div>
+
+    <div
+        class="rkm-admin-users-modal<?php echo $is_editing ? ' is-open' : ''; ?>"
+        data-rkm-edit-modal
+        aria-hidden="<?php echo $is_editing ? 'false' : 'true'; ?>"
+    >
+        <div class="rkm-admin-users-modal__overlay" data-rkm-edit-modal-close></div>
+        <section
+            class="rkm-admin-users-modal__dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="rkm-admin-users-edit-title"
+        >
+            <button
+                type="button"
+                class="rkm-admin-users-modal__close"
+                data-rkm-edit-modal-close
+                aria-label="Cerrar edicion"
+            >
+                &times;
+            </button>
+
+            <div class="rkm-admin-users-modal__header">
+                <span class="rkm-admin-users-modal__eyebrow">Administrador</span>
+                <h3 id="rkm-admin-users-edit-title">Editar usuario</h3>
+                <p>Actualiza datos principales, rol y contrasena opcional usando usuarios nativos de WordPress.</p>
+            </div>
+
+            <form class="rkm-admin-users-form" method="post" data-rkm-admin-users-edit-form>
+                <input type="hidden" name="rkm_admin_users_action" value="update_user">
+                <input type="hidden" name="user_id" data-rkm-edit-user-id value="<?php echo esc_attr($edit_user['id'] ?? ''); ?>">
+                <?php wp_nonce_field('rkm_admin_users_update', 'rkm_admin_users_nonce'); ?>
+
+                <div class="rkm-admin-users-form__grid">
+                    <label class="rkm-admin-users-form__field">
+                        <span>Nombre</span>
+                        <input type="text" name="first_name" data-rkm-edit-first-name value="<?php echo esc_attr($edit_user['first_name'] ?? ''); ?>" required>
+                    </label>
+
+                    <label class="rkm-admin-users-form__field">
+                        <span>Apellido</span>
+                        <input type="text" name="last_name" data-rkm-edit-last-name value="<?php echo esc_attr($edit_user['last_name'] ?? ''); ?>" required>
+                    </label>
+
+                    <label class="rkm-admin-users-form__field">
+                        <span>Correo electronico</span>
+                        <input type="email" name="email" data-rkm-edit-email value="<?php echo esc_attr($edit_user['email'] ?? ''); ?>" required>
+                    </label>
+
+                    <label class="rkm-admin-users-form__field">
+                        <span>Usuario</span>
+                        <input type="text" name="username" data-rkm-edit-username value="<?php echo esc_attr($edit_user['username'] ?? ''); ?>" readonly aria-readonly="true">
+                    </label>
+
+                    <label class="rkm-admin-users-form__field">
+                        <span>Nueva contrasena</span>
+                        <input type="password" name="password" autocomplete="new-password" placeholder="Dejar vacio para mantenerla">
+                    </label>
+
+                    <label class="rkm-admin-users-form__field">
+                        <span>Rol</span>
+                        <select name="role" data-rkm-edit-role required>
+                            <?php foreach ($roles as $role_option) : ?>
+                                <option
+                                    value="<?php echo esc_attr($role_option['value']); ?>"
+                                    data-description="<?php echo esc_attr($role_option['description']); ?>"
+                                    <?php selected($edit_user['role'] ?? 'customer', $role_option['value']); ?>
+                                >
+                                    <?php echo esc_html($role_option['label']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
+                </div>
+
+                <p class="rkm-admin-users-form__hint" data-rkm-admin-edit-role-hint></p>
+
+                <div class="rkm-admin-users-form__footer">
+                    <button
+                        type="submit"
+                        class="rkm-admin-users-form__submit"
+                        data-rkm-admin-users-submit
+                        data-loading-label="Guardando cambios..."
+                    >
+                        Guardar cambios
+                    </button>
+                    <button type="button" class="rkm-admin-users-form__cancel" data-rkm-edit-modal-close>
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </section>
     </div>
 </div>
