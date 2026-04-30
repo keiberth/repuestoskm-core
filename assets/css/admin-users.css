@@ -320,6 +320,32 @@
     padding: 0 12px;
 }
 
+.rkm-app .rkm-admin-users-page button.rkm-admin-users-table__action,
+.rkm-app .rkm-admin-users-page .rkm-admin-users-table__action {
+    background: #eff6ff !important;
+    color: #1d4ed8 !important;
+    border: 1px solid rgba(37, 99, 235, 0.16) !important;
+    box-shadow: none !important;
+}
+
+.rkm-app .rkm-admin-users-page button.rkm-admin-users-table__action:hover,
+.rkm-app .rkm-admin-users-page button.rkm-admin-users-table__action:focus,
+.rkm-app .rkm-admin-users-page .rkm-admin-users-table__action:hover,
+.rkm-app .rkm-admin-users-page .rkm-admin-users-table__action:focus {
+    background: #dbeafe !important;
+    color: #1e40af !important;
+    border-color: rgba(37, 99, 235, 0.32) !important;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12) !important;
+    outline: none !important;
+}
+
+.rkm-app .rkm-admin-users-page button.rkm-admin-users-table__action:active,
+.rkm-app .rkm-admin-users-page .rkm-admin-users-table__action:active {
+    background: #bfdbfe !important;
+    color: #1e3a8a !important;
+    transform: translateY(0);
+}
+
 .rkm-admin-users-table__empty {
     text-align: center;
     color: #64748b;
