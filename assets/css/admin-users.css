@@ -420,8 +420,65 @@
 }
 
 .rkm-admin-users-modal__close:hover {
-    background: rgba(239, 68, 68, 0.12);
+    background: #dbeafe;
+    color: #1e40af;
     transform: translateY(-1px);
+}
+
+.rkm-app .rkm-admin-users-modal button.rkm-admin-users-modal__close,
+.rkm-app .rkm-admin-users-modal button.rkm-admin-users-form__cancel {
+    background: #f1f5f9 !important;
+    color: #334155 !important;
+    border: 1px solid rgba(148, 163, 184, 0.18) !important;
+    box-shadow: none !important;
+}
+
+.rkm-app .rkm-admin-users-modal button.rkm-admin-users-modal__close:hover,
+.rkm-app .rkm-admin-users-modal button.rkm-admin-users-modal__close:focus,
+.rkm-app .rkm-admin-users-modal button.rkm-admin-users-form__cancel:hover,
+.rkm-app .rkm-admin-users-modal button.rkm-admin-users-form__cancel:focus {
+    background: #dbeafe !important;
+    color: #1e40af !important;
+    border-color: rgba(37, 99, 235, 0.28) !important;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12) !important;
+    outline: none !important;
+}
+
+.rkm-app .rkm-admin-users-modal button.rkm-admin-users-form__submit {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    color: #fff !important;
+    border: 1px solid rgba(37, 99, 235, 0.2) !important;
+    box-shadow: 0 18px 28px rgba(37, 99, 235, 0.2) !important;
+}
+
+.rkm-app .rkm-admin-users-modal button.rkm-admin-users-form__submit:hover,
+.rkm-app .rkm-admin-users-modal button.rkm-admin-users-form__submit:focus {
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+    color: #fff !important;
+    border-color: rgba(30, 64, 175, 0.34) !important;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14), 0 22px 32px rgba(37, 99, 235, 0.24) !important;
+    outline: none !important;
+}
+
+.rkm-app .rkm-admin-users-modal button.rkm-admin-users-form__submit:active {
+    background: #1e40af !important;
+    color: #fff !important;
+    transform: translateY(0);
+}
+
+.rkm-app .rkm-admin-users-modal button.rkm-admin-users-form__cancel {
+    background: #f8fafc !important;
+    color: #475569 !important;
+    border-color: rgba(148, 163, 184, 0.28) !important;
+}
+
+.rkm-app .rkm-admin-users-modal button.rkm-admin-users-form__cancel:hover,
+.rkm-app .rkm-admin-users-modal button.rkm-admin-users-form__cancel:focus {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+    border-color: rgba(100, 116, 139, 0.28) !important;
+    box-shadow: 0 0 0 4px rgba(100, 116, 139, 0.1) !important;
+    outline: none !important;
 }
 
 .rkm-admin-users-modal__header {

@@ -119,7 +119,7 @@ class RKM_Admin_Dashboard {
                 [
                     'label'       => 'WordPress Admin',
                     'description' => 'Entrar al backoffice para configuracion avanzada y gestion total.',
-                    'url'         => admin_url(),
+                    'url'         => add_query_arg('rkm_keep_wp_admin', '1', admin_url()),
                 ],
             ],
             'admin_future_blocks' => [
