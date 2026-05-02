@@ -103,7 +103,7 @@ class RKM_Auth {
     }
 
     public static function get_logout_redirect_url() {
-        return apply_filters('rkm_logout_redirect_url', home_url('/'));
+        return apply_filters('rkm_logout_redirect_url', self::get_login_url());
     }
 
     public static function get_logout_url() {
