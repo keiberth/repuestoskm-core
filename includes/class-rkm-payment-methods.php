@@ -120,7 +120,7 @@ class RKM_Payment_Methods {
             'rkm-admin-payment-methods-css',
             RKM_CORE_URL . 'assets/css/admin-payment-methods.css',
             ['rkm-dashboard-css'],
-            '1.0.0'
+            rkm_core_asset_version('assets/css/admin-payment-methods.css')
         );
 
         wp_enqueue_script(

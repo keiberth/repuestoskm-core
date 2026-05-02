@@ -44,7 +44,7 @@ class RKM_Admin_Users {
             'rkm-admin-users-css',
             RKM_CORE_URL . 'assets/css/admin-users.css',
             ['rkm-dashboard-css'],
-            '1.0.0'
+            rkm_core_asset_version('assets/css/admin-users.css')
         );
 
         wp_enqueue_script(

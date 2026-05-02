@@ -136,7 +136,7 @@ class RKM_Payment_Terms {
             'rkm-admin-payment-terms-css',
             RKM_CORE_URL . 'assets/css/admin-payment-terms.css',
             ['rkm-dashboard-css'],
-            '1.0.0'
+            rkm_core_asset_version('assets/css/admin-payment-terms.css')
         );
     }
 

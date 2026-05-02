@@ -94,7 +94,7 @@ class RKM_Assignments {
             'rkm-admin-assignments-css',
             RKM_CORE_URL . 'assets/css/admin-assignments.css',
             ['rkm-dashboard-css'],
-            '1.0.0'
+            rkm_core_asset_version('assets/css/admin-assignments.css')
         );
 
         wp_enqueue_script(

@@ -15,6 +15,7 @@ class RKM_Dashboard {
 
     public function init() {
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
+        add_action('woocommerce_account_panel_endpoint', [$this, 'force_enqueue_assets']);
         add_action('woocommerce_account_panel_endpoint', [$this, 'render_dashboard']);
 
         add_filter('woocommerce_account_menu_items', [$this, 'remove_woocommerce_menu']);
@@ -24,12 +25,12 @@ class RKM_Dashboard {
         return [];
     }
 
-    public function enqueue_assets() {
+    public function enqueue_assets($force = false) {
         if (!is_user_logged_in()) {
             return;
         }
 
-        if (!(function_exists('is_account_page') && is_account_page())) {
+        if (!$force && !$this->is_rkm_frontend_area()) {
             return;
         }
 
@@ -39,56 +40,56 @@ class RKM_Dashboard {
             'rkm-base-css',
             RKM_CORE_URL . 'assets/css/base.css',
             [],
-            '1.0.0'
+            rkm_core_asset_version('assets/css/base.css')
         );
 
         wp_enqueue_style(
             'rkm-layout-css',
             RKM_CORE_URL . 'assets/css/layout.css',
             ['rkm-base-css'],
-            '1.0.0'
+            rkm_core_asset_version('assets/css/layout.css')
         );
 
         wp_enqueue_style(
             'rkm-components-css',
             RKM_CORE_URL . 'assets/css/components.css',
             ['rkm-layout-css'],
-            '1.0.0'
+            rkm_core_asset_version('assets/css/components.css')
         );
 
         wp_enqueue_style(
             'rkm-responsive-css',
             RKM_CORE_URL . 'assets/css/responsive.css',
             ['rkm-components-css'],
-            '1.0.0'
+            rkm_core_asset_version('assets/css/responsive.css')
         );
 
         wp_enqueue_style(
             'rkm-dashboard-css',
             RKM_CORE_URL . 'assets/css/dashboard.css',
-            ['rkm-responsive-css'],
-            '1.0.0'
+            [],
+            rkm_core_asset_version('assets/css/dashboard.css')
         );
 
         wp_enqueue_style(
             'rkm-orders-css',
             RKM_CORE_URL . 'assets/css/orders.css',
             ['rkm-dashboard-css'],
-            '1.0.0'
+            rkm_core_asset_version('assets/css/orders.css')
         );
 
         wp_enqueue_style(
             'rkm-pedidos-css',
             RKM_CORE_URL . 'assets/css/pedidos.css',
             ['rkm-orders-css'],
-            '1.0.0'
+            rkm_core_asset_version('assets/css/pedidos.css')
         );
 
         wp_enqueue_style(
             'rkm-catalogo-css',
             RKM_CORE_URL . 'assets/css/catalogo.css',
             ['rkm-pedidos-css'],
-            '1.0.0'
+            rkm_core_asset_version('assets/css/catalogo.css')
         );
 
         wp_enqueue_script(
@@ -153,6 +154,40 @@ class RKM_Dashboard {
                 true
             );
         }
+    }
+
+    public function force_enqueue_assets() {
+        $this->enqueue_assets(true);
+    }
+
+    private function is_rkm_frontend_area() {
+        if (function_exists('is_account_page') && is_account_page()) {
+            return true;
+        }
+
+        $request_uri = isset($_SERVER['REQUEST_URI']) ? (string) wp_unslash($_SERVER['REQUEST_URI']) : '';
+        $request_path = wp_parse_url($request_uri, PHP_URL_PATH);
+
+        if (!is_string($request_path)) {
+            $request_path = $request_uri;
+        }
+
+        $request_path = strtolower($request_path);
+        $rkm_paths = [
+            '/mi-cuenta',
+            '/panel',
+            '/catalogo',
+            '/pedidos',
+            '/historial',
+        ];
+
+        foreach ($rkm_paths as $path) {
+            if (strpos($request_path, $path) !== false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function render_dashboard() {

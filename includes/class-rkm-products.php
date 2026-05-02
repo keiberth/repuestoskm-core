@@ -62,7 +62,7 @@ class RKM_Products {
             'rkm-admin-products-css',
             RKM_CORE_URL . 'assets/css/admin-products.css',
             ['rkm-dashboard-css'],
-            '1.0.0'
+            rkm_core_asset_version('assets/css/admin-products.css')
         );
 
         wp_enqueue_script(

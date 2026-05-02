@@ -142,7 +142,7 @@ class RKM_Current_Account {
             'rkm-current-account-css',
             RKM_CORE_URL . 'assets/css/current-account.css',
             ['rkm-dashboard-css'],
-            '1.0.0'
+            rkm_core_asset_version('assets/css/current-account.css')
         );
 
         wp_enqueue_script(

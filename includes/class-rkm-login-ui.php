@@ -21,14 +21,14 @@ class RKM_Login_UI {
             'rkm-base-css',
             RKM_CORE_URL . 'assets/css/base.css',
             [],
-            '1.0.0'
+            rkm_core_asset_version('assets/css/base.css')
         );
 
         wp_enqueue_style(
             'rkm-login-css',
             RKM_CORE_URL . 'assets/css/login.css',
             ['rkm-base-css'],
-            '1.0.0'
+            rkm_core_asset_version('assets/css/login.css')
         );
 
         wp_enqueue_script(

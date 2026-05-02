@@ -7,12 +7,35 @@
  * Text Domain: repuestoskm-core
  */
 
+die('PLUGIN ACTIVO RKM');
+
 if (!defined('ABSPATH')) {
     exit;
 }
 
-define('RKM_CORE_PATH', plugin_dir_path(__FILE__));
-define('RKM_CORE_URL', plugin_dir_url(__FILE__));
+if (!defined('RKM_CORE_VERSION')) {
+    define('RKM_CORE_VERSION', '1.0.0');
+}
+
+if (!defined('RKM_CORE_PATH')) {
+    define('RKM_CORE_PATH', plugin_dir_path(__FILE__));
+}
+
+if (!defined('RKM_CORE_URL')) {
+    define('RKM_CORE_URL', plugin_dir_url(__FILE__));
+}
+
+if (!function_exists('rkm_core_asset_version')) {
+    function rkm_core_asset_version($relative_path) {
+        $file = RKM_CORE_PATH . ltrim($relative_path, '/');
+
+        if (file_exists($file)) {
+            return filemtime($file);
+        }
+
+        return RKM_CORE_VERSION;
+    }
+}
 
 require_once RKM_CORE_PATH . 'includes/class-rkm-loader.php';
 require_once RKM_CORE_PATH . 'includes/class-rkm-permissions.php';
@@ -49,9 +72,9 @@ function rkm_enqueue_assets() {
 
     wp_enqueue_style(
         'rkm-orders',
-        plugin_dir_url(__FILE__) . 'assets/css/orders.css',
+        RKM_CORE_URL . 'assets/css/orders.css',
         [],
-        '1.0'
+        rkm_core_asset_version('assets/css/orders.css')
     );
 }
 add_action('wp_enqueue_scripts', 'rkm_enqueue_assets');

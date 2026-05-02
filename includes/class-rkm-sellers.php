@@ -56,7 +56,7 @@ class RKM_Sellers {
             'rkm-sellers-css',
             RKM_CORE_URL . 'assets/css/sellers.css',
             ['rkm-catalogo-css'],
-            '1.0.0'
+            rkm_core_asset_version('assets/css/sellers.css')
         );
 
         wp_enqueue_script(
