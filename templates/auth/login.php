@@ -26,7 +26,7 @@ $register_email_value = (!empty($_POST['email']) && is_string($_POST['email']))
 do_action('woocommerce_before_customer_login_form');
 ?>
 
-<div class="rkm-login-screen">
+<div class="rkm-login-page rkm-login-screen">
     <section class="rkm-login-screen__brand" aria-label="<?php esc_attr_e('Presentacion del sistema', 'repuestoskm-core'); ?>">
         <div class="rkm-login-screen__brand-inner">
             <div class="rkm-login-screen__badge">
@@ -106,7 +106,7 @@ do_action('woocommerce_before_customer_login_form');
                                 />
                             </span>
                             <button
-                                class="rkm-login-form__password-toggle"
+                                class="rkm-password-toggle rkm-login-form__password-toggle"
                                 type="button"
                                 data-rkm-password-toggle
                                 data-target="password"
@@ -210,7 +210,7 @@ do_action('woocommerce_before_customer_login_form');
                                         />
                                     </span>
                                     <button
-                                        class="rkm-login-form__password-toggle"
+                                        class="rkm-password-toggle rkm-login-form__password-toggle"
                                         type="button"
                                         data-rkm-password-toggle
                                         data-target="reg_password"

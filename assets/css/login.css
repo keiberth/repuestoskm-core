@@ -644,3 +644,785 @@ body.woocommerce-account.rkm-login-ui .rkm-register-form .rkm-login-form__passwo
         padding: 0 12px;
     }
 }
+
+body.woocommerce-account.rkm-login-ui .entry-title,
+body.woocommerce-account.rkm-login-ui .page-title,
+body.woocommerce-account.rkm-login-ui .wp-block-post-title,
+body.woocommerce-account.rkm-login-ui .elementor-heading-title,
+body.woocommerce-account.rkm-login-ui .custom-logo-link {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+body.woocommerce-account.rkm-login-ui .site-title,
+body.woocommerce-account.rkm-login-ui div.site-title,
+body.woocommerce-account.rkm-login-ui .site-title a,
+body.rkm-login-ui .site-title,
+body.rkm-login-ui div.site-title,
+body.rkm-login-ui .site-title a {
+    color: transparent !important;
+    text-shadow: none !important;
+    text-decoration: none !important;
+}
+
+body.woocommerce-account.rkm-login-ui .site-title,
+body.woocommerce-account.rkm-login-ui div.site-title,
+body.rkm-login-ui .site-title,
+body.rkm-login-ui div.site-title {
+    display: block !important;
+    visibility: hidden !important;
+}
+
+body.woocommerce-account.rkm-login-ui .site-branding,
+body.rkm-login-ui .site-branding {
+    display: block !important;
+    visibility: hidden !important;
+}
+
+body.woocommerce-account.rkm-login-ui header.site-header,
+body.rkm-login-ui header.site-header {
+    display: block !important;
+    visibility: hidden !important;
+}
+
+body.woocommerce-account.rkm-login-ui .rkm-login-page,
+body.woocommerce-account.rkm-login-ui .rkm-login-page * {
+    box-sizing: border-box;
+}
+
+body.woocommerce-account.rkm-login-ui .rkm-login-page .rkm-login-form__password-wrap {
+    position: relative !important;
+    display: block !important;
+    width: 100% !important;
+    min-height: 54px !important;
+    padding: 0 !important;
+    border: 1px solid rgba(148, 163, 184, 0.22) !important;
+    border-radius: 16px !important;
+    background: #fff !important;
+    overflow: hidden !important;
+}
+
+body.woocommerce-account.rkm-login-ui .rkm-login-page .rkm-login-form__password-input {
+    display: block !important;
+    width: 100% !important;
+    min-height: 54px !important;
+    padding: 0 !important;
+}
+
+body.woocommerce-account.rkm-login-ui .rkm-login-page .rkm-login-form__password-wrap .woocommerce-Input.input-text {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 54px !important;
+    height: 54px !important;
+    margin: 0 !important;
+    padding: 0 126px 0 16px !important;
+    border: none !important;
+    border-radius: 16px !important;
+    background: transparent !important;
+    color: #0f172a !important;
+    box-shadow: none !important;
+    line-height: 54px !important;
+}
+
+body.woocommerce-account.rkm-login-ui .rkm-login-page .rkm-password-toggle,
+body.woocommerce-account.rkm-login-ui .rkm-login-page .rkm-login-form__password-toggle {
+    position: absolute !important;
+    top: 50% !important;
+    right: 8px !important;
+    bottom: auto !important;
+    left: auto !important;
+    z-index: 2 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    width: auto !important;
+    min-width: 100px !important;
+    max-width: 112px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    margin: 0 !important;
+    padding: 0 12px !important;
+    border: 1px solid rgba(37, 99, 235, 0.14) !important;
+    border-radius: 12px !important;
+    background: #eff6ff !important;
+    color: #2563eb !important;
+    box-shadow: none !important;
+    transform: translateY(-50%) !important;
+    line-height: 1 !important;
+    text-decoration: none !important;
+}
+
+body.woocommerce-account.rkm-login-ui .rkm-login-page .rkm-login-form__password-toggle:hover,
+body.woocommerce-account.rkm-login-ui .rkm-login-page .rkm-login-form__password-toggle:focus,
+body.woocommerce-account.rkm-login-ui .rkm-login-page .rkm-login-form__password-toggle:focus-visible {
+    border-color: rgba(37, 99, 235, 0.28) !important;
+    background: #dbeafe !important;
+    color: #1d4ed8 !important;
+    box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.16) !important;
+    outline: none !important;
+    transform: translateY(-50%) !important;
+}
+
+body.woocommerce-account.rkm-login-ui .rkm-login-page .rkm-login-form__password-toggle.is-active {
+    background: #dbeafe !important;
+    color: #1d4ed8 !important;
+}
+
+@media (max-width: 560px) {
+    body.woocommerce-account.rkm-login-ui .rkm-login-page .rkm-login-form__password-wrap .woocommerce-Input.input-text {
+        padding-right: 112px !important;
+    }
+
+    body.woocommerce-account.rkm-login-ui .rkm-login-page .rkm-login-form__password-toggle {
+        min-width: 88px !important;
+        max-width: 96px !important;
+        padding: 0 10px !important;
+    }
+}
+
+body.rkm-login-ui {
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at 12% 8%, rgba(37, 99, 235, 0.16), transparent 28%),
+        radial-gradient(circle at 88% 92%, rgba(15, 23, 42, 0.1), transparent 34%),
+        linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%) !important;
+}
+
+body.rkm-login-ui .site-title,
+body.rkm-login-ui div.site-title,
+body.rkm-login-ui .site-title a,
+body.rkm-login-ui .site-branding,
+body.rkm-login-ui header.site-header,
+body.rkm-login-ui .entry-title,
+body.rkm-login-ui .page-title {
+    display: none !important;
+}
+
+body.rkm-login-ui .woocommerce {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    padding: 44px 32px 44px !important;
+}
+
+body.rkm-login-ui .woocommerce::before,
+body.rkm-login-ui .woocommerce::after {
+    display: none !important;
+}
+
+body.rkm-login-ui .rkm-login-page.rkm-login-screen {
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(380px, 430px);
+    width: min(1180px, 100%);
+    min-height: 680px;
+    margin: 0 auto;
+    border: 1px solid rgba(226, 232, 240, 0.72);
+    border-radius: 34px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 34px 80px rgba(15, 23, 42, 0.16);
+    backdrop-filter: blur(16px);
+}
+
+body.rkm-login-ui .rkm-login-screen__brand {
+    display: flex;
+    min-height: 680px;
+    padding: 46px;
+    background:
+        radial-gradient(circle at 82% 12%, rgba(96, 165, 250, 0.22), transparent 30%),
+        radial-gradient(circle at 8% 92%, rgba(37, 99, 235, 0.2), transparent 34%),
+        linear-gradient(145deg, #0b1220 0%, #13233f 52%, #1d4ed8 100%);
+}
+
+body.rkm-login-ui .rkm-login-screen__brand-inner {
+    width: 100%;
+    min-height: 100%;
+    gap: 34px;
+}
+
+body.rkm-login-ui .rkm-login-screen__badge {
+    min-height: 72px;
+    padding: 10px 18px 10px 10px;
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.16);
+    color: rgba(226, 232, 240, 0.9);
+}
+
+body.rkm-login-ui .rkm-login-screen__logo {
+    width: 54px;
+    height: 54px;
+    flex-basis: 54px;
+}
+
+body.rkm-login-ui .rkm-login-screen__copy {
+    max-width: 620px;
+}
+
+body.rkm-login-ui .rkm-login-screen__copy h1 {
+    max-width: 620px;
+    margin-bottom: 18px;
+    color: #fff;
+    font-size: 58px;
+    line-height: 0.98;
+    letter-spacing: 0;
+}
+
+body.rkm-login-ui .rkm-login-screen__lead {
+    max-width: 520px;
+    color: rgba(226, 232, 240, 0.86);
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+body.rkm-login-ui .rkm-login-screen__highlights {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+body.rkm-login-ui .rkm-login-screen__highlight {
+    min-height: 136px;
+    padding: 18px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+body.rkm-login-ui .rkm-login-screen__auth {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 680px;
+    padding: 42px 34px;
+    background: linear-gradient(180deg, #f8fafc 0%, #eef4fb 100%);
+}
+
+body.rkm-login-ui .rkm-login-panel {
+    width: 100%;
+    max-width: 380px;
+}
+
+body.rkm-login-ui .rkm-login-card {
+    padding: 30px;
+    border: 1px solid rgba(226, 232, 240, 0.92);
+    border-radius: 26px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 20px 46px rgba(15, 23, 42, 0.09);
+}
+
+body.rkm-login-ui .rkm-login-card__header h2 {
+    color: #0f172a;
+    font-size: 32px;
+    line-height: 1.05;
+    letter-spacing: 0;
+}
+
+body.rkm-login-ui .rkm-login-form__row .input-text {
+    min-height: 54px;
+    border-radius: 16px;
+}
+
+body.rkm-login-ui .rkm-login-page .rkm-login-form__password-wrap {
+    position: relative !important;
+    display: block !important;
+    min-height: 54px !important;
+    border: 1px solid rgba(148, 163, 184, 0.24) !important;
+    border-radius: 16px !important;
+    background: #fff !important;
+    overflow: hidden !important;
+}
+
+body.rkm-login-ui .rkm-login-page .rkm-login-form__password-wrap .woocommerce-Input.input-text {
+    width: 100% !important;
+    height: 54px !important;
+    min-height: 54px !important;
+    padding: 0 118px 0 16px !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+body.rkm-login-ui .rkm-login-page .rkm-password-toggle,
+body.rkm-login-ui .rkm-login-page .rkm-login-form__password-toggle {
+    position: absolute !important;
+    top: 50% !important;
+    right: 8px !important;
+    z-index: 2 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: auto !important;
+    min-width: 96px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    margin: 0 !important;
+    padding: 0 12px !important;
+    border: 1px solid rgba(37, 99, 235, 0.16) !important;
+    border-radius: 12px !important;
+    background: #eff6ff !important;
+    color: #2563eb !important;
+    box-shadow: none !important;
+    transform: translateY(-50%) !important;
+}
+
+body.rkm-login-ui .rkm-login-form__submit {
+    min-height: 54px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    box-shadow: 0 18px 30px rgba(37, 99, 235, 0.24);
+}
+
+@media (max-width: 1180px) {
+    body.rkm-login-ui .woocommerce {
+        padding: 36px 20px 36px !important;
+    }
+
+    body.rkm-login-ui .rkm-login-page.rkm-login-screen {
+        grid-template-columns: 1fr;
+        width: min(760px, 100%);
+        min-height: auto;
+    }
+
+    body.rkm-login-ui .rkm-login-screen__brand,
+    body.rkm-login-ui .rkm-login-screen__auth {
+        min-height: auto;
+    }
+}
+
+@media (max-width: 820px) {
+    body.rkm-login-ui .woocommerce {
+        align-items: flex-start !important;
+        min-height: 100vh !important;
+        padding: 28px 16px 28px !important;
+    }
+
+    body.rkm-login-ui .rkm-login-page.rkm-login-screen {
+        border-radius: 24px;
+    }
+
+    body.rkm-login-ui .rkm-login-screen__brand,
+    body.rkm-login-ui .rkm-login-screen__auth {
+        padding: 24px 20px;
+    }
+
+    body.rkm-login-ui .rkm-login-screen__copy h1 {
+        font-size: 36px;
+        line-height: 1.05;
+    }
+
+    body.rkm-login-ui .rkm-login-screen__highlights {
+        grid-template-columns: 1fr;
+    }
+
+    body.rkm-login-ui .rkm-login-card {
+        padding: 24px 20px;
+        border-radius: 22px;
+    }
+}
+
+body.rkm-login-ui .rkm-login-page.rkm-login-screen {
+    grid-template-columns: minmax(0, 1.02fr) minmax(360px, 410px);
+    width: min(1080px, calc(100vw - 64px));
+    min-height: 620px;
+    border-radius: 30px;
+    box-shadow: 0 28px 64px rgba(15, 23, 42, 0.14);
+}
+
+body.rkm-login-ui .rkm-login-screen__brand {
+    min-height: 620px;
+    padding: 40px 42px;
+}
+
+body.rkm-login-ui .rkm-login-screen__brand-inner {
+    gap: 28px;
+}
+
+body.rkm-login-ui .rkm-login-screen__copy {
+    max-width: 500px;
+}
+
+body.rkm-login-ui .rkm-login-screen__copy h1 {
+    max-width: 500px;
+    font-size: 48px;
+    line-height: 1.04;
+}
+
+body.rkm-login-ui .rkm-login-screen__lead {
+    max-width: 470px;
+    font-size: 15px;
+}
+
+body.rkm-login-ui .rkm-login-screen__highlights {
+    gap: 12px;
+}
+
+body.rkm-login-ui .rkm-login-screen__highlight {
+    min-height: 118px;
+    padding: 16px;
+    border-radius: 18px;
+}
+
+body.rkm-login-ui .rkm-login-screen__auth {
+    min-height: 620px;
+    padding: 36px 30px;
+}
+
+body.rkm-login-ui .rkm-login-panel {
+    max-width: 350px;
+}
+
+body.rkm-login-ui .rkm-login-card {
+    padding: 28px 26px;
+    border-radius: 22px;
+}
+
+body.rkm-login-ui .rkm-login-card__header {
+    margin-bottom: 20px;
+}
+
+body.rkm-login-ui .rkm-login-card__header h2 {
+    font-size: 30px;
+}
+
+body.rkm-login-ui .rkm-login-form,
+body.rkm-login-ui .rkm-register-form {
+    gap: 14px;
+}
+
+body.rkm-login-ui .rkm-login-page .rkm-password-toggle,
+body.rkm-login-ui .rkm-login-page .rkm-login-form__password-toggle {
+    min-width: 92px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    border-radius: 10px !important;
+    font-size: 11px !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
+}
+
+body.rkm-login-ui .rkm-login-page .rkm-login-form__password-wrap .woocommerce-Input.input-text {
+    padding-right: 112px !important;
+}
+
+body.rkm-login-ui .rkm-login-form__submit {
+    min-height: 52px;
+    border-radius: 12px;
+    letter-spacing: 0.05em;
+}
+
+@media (max-width: 1180px) {
+    body.rkm-login-ui .rkm-login-page.rkm-login-screen {
+        width: min(720px, 100%);
+        min-height: auto;
+    }
+
+    body.rkm-login-ui .rkm-login-screen__brand,
+    body.rkm-login-ui .rkm-login-screen__auth {
+        min-height: auto;
+    }
+}
+
+@media (max-width: 820px) {
+    body.rkm-login-ui .rkm-login-page.rkm-login-screen {
+        width: 100%;
+    }
+
+    body.rkm-login-ui .rkm-login-screen__copy,
+    body.rkm-login-ui .rkm-login-screen__copy h1,
+    body.rkm-login-ui .rkm-login-screen__lead {
+        max-width: none;
+    }
+
+    body.rkm-login-ui .rkm-login-screen__copy h1 {
+        font-size: 34px;
+    }
+
+    body.rkm-login-ui .rkm-login-panel {
+        max-width: 100%;
+    }
+}
+
+body.rkm-login-ui .woocommerce {
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 100vh !important;
+    padding: 72px 28px 40px !important;
+}
+
+body.rkm-login-ui .rkm-login-page.rkm-login-screen {
+    grid-template-columns: 55% 45%;
+    width: min(1180px, calc(100vw - 56px));
+    max-width: 1180px;
+    min-height: 640px;
+    margin: auto;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0 28px 70px rgba(15, 23, 42, 0.15);
+}
+
+body.rkm-login-ui .rkm-login-screen__brand {
+    min-height: 640px;
+    padding: 42px 44px;
+}
+
+body.rkm-login-ui .rkm-login-screen__brand-inner {
+    justify-content: space-between;
+    gap: 26px;
+}
+
+body.rkm-login-ui .rkm-login-screen__copy {
+    max-width: 520px;
+}
+
+body.rkm-login-ui .rkm-login-screen__copy h1 {
+    max-width: 520px;
+    font-size: 50px;
+    line-height: 1.02;
+    letter-spacing: 0;
+    text-wrap: balance;
+}
+
+body.rkm-login-ui .rkm-login-screen__lead {
+    max-width: 500px;
+    font-size: 15px;
+    line-height: 1.65;
+}
+
+body.rkm-login-ui .rkm-login-screen__highlights {
+    gap: 12px;
+}
+
+body.rkm-login-ui .rkm-login-screen__highlight {
+    min-height: 112px;
+    padding: 15px;
+    border-radius: 18px;
+}
+
+body.rkm-login-ui .rkm-login-screen__highlight strong {
+    font-size: 16px;
+}
+
+body.rkm-login-ui .rkm-login-screen__highlight span {
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+body.rkm-login-ui .rkm-login-screen__auth {
+    min-height: 640px;
+    padding: 36px 34px;
+}
+
+body.rkm-login-ui .rkm-login-panel {
+    max-width: 380px;
+    gap: 14px;
+}
+
+body.rkm-login-ui .rkm-login-card {
+    padding: 28px 26px;
+    border-radius: 18px;
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+}
+
+body.rkm-login-ui .rkm-login-card__header {
+    margin-bottom: 18px;
+}
+
+body.rkm-login-ui .rkm-login-card__header h2 {
+    font-size: 30px;
+    line-height: 1.05;
+}
+
+body.rkm-login-ui .rkm-login-card__header p {
+    font-size: 14px;
+    line-height: 1.55;
+}
+
+body.rkm-login-ui .rkm-login-form,
+body.rkm-login-ui .rkm-register-form {
+    gap: 13px;
+}
+
+body.rkm-login-ui .rkm-login-form__row label {
+    margin-bottom: 7px;
+}
+
+body.rkm-login-ui .rkm-login-page .rkm-login-form__password-wrap {
+    position: relative !important;
+    min-height: 52px !important;
+    border-radius: 14px !important;
+}
+
+body.rkm-login-ui .rkm-login-page .rkm-login-form__password-wrap .woocommerce-Input.input-text {
+    height: 52px !important;
+    min-height: 52px !important;
+    padding: 0 108px 0 15px !important;
+    line-height: 52px !important;
+}
+
+body.rkm-login-ui .rkm-login-page .rkm-password-toggle,
+body.rkm-login-ui .rkm-login-page .rkm-login-form__password-toggle {
+    position: absolute !important;
+    top: 50% !important;
+    right: 12px !important;
+    min-width: auto !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    padding: 0 10px !important;
+    border: none !important;
+    border-radius: 8px !important;
+    background: transparent !important;
+    color: #2563eb !important;
+    box-shadow: none !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
+    transform: translateY(-50%) !important;
+}
+
+body.rkm-login-ui .rkm-login-page .rkm-login-form__password-toggle:hover,
+body.rkm-login-ui .rkm-login-page .rkm-login-form__password-toggle:focus,
+body.rkm-login-ui .rkm-login-page .rkm-login-form__password-toggle:focus-visible {
+    background: rgba(37, 99, 235, 0.08) !important;
+    color: #1d4ed8 !important;
+    box-shadow: none !important;
+    transform: translateY(-50%) !important;
+}
+
+body.rkm-login-ui .rkm-login-form__submit {
+    min-height: 50px;
+    padding: 0 18px;
+    border-radius: 9px;
+    box-shadow: 0 16px 28px rgba(37, 99, 235, 0.22);
+}
+
+@media (max-width: 1180px) {
+    body.rkm-login-ui .woocommerce {
+        padding: 56px 20px 32px !important;
+    }
+
+    body.rkm-login-ui .rkm-login-page.rkm-login-screen {
+        grid-template-columns: 1fr;
+        width: min(760px, 100%);
+        min-height: auto;
+    }
+
+    body.rkm-login-ui .rkm-login-screen__brand,
+    body.rkm-login-ui .rkm-login-screen__auth {
+        min-height: auto;
+    }
+}
+
+@media (max-width: 820px) {
+    body.rkm-login-ui .woocommerce {
+        align-items: flex-start !important;
+        padding: 40px 14px 24px !important;
+    }
+
+    body.rkm-login-ui .rkm-login-page.rkm-login-screen {
+        width: 100%;
+        border-radius: 22px;
+    }
+
+    body.rkm-login-ui .rkm-login-screen__brand,
+    body.rkm-login-ui .rkm-login-screen__auth {
+        padding: 22px 18px;
+    }
+
+    body.rkm-login-ui .rkm-login-screen__copy,
+    body.rkm-login-ui .rkm-login-screen__copy h1,
+    body.rkm-login-ui .rkm-login-screen__lead {
+        max-width: none;
+    }
+
+    body.rkm-login-ui .rkm-login-screen__copy h1 {
+        font-size: 34px;
+        line-height: 1.05;
+    }
+
+    body.rkm-login-ui .rkm-login-panel {
+        max-width: 100%;
+    }
+
+    body.rkm-login-ui .rkm-login-card {
+        padding: 24px 20px;
+    }
+}
+
+body.rkm-login-ui {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+}
+
+body.rkm-login-ui header.site-header,
+body.rkm-login-ui .site-title,
+body.rkm-login-ui .site-title a,
+body.rkm-login-ui .site-branding,
+body.rkm-login-ui .page-header,
+body.rkm-login-ui .entry-title {
+    display: block !important;
+    visibility: hidden !important;
+}
+
+body.rkm-login-ui .rkm-login-screen {
+    display: grid;
+    grid-template-columns: 55% 45%;
+    min-height: 100vh;
+}
+
+body.rkm-login-ui .rkm-login-screen__auth {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+body.rkm-login-ui .rkm-login-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+body.rkm-login-ui .rkm-login-card {
+    width: 100%;
+    max-width: 380px;
+    border-radius: 16px;
+}
+
+body.rkm-login-ui .rkm-login-form,
+body.rkm-login-ui .rkm-register-form {
+    border: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+body.rkm-login-ui .rkm-login-form__password-wrap {
+    position: relative !important;
+}
+
+body.rkm-login-ui .rkm-login-form__password-input input {
+    padding-right: 100px !important;
+}
+
+body.rkm-login-ui .rkm-login-form__password-toggle {
+    position: absolute !important;
+    right: 12px !important;
+    top: 50% !important;
+    gap: 7px !important;
+    transform: translateY(-50%) !important;
+}
+
+@media (max-width: 820px) {
+    body.rkm-login-ui .rkm-login-screen {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+}

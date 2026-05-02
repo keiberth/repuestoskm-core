@@ -595,3 +595,93 @@
         text-transform: uppercase;
     }
 }
+
+.rkm-app .rkm-admin-users-page .rkm-admin-users-edit-modal,
+.rkm-app .rkm-admin-users-page .rkm-admin-users-edit-modal[aria-hidden="true"] {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 2147483000 !important;
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    padding: 24px !important;
+    box-sizing: border-box !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+.rkm-app .rkm-admin-users-page .rkm-admin-users-edit-modal.is-open,
+.rkm-app .rkm-admin-users-page .rkm-admin-users-edit-modal[aria-hidden="false"] {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+.rkm-app .rkm-admin-users-page .rkm-admin-users-edit-modal *,
+.rkm-app .rkm-admin-users-page .rkm-admin-users-edit-modal *::before,
+.rkm-app .rkm-admin-users-page .rkm-admin-users-edit-modal *::after {
+    box-sizing: border-box;
+}
+
+.rkm-app .rkm-admin-users-page .rkm-admin-users-edit-modal__outside-form,
+.rkm-app .rkm-admin-users-page .rkm-admin-users-edit-modal > form,
+.rkm-app .rkm-admin-users-page .rkm-admin-users-edit-modal > .rkm-admin-users-form {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+.rkm-app .rkm-admin-users-page .rkm-admin-users-edit-modal .rkm-admin-users-modal__overlay {
+    position: absolute !important;
+    inset: 0 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 !important;
+}
+
+.rkm-app .rkm-admin-users-page .rkm-admin-users-edit-modal .rkm-admin-users-modal__dialog {
+    position: relative !important;
+    z-index: 1 !important;
+    display: block !important;
+    width: min(720px, 100%) !important;
+    max-width: 720px !important;
+    max-height: calc(100vh - 48px) !important;
+    margin: 0 auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    background: #fff !important;
+}
+
+.rkm-app .rkm-admin-users-page .rkm-admin-users-edit-modal .rkm-admin-users-modal__dialog > .rkm-admin-users-form {
+    display: flex !important;
+    visibility: visible !important;
+}
+
+.rkm-app .rkm-admin-users-page .rkm-admin-users-edit-modal .rkm-admin-users-form__field input,
+.rkm-app .rkm-admin-users-page .rkm-admin-users-edit-modal .rkm-admin-users-form__field select {
+    appearance: none;
+    -webkit-appearance: none;
+    max-width: 100% !important;
+    box-shadow: none;
+}
+
+html.rkm-admin-users-modal-open,
+body.rkm-admin-users-modal-open {
+    overflow: hidden !important;
+}
+
+@media (max-width: 768px) {
+    .rkm-app .rkm-admin-users-page .rkm-admin-users-edit-modal,
+    .rkm-app .rkm-admin-users-page .rkm-admin-users-edit-modal[aria-hidden="true"] {
+        padding: 14px !important;
+    }
+
+    .rkm-app .rkm-admin-users-page .rkm-admin-users-edit-modal .rkm-admin-users-modal__dialog {
+        max-height: calc(100vh - 28px) !important;
+    }
+}

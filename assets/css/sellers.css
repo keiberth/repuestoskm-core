@@ -254,6 +254,15 @@
     word-break: break-word;
 }
 
+.rkm-app .rkm-sellers-actions a.rkm-sellers-action-card,
+.rkm-app .rkm-sellers-actions a.rkm-sellers-action-card:hover,
+.rkm-app .rkm-sellers-actions a.rkm-sellers-action-card:focus,
+.rkm-app .rkm-sellers-actions a.rkm-sellers-action-card:focus-visible,
+.rkm-app .rkm-sellers-actions a.rkm-sellers-action-card strong,
+.rkm-app .rkm-sellers-actions a.rkm-sellers-action-card span {
+    text-decoration: none !important;
+}
+
 .rkm-sellers-panel--orders {
     margin-top: 22px;
 }

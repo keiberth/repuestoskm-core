@@ -1,9 +1,15 @@
 document.addEventListener('DOMContentLoaded', function () {
-    var forms = document.querySelectorAll('[data-rkm-admin-users-form], [data-rkm-admin-users-edit-form]');
-    var roleSelect = document.getElementById('rkm_admin_user_role');
-    var roleHint = document.querySelector('[data-rkm-admin-role-hint]');
-    var modal = document.querySelector('[data-rkm-edit-modal]');
-    var editButtons = document.querySelectorAll('[data-rkm-edit-user]');
+    var page = document.querySelector('.rkm-app .rkm-admin-users-page');
+
+    if (!page) {
+        return;
+    }
+
+    var forms = page.querySelectorAll('[data-rkm-admin-users-form], [data-rkm-admin-users-edit-form]');
+    var roleSelect = page.querySelector('#rkm_admin_user_role');
+    var roleHint = page.querySelector('[data-rkm-admin-role-hint]');
+    var modal = page.querySelector('[data-rkm-edit-modal]');
+    var editButtons = page.querySelectorAll('[data-rkm-edit-user]');
     var editRoleSelect = modal ? modal.querySelector('[data-rkm-edit-role]') : null;
     var editRoleHint = modal ? modal.querySelector('[data-rkm-admin-edit-role-hint]') : null;
 
@@ -26,9 +32,11 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        modal.hidden = false;
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
         document.documentElement.classList.add('rkm-admin-users-modal-open');
+        document.body.classList.add('rkm-admin-users-modal-open');
 
         var firstInput = modal.querySelector('input:not([type="hidden"]):not([readonly])');
 
@@ -44,7 +52,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         modal.classList.remove('is-open');
         modal.setAttribute('aria-hidden', 'true');
+        modal.hidden = true;
         document.documentElement.classList.remove('rkm-admin-users-modal-open');
+        document.body.classList.remove('rkm-admin-users-modal-open');
     }
 
     function setField(selector, value) {
@@ -96,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function () {
         syncHint(editRoleSelect, editRoleHint);
     }
 
-    document.querySelectorAll('[data-rkm-edit-modal-close]').forEach(function (button) {
+    page.querySelectorAll('[data-rkm-edit-modal-close]').forEach(function (button) {
         button.addEventListener('click', closeModal);
     });
 
