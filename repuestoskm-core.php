@@ -7,7 +7,6 @@
  * Text Domain: repuestoskm-core
  */
 
-die('PLUGIN ACTIVO RKM');
 
 if (!defined('ABSPATH')) {
     exit;
