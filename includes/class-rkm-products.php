@@ -92,6 +92,9 @@ class RKM_Products {
             'view' => $view,
             'status_options' => $this->get_status_options(),
             'categories' => $this->get_product_categories(),
+            'rkm_vehicle_brands' => class_exists('RKM_Vehicle_Compatibility') ? RKM_Vehicle_Compatibility::get_terms(RKM_Vehicle_Compatibility::TAX_BRAND) : [],
+            'rkm_vehicle_models' => class_exists('RKM_Vehicle_Compatibility') ? RKM_Vehicle_Compatibility::get_terms(RKM_Vehicle_Compatibility::TAX_MODEL) : [],
+            'rkm_part_categories' => class_exists('RKM_Vehicle_Compatibility') ? RKM_Vehicle_Compatibility::get_terms(RKM_Vehicle_Compatibility::TAX_PART_CATEGORY) : [],
         ]);
 
         if ($view === 'create') {
@@ -295,6 +298,10 @@ class RKM_Products {
             }
 
             $saved_id = $product->save();
+
+            if (class_exists('RKM_Vehicle_Compatibility')) {
+                RKM_Vehicle_Compatibility::save_product_data($saved_id, $form_data['vehicle_compatibility']);
+            }
         } catch (Exception $exception) {
             if ($image_id > 0) {
                 wp_delete_attachment($image_id, true);
@@ -338,6 +345,16 @@ class RKM_Products {
     private function get_submitted_product_data() {
         $category_ids = isset($_POST['category_ids']) ? array_map('absint', (array) wp_unslash($_POST['category_ids'])) : [];
         $category_ids = array_values(array_filter($category_ids));
+        $vehicle_compatibility = class_exists('RKM_Vehicle_Compatibility')
+            ? RKM_Vehicle_Compatibility::get_submitted_data()
+            : [
+                'vehicle_brand' => '',
+                'vehicle_model' => '',
+                'part_category' => '',
+                'year_from' => '',
+                'year_to' => '',
+                'engine_version' => '',
+            ];
 
         return [
             'name' => isset($_POST['name']) ? sanitize_text_field(wp_unslash($_POST['name'])) : '',
@@ -350,6 +367,7 @@ class RKM_Products {
             'stock' => isset($_POST['stock']) ? max(0, absint($_POST['stock'])) : 0,
             'status' => $this->sanitize_product_status($_POST['status'] ?? 'publish'),
             'remove_gallery_image_ids' => $this->get_submitted_gallery_remove_ids(),
+            'vehicle_compatibility' => $vehicle_compatibility,
         ];
     }
 
@@ -378,6 +396,14 @@ class RKM_Products {
             }
         }
 
+        if (class_exists('RKM_Vehicle_Compatibility')) {
+            $vehicle_validation = RKM_Vehicle_Compatibility::validate_data($data['vehicle_compatibility']);
+
+            if (is_wp_error($vehicle_validation)) {
+                return $vehicle_validation;
+            }
+        }
+
         return true;
     }
 
@@ -392,7 +418,11 @@ class RKM_Products {
     }
 
     private function get_product_form_data($product) {
-        return [
+        $vehicle_data = class_exists('RKM_Vehicle_Compatibility')
+            ? RKM_Vehicle_Compatibility::get_product_data($product)
+            : [];
+
+        return array_merge([
             'id' => $product->get_id(),
             'name' => $product->get_name(),
             'sku' => $product->get_sku(),
@@ -405,7 +435,7 @@ class RKM_Products {
             'status' => $product->get_status(),
             'image_id' => $product->get_image_id(),
             'gallery_image_ids' => $product->get_gallery_image_ids(),
-        ];
+        ], $vehicle_data);
     }
 
     private function get_product_categories() {

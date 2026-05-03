@@ -10,6 +10,9 @@ $form_url = isset($form_url) ? $form_url : $section_url;
 $list_url = isset($list_url) ? $list_url : ($data['list_url'] ?? $section_url);
 $categories = isset($categories) && is_array($categories) ? $categories : (isset($data['categories']) && is_array($data['categories']) ? $data['categories'] : []);
 $status_options = isset($status_options) && is_array($status_options) ? $status_options : (isset($data['status_options']) && is_array($data['status_options']) ? $data['status_options'] : []);
+$rkm_vehicle_brands = isset($rkm_vehicle_brands) && is_array($rkm_vehicle_brands) ? $rkm_vehicle_brands : (isset($data['rkm_vehicle_brands']) && is_array($data['rkm_vehicle_brands']) ? $data['rkm_vehicle_brands'] : []);
+$rkm_vehicle_models = isset($rkm_vehicle_models) && is_array($rkm_vehicle_models) ? $rkm_vehicle_models : (isset($data['rkm_vehicle_models']) && is_array($data['rkm_vehicle_models']) ? $data['rkm_vehicle_models'] : []);
+$rkm_part_categories = isset($rkm_part_categories) && is_array($rkm_part_categories) ? $rkm_part_categories : (isset($data['rkm_part_categories']) && is_array($data['rkm_part_categories']) ? $data['rkm_part_categories'] : []);
 $default_product_form_data = [
     'id' => 0,
     'name' => '',
@@ -23,6 +26,12 @@ $default_product_form_data = [
     'status' => 'publish',
     'image_id' => 0,
     'gallery_image_ids' => [],
+    'vehicle_brand' => '',
+    'vehicle_model' => '',
+    'part_category' => '',
+    'year_from' => '',
+    'year_to' => '',
+    'engine_version' => '',
 ];
 $product_form_data = isset($product_form_data) && is_array($product_form_data)
     ? $product_form_data
@@ -115,6 +124,64 @@ foreach ($product_form_data['gallery_image_ids'] as $gallery_image_id) {
                 <span>Stock</span>
                 <input type="number" name="stock" min="0" step="1" required value="<?php echo esc_attr((string) $product_form_data['stock']); ?>">
             </label>
+        </section>
+
+        <section class="rkm-admin-products-editor-section rkm-admin-products-editor-section--full">
+            <h4>Compatibilidad vehicular</h4>
+
+            <div class="rkm-admin-products-form__row">
+                <label class="rkm-admin-products-field">
+                    <span>Marca vehiculo</span>
+                    <input type="text" name="rkm_vehicle_brand" value="<?php echo esc_attr($product_form_data['vehicle_brand']); ?>" list="rkmVehicleBrandOptions" placeholder="Ej: Toyota">
+                </label>
+
+                <label class="rkm-admin-products-field">
+                    <span>Modelo vehiculo</span>
+                    <input type="text" name="rkm_vehicle_model" value="<?php echo esc_attr($product_form_data['vehicle_model']); ?>" list="rkmVehicleModelOptions" placeholder="Ej: Hilux">
+                </label>
+            </div>
+
+            <div class="rkm-admin-products-form__row">
+                <label class="rkm-admin-products-field">
+                    <span>Categoria de repuesto</span>
+                    <input type="text" name="rkm_part_category" value="<?php echo esc_attr($product_form_data['part_category']); ?>" list="rkmPartCategoryOptions" placeholder="Ej: Filtros">
+                </label>
+
+                <label class="rkm-admin-products-field">
+                    <span>Motor / version</span>
+                    <input type="text" name="rkm_engine_version" value="<?php echo esc_attr($product_form_data['engine_version']); ?>" placeholder="Ej: 2.8 Diesel">
+                </label>
+            </div>
+
+            <div class="rkm-admin-products-form__row">
+                <label class="rkm-admin-products-field">
+                    <span>Ano desde</span>
+                    <input type="number" name="rkm_year_from" min="1900" max="2100" step="1" value="<?php echo esc_attr((string) $product_form_data['year_from']); ?>" placeholder="Ej: 2016">
+                </label>
+
+                <label class="rkm-admin-products-field">
+                    <span>Ano hasta</span>
+                    <input type="number" name="rkm_year_to" min="1900" max="2100" step="1" value="<?php echo esc_attr((string) $product_form_data['year_to']); ?>" placeholder="Ej: 2023">
+                </label>
+            </div>
+
+            <datalist id="rkmVehicleBrandOptions">
+                <?php foreach ($rkm_vehicle_brands as $vehicle_brand) : ?>
+                    <option value="<?php echo esc_attr($vehicle_brand->name); ?>"></option>
+                <?php endforeach; ?>
+            </datalist>
+
+            <datalist id="rkmVehicleModelOptions">
+                <?php foreach ($rkm_vehicle_models as $vehicle_model) : ?>
+                    <option value="<?php echo esc_attr($vehicle_model->name); ?>"></option>
+                <?php endforeach; ?>
+            </datalist>
+
+            <datalist id="rkmPartCategoryOptions">
+                <?php foreach ($rkm_part_categories as $part_category) : ?>
+                    <option value="<?php echo esc_attr($part_category->name); ?>"></option>
+                <?php endforeach; ?>
+            </datalist>
         </section>
 
         <section class="rkm-admin-products-editor-section rkm-admin-products-editor-section--full">

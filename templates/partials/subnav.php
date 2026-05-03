@@ -22,6 +22,11 @@ $is_vendor_user = class_exists('RKM_Permissions') && RKM_Permissions::is_rkm_ven
         Nueva orden
     </a>
 
+    <a href="<?php echo esc_url($panel_url . '?section=catalogo'); ?>"
+       class="rkm-subnav__link <?php echo ($current === 'catalogo') ? 'is-active' : ''; ?>">
+        Catalogo
+    </a>
+
     <a href="<?php echo esc_url($panel_url . '?section=pedidos'); ?>"
        class="rkm-subnav__link <?php echo ($current === 'pedidos') ? 'is-active' : ''; ?>">
         Pedidos

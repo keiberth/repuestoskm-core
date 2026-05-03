@@ -154,6 +154,16 @@ class RKM_Dashboard {
                 true
             );
         }
+
+        if ($section === 'catalogo') {
+            wp_enqueue_script(
+                'rkm-catalogo-js',
+                RKM_CORE_URL . 'assets/js/catalogo.js',
+                [],
+                rkm_core_asset_version('assets/js/catalogo.js'),
+                true
+            );
+        }
     }
 
     public function force_enqueue_assets() {
@@ -203,6 +213,10 @@ class RKM_Dashboard {
                 
             case 'nueva-orden':
                 $template = RKM_CORE_PATH . 'templates/nueva-orden.php';
+                break;
+
+            case 'catalogo':
+                $template = RKM_CORE_PATH . 'templates/catalogo.php';
                 break;
 
             case 'pedidos':
