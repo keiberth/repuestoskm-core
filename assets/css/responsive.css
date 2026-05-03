@@ -150,3 +150,109 @@
         font-size: 20px;
     }
 }
+
+@media (max-width: 767px) {
+    .rkm-private-header,
+    .rkm-private-header__inner,
+    .rkm-private-header-pro,
+    .rkm-private-header-pro__inner,
+    .rkm-private-header-pro__brand,
+    .rkm-private-header-pro__context,
+    .rkm-private-header-pro__right,
+    .rkm-private-header-pro__rate,
+    .rkm-private-header-pro__user,
+    .rkm-dashboard-header,
+    .rkm-subnav {
+        position: relative;
+        z-index: auto;
+    }
+
+    .rkm-dashboard-wrapper {
+        padding-top: 14px;
+    }
+
+    .rkm-private-header,
+    .rkm-private-header__inner,
+    .rkm-private-header-pro,
+    .rkm-private-header-pro__inner,
+    .rkm-dashboard-header {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+    }
+
+    .rkm-private-header-pro {
+        height: auto;
+        min-height: 0;
+        margin-bottom: 18px;
+        overflow: visible;
+    }
+
+    .rkm-private-header-pro__inner {
+        min-height: 0;
+    }
+
+    .rkm-private-header-pro__brand,
+    .rkm-private-header-pro__context,
+    .rkm-private-header-pro__right,
+    .rkm-private-header-pro__rate,
+    .rkm-private-header-pro__user,
+    .rkm-private-header-pro__toggle {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .rkm-private-header-pro__brand {
+        min-height: 0;
+    }
+
+    .rkm-private-header-pro__brand-link {
+        justify-content: center;
+    }
+
+    .rkm-private-header-pro__logo {
+        max-width: min(230px, 100%);
+        max-height: 58px;
+    }
+
+    .rkm-private-header-pro__context {
+        min-height: 0;
+        padding: 12px 0 0;
+        border-left: 0;
+        border-top: 1px solid rgba(226, 232, 240, 0.82);
+    }
+
+    .rkm-private-header-pro__right {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        justify-content: flex-start;
+        gap: 12px;
+    }
+
+    .rkm-private-header-pro__toggle {
+        justify-content: space-between;
+    }
+
+    .rkm-dashboard-header {
+        margin-top: 0;
+        margin-bottom: 18px;
+    }
+
+    .rkm-subnav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+        margin-bottom: 18px;
+        overflow: visible;
+    }
+
+    .rkm-subnav a,
+    .rkm-subnav__link {
+        min-height: 42px;
+        padding: 10px 14px;
+        white-space: nowrap;
+    }
+}

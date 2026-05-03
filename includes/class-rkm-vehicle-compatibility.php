@@ -216,18 +216,90 @@ class RKM_Vehicle_Compatibility {
         if (!empty($filters['year'])) {
             $year = (int) $filters['year'];
             $args['meta_query'] = [
-                'relation' => 'AND',
+                'relation' => 'OR',
                 [
-                    'key' => self::META_YEAR_FROM,
-                    'value' => $year,
-                    'compare' => '<=',
-                    'type' => 'NUMERIC',
+                    'relation' => 'AND',
+                    [
+                        'key' => self::META_YEAR_FROM,
+                        'value' => $year,
+                        'compare' => '<=',
+                        'type' => 'NUMERIC',
+                    ],
+                    [
+                        'key' => self::META_YEAR_TO,
+                        'value' => $year,
+                        'compare' => '>=',
+                        'type' => 'NUMERIC',
+                    ],
                 ],
                 [
-                    'key' => self::META_YEAR_TO,
-                    'value' => $year,
-                    'compare' => '>=',
-                    'type' => 'NUMERIC',
+                    'relation' => 'AND',
+                    [
+                        'relation' => 'OR',
+                        [
+                            'key' => self::META_YEAR_FROM,
+                            'compare' => 'NOT EXISTS',
+                        ],
+                        [
+                            'key' => self::META_YEAR_FROM,
+                            'value' => '',
+                            'compare' => '=',
+                        ],
+                    ],
+                    [
+                        'relation' => 'OR',
+                        [
+                            'key' => self::META_YEAR_TO,
+                            'compare' => 'NOT EXISTS',
+                        ],
+                        [
+                            'key' => self::META_YEAR_TO,
+                            'value' => '',
+                            'compare' => '=',
+                        ],
+                    ],
+                ],
+                [
+                    'relation' => 'AND',
+                    [
+                        'key' => self::META_YEAR_FROM,
+                        'value' => $year,
+                        'compare' => '<=',
+                        'type' => 'NUMERIC',
+                    ],
+                    [
+                        'relation' => 'OR',
+                        [
+                            'key' => self::META_YEAR_TO,
+                            'compare' => 'NOT EXISTS',
+                        ],
+                        [
+                            'key' => self::META_YEAR_TO,
+                            'value' => '',
+                            'compare' => '=',
+                        ],
+                    ],
+                ],
+                [
+                    'relation' => 'AND',
+                    [
+                        'relation' => 'OR',
+                        [
+                            'key' => self::META_YEAR_FROM,
+                            'compare' => 'NOT EXISTS',
+                        ],
+                        [
+                            'key' => self::META_YEAR_FROM,
+                            'value' => '',
+                            'compare' => '=',
+                        ],
+                    ],
+                    [
+                        'key' => self::META_YEAR_TO,
+                        'value' => $year,
+                        'compare' => '>=',
+                        'type' => 'NUMERIC',
+                    ],
                 ],
             ];
         }
