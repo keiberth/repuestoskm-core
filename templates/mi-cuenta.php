@@ -28,9 +28,10 @@ $shipping_address_1 = get_user_meta($user_id, 'shipping_address_1', true);
 $shipping_city      = get_user_meta($user_id, 'shipping_city', true);
 ?>
 
-<div class="rkm-app">
+<div class="rkm-app rkm-account-page">
     <div class="rkm-container">
         <?php include plugin_dir_path(__FILE__) . 'partials/private-header.php'; ?>
+
         <div class="rkm-page-header">
             <h1><?php echo esc_html($page_title); ?></h1>
             <p><?php echo esc_html($page_subtitle); ?></p>
@@ -38,91 +39,93 @@ $shipping_city      = get_user_meta($user_id, 'shipping_city', true);
 
         <?php include plugin_dir_path(__FILE__) . 'partials/subnav.php'; ?>
 
-        <div class="rkm-card rkm-account-card">
-            <?php
-            if (function_exists('wc_get_template')) {
-                wc_get_template(
-                    'myaccount/form-edit-account.php',
-                    array(
-                        'user' => $user,
-                    )
-                );
-            }
-            ?>
-        </div>
+        <div class="rkm-account-shell">
+            <main class="rkm-account-main">
+                <div class="rkm-card rkm-account-card">
+                    <?php
+                    if (function_exists('wc_get_template')) {
+                        wc_get_template(
+                            'myaccount/form-edit-account.php',
+                            [
+                                'user' => $user,
+                            ]
+                        );
+                    }
+                    ?>
+                </div>
+            </main>
 
-        <div class="rkm-grid rkm-grid-2" style="margin-top: 24px;">
+            <aside class="rkm-account-sidebar">
+                <div class="rkm-card rkm-address-card">
+                    <div class="rkm-address-summary__header">
+                        <h3>Dirección de facturación</h3>
 
-            <div class="rkm-card rkm-address-card">
-                <div class="rkm-address-summary__header">
-                    <h3>Dirección de facturación</h3>
+                        <?php if (!empty($billing_address_1)) : ?>
+                            <button type="button" class="rkm-link-edit rkm-open-billing-modal">
+                                Editar
+                            </button>
+                        <?php endif; ?>
+                    </div>
 
-                    <?php if (!empty($billing_address_1)) : ?>
-                        <button type="button" class="rkm-link-edit rkm-open-billing-modal">
-                            Editar
+                    <div class="rkm-address-summary__content" id="rkmBillingSummary" <?php if (empty($billing_address_1)) echo 'style="display:none;"'; ?>>
+                        <?php if (!empty($billing_name)) : ?>
+                            <strong><?php echo esc_html($billing_name); ?></strong>
+                        <?php endif; ?>
+
+                        <?php if (!empty($billing_address_1)) : ?>
+                            <p><?php echo esc_html($billing_address_1); ?></p>
+                        <?php endif; ?>
+
+                        <?php if (!empty($billing_city)) : ?>
+                            <p><?php echo esc_html($billing_city); ?></p>
+                        <?php endif; ?>
+
+                        <?php if (!empty($billing_phone)) : ?>
+                            <p>Tel: <?php echo esc_html($billing_phone); ?></p>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="rkm-address-summary__empty" id="rkmBillingEmpty" <?php if (!empty($billing_address_1)) echo 'style="display:none;"'; ?>>
+                        <p>No tenés una dirección de facturación configurada.</p>
+                        <button type="button" class="rkm-btn-secondary rkm-open-billing-modal">
+                            Cargar dirección
                         </button>
-                    <?php endif; ?>
+                    </div>
                 </div>
 
-                <div class="rkm-address-summary__content" id="rkmBillingSummary" <?php if (empty($billing_address_1)) echo 'style="display:none;"'; ?>>
-                    <?php if (!empty($billing_name)) : ?>
-                        <strong><?php echo esc_html($billing_name); ?></strong>
-                    <?php endif; ?>
+                <div class="rkm-card rkm-address-card">
+                    <div class="rkm-address-summary__header">
+                        <h3>Dirección de envío</h3>
 
-                    <?php if (!empty($billing_address_1)) : ?>
-                        <p><?php echo esc_html($billing_address_1); ?></p>
-                    <?php endif; ?>
+                        <?php if (!empty($shipping_address_1)) : ?>
+                            <button type="button" class="rkm-link-edit rkm-open-shipping-modal">
+                                Editar
+                            </button>
+                        <?php endif; ?>
+                    </div>
 
-                    <?php if (!empty($billing_city)) : ?>
-                        <p><?php echo esc_html($billing_city); ?></p>
-                    <?php endif; ?>
+                    <div class="rkm-address-summary__content" id="rkmShippingSummary" <?php if (empty($shipping_address_1)) echo 'style="display:none;"'; ?>>
+                        <?php if (!empty($shipping_name)) : ?>
+                            <strong><?php echo esc_html($shipping_name); ?></strong>
+                        <?php endif; ?>
 
-                    <?php if (!empty($billing_phone)) : ?>
-                        <p>Tel: <?php echo esc_html($billing_phone); ?></p>
-                    <?php endif; ?>
-                </div>
+                        <?php if (!empty($shipping_address_1)) : ?>
+                            <p><?php echo esc_html($shipping_address_1); ?></p>
+                        <?php endif; ?>
 
-                <div class="rkm-address-summary__empty" id="rkmBillingEmpty" <?php if (!empty($billing_address_1)) echo 'style="display:none;"'; ?>>
-                    <p>No tenés una dirección de facturación configurada.</p>
-                    <button type="button" class="rkm-btn-secondary rkm-open-billing-modal">
-                        Cargar dirección
-                    </button>
-                </div>
-            </div>
+                        <?php if (!empty($shipping_city)) : ?>
+                            <p><?php echo esc_html($shipping_city); ?></p>
+                        <?php endif; ?>
+                    </div>
 
-            <div class="rkm-card rkm-address-card">
-                <div class="rkm-address-summary__header">
-                    <h3>Dirección de envío</h3>
-
-                    <?php if (!empty($shipping_address_1)) : ?>
-                        <button type="button" class="rkm-link-edit rkm-open-shipping-modal">
-                            Editar
+                    <div class="rkm-address-summary__empty" id="rkmShippingEmpty" <?php if (!empty($shipping_address_1)) echo 'style="display:none;"'; ?>>
+                        <p>No tenés una dirección de envío configurada.</p>
+                        <button type="button" class="rkm-btn-secondary rkm-open-shipping-modal">
+                            Cargar dirección
                         </button>
-                    <?php endif; ?>
+                    </div>
                 </div>
-
-                <div class="rkm-address-summary__content" id="rkmShippingSummary" <?php if (empty($shipping_address_1)) echo 'style="display:none;"'; ?>>
-                    <?php if (!empty($shipping_name)) : ?>
-                        <strong><?php echo esc_html($shipping_name); ?></strong>
-                    <?php endif; ?>
-
-                    <?php if (!empty($shipping_address_1)) : ?>
-                        <p><?php echo esc_html($shipping_address_1); ?></p>
-                    <?php endif; ?>
-
-                    <?php if (!empty($shipping_city)) : ?>
-                        <p><?php echo esc_html($shipping_city); ?></p>
-                    <?php endif; ?>
-                </div>
-
-                <div class="rkm-address-summary__empty" id="rkmShippingEmpty" <?php if (!empty($shipping_address_1)) echo 'style="display:none;"'; ?>>
-                    <p>No tenés una dirección de envío configurada.</p>
-                    <button type="button" class="rkm-btn-secondary rkm-open-shipping-modal">
-                        Cargar dirección
-                    </button>
-                </div>
-            </div>
-
+            </aside>
         </div>
     </div>
 </div>

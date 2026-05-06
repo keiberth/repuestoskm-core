@@ -92,6 +92,15 @@ class RKM_Dashboard {
             rkm_core_asset_version('assets/css/catalogo.css')
         );
 
+        if ($section === 'mi-cuenta') {
+            wp_enqueue_style(
+                'rkm-account-css',
+                RKM_CORE_URL . 'assets/css/account.css',
+                ['rkm-catalogo-css'],
+                rkm_core_asset_version('assets/css/account.css')
+            );
+        }
+
         wp_enqueue_script(
             'rkm-orders-js',
             RKM_CORE_URL . 'assets/js/orders.js',

@@ -255,4 +255,24 @@
         padding: 10px 14px;
         white-space: nowrap;
     }
+
+    .rkm-app .rkm-private-header-pro {
+        height: auto;
+        min-height: 0;
+        margin-bottom: 18px;
+        overflow: visible;
+    }
+
+    .rkm-app .rkm-private-header-pro__inner {
+        height: auto;
+        min-height: 0;
+        grid-template-columns: 1fr;
+    }
+
+    .rkm-app .rkm-private-header-pro__right {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
 }
