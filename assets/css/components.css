@@ -1337,6 +1337,8 @@
 /* Header ERP RKM */
 .rkm-app .rkm-private-header-pro {
     box-sizing: border-box;
+    position: relative;
+    z-index: 50;
     display: flex;
     align-items: center;
     width: 100%;
@@ -1353,6 +1355,7 @@
 }
 
 .rkm-app .rkm-private-header-pro__inner {
+    position: relative;
     display: grid;
     grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1fr) minmax(0, auto);
     align-items: center;
@@ -1362,6 +1365,7 @@
     min-height: 54px;
     margin: 0 auto;
     min-width: 0;
+    overflow: visible;
 }
 
 .rkm-app .rkm-private-header-pro__brand {
@@ -1432,12 +1436,14 @@
 }
 
 .rkm-app .rkm-private-header-pro__right {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 12px;
     min-width: 0;
     max-width: 100%;
+    overflow: visible;
 }
 
 .rkm-app .rkm-private-header-pro__rate {
@@ -1480,11 +1486,13 @@
 
 .rkm-app .rkm-private-header-pro__user {
     position: relative;
+    z-index: 60;
     display: flex;
     align-items: center;
     flex: 0 0 auto;
     width: auto;
     margin-left: 0;
+    overflow: visible;
 }
 
 .rkm-app .rkm-private-header-pro__toggle {
@@ -1556,6 +1564,7 @@
 }
 
 .rkm-app .rkm-private-header-pro__dropdown {
+    position: absolute;
     right: 0;
     top: calc(100% + 10px);
     min-width: 220px;
@@ -1564,7 +1573,7 @@
     border-radius: 16px;
     background: #fff;
     box-shadow: 0 22px 42px rgba(15, 23, 42, 0.14);
-    z-index: 1000;
+    z-index: 999;
 }
 
 .rkm-app .rkm-private-header-pro__dropdown a {
