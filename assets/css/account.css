@@ -1,5 +1,7 @@
 .rkm-account-page::before {
-    opacity: 0.035;
+    background-position: right 3vw top 180px;
+    background-size: clamp(320px, 40vw, 560px);
+    opacity: 0.06;
 }
 
 .rkm-account-page .rkm-container {

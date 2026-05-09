@@ -19,6 +19,7 @@ $vehicle_filters = class_exists('RKM_Vehicle_Compatibility')
 $rkm_vehicle_brands = class_exists('RKM_Vehicle_Compatibility') ? RKM_Vehicle_Compatibility::get_terms(RKM_Vehicle_Compatibility::TAX_BRAND) : [];
 $rkm_vehicle_models = class_exists('RKM_Vehicle_Compatibility') ? RKM_Vehicle_Compatibility::get_terms(RKM_Vehicle_Compatibility::TAX_MODEL) : [];
 $rkm_part_categories = class_exists('RKM_Vehicle_Compatibility') ? RKM_Vehicle_Compatibility::get_terms(RKM_Vehicle_Compatibility::TAX_PART_CATEGORY) : [];
+$bcv_rate = isset($data['bcv_rate']) && is_array($data['bcv_rate']) ? $data['bcv_rate'] : null;
 
 $args = [
     'status'   => 'publish',
@@ -69,7 +70,7 @@ if ($vehicle_filters['year'] !== '') {
 ?>
 
 <div class="rkm-app">
-    <div class="rkm-container rkm-dashboard-wrapper">
+    <div class="rkm-container rkm-dashboard-wrapper rkm-branded-layout">
         <?php include RKM_CORE_PATH . 'templates/partials/private-header.php'; ?>
 
         <div class="rkm-dashboard-header">
@@ -171,6 +172,7 @@ if ($vehicle_filters['year'] !== '') {
                             $modal_image = get_the_post_thumbnail_url($product_id, 'large');
                             $description = trim(wp_strip_all_tags($product->get_short_description()));
                             $price_text  = wp_strip_all_tags($price_html ?: 'Sin precio');
+                            $price_bs    = function_exists('rkm_get_product_bcv_price') ? rkm_get_product_bcv_price($product, $bcv_rate) : '';
                             $stock_label = $in_stock ? 'En stock' : 'Sin stock';
 
                             if (!$image) {
@@ -207,6 +209,12 @@ if ($vehicle_filters['year'] !== '') {
                                     <p class="rkm-product-card__price">
                                         <?php echo wp_kses_post($price_html ?: 'Sin precio'); ?>
                                     </p>
+
+                                    <?php if ($price_bs !== '') : ?>
+                                        <p class="rkm-product-card__price-bs"><?php echo esc_html($price_bs); ?></p>
+                                    <?php else : ?>
+                                        <p class="rkm-product-card__price-bs rkm-product-card__price-bs--muted">Tasa BCV no disponible</p>
+                                    <?php endif; ?>
                                 </div>
 
                                 <div class="rkm-product-card__actions">
@@ -216,6 +224,7 @@ if ($vehicle_filters['year'] !== '') {
                                         data-product-name="<?php echo esc_attr($name); ?>"
                                         data-product-sku="<?php echo esc_attr($sku !== '' ? $sku : 'Sin SKU'); ?>"
                                         data-product-price="<?php echo esc_attr($price_text); ?>"
+                                        data-product-price-bs="<?php echo esc_attr($price_bs); ?>"
                                         data-product-stock="<?php echo esc_attr($stock_label); ?>"
                                         data-product-description="<?php echo esc_attr($description !== '' ? $description : 'Producto disponible para consultar.'); ?>"
                                         data-product-image="<?php echo esc_url($modal_image); ?>"
@@ -304,6 +313,7 @@ if ($vehicle_filters['year'] !== '') {
                     <div class="rkm-catalog-modal__meta-item">
                         <span>Precio</span>
                         <strong id="rkmCatalogModalPrice"></strong>
+                        <small id="rkmCatalogModalPriceBs" class="rkm-product-card__price-bs"></small>
                     </div>
 
                     <div class="rkm-catalog-modal__meta-item">

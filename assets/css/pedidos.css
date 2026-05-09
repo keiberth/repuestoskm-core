@@ -177,6 +177,7 @@
 }
 
 .rkm-order-badge.status-pending,
+.rkm-order-badge.status-rkm-review,
 .rkm-order-badge.status-en-revision {
     background: #fff7db;
     border-color: #f4d98f;
@@ -190,6 +191,15 @@
 }
 
 .rkm-order-badge.status-processing {
+    background: #dbeafe;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+}
+
+.rkm-order-badge.status-rkm-confirmed,
+.rkm-order-badge.status-rkm-warehouse,
+.rkm-order-badge.status-rkm-ready,
+.rkm-order-badge.status-rkm-dispatched {
     background: #dbeafe;
     border-color: #93c5fd;
     color: #1d4ed8;

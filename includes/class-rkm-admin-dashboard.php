@@ -6,7 +6,7 @@ if (!defined('ABSPATH')) {
 
 class RKM_Admin_Dashboard {
 
-    const ACTIVE_ORDER_STATUSES = ['pending', 'on-hold', 'processing', 'en-revision'];
+    const ACTIVE_ORDER_STATUSES = ['rkm-review', 'pending', 'on-hold', 'rkm-confirmed', 'processing', 'rkm-warehouse', 'rkm-ready', 'rkm-dispatched', 'en-revision'];
     const SALES_ORDER_STATUSES = ['processing', 'completed', 'on-hold'];
     const ACTIVE_CUSTOMERS_LOOKBACK_DAYS = 90;
 
@@ -44,6 +44,7 @@ class RKM_Admin_Dashboard {
                     'value' => $this->get_active_orders_count(),
                     'meta'  => 'Pendientes, en revision o en proceso',
                     'tone'  => 'warning',
+                    'url'   => class_exists('RKM_Operational_Orders') ? RKM_Operational_Orders::get_section_url() : home_url('/mi-cuenta/panel/?section=pedidos-operativos'),
                 ],
                 [
                     'label' => 'Clientes activos',

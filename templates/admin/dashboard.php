@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 ?>
 
 <div class="rkm-app rkm-module-app">
-    <div class="rkm-container rkm-admin-dashboard-page">
+    <div class="rkm-container rkm-admin-dashboard-page rkm-branded-layout">
         <?php include plugin_dir_path(__FILE__) . '../partials/private-header.php'; ?>
 
         <div class="rkm-page-header rkm-admin-dashboard__header">
@@ -27,11 +27,24 @@ if (!defined('ABSPATH')) {
 
         <section class="rkm-admin-dashboard__metrics">
             <?php foreach ($data['admin_metrics'] as $metric) : ?>
-                <article class="rkm-admin-metric-card rkm-admin-metric-card--<?php echo esc_attr($metric['tone']); ?>">
+                <?php
+                $metric_classes = 'rkm-admin-metric-card rkm-admin-metric-card--' . $metric['tone'];
+                $metric_url = !empty($metric['url']) ? $metric['url'] : '';
+
+                if ($metric_url) :
+                ?>
+                <a class="<?php echo esc_attr($metric_classes . ' rkm-admin-metric-card--clickable'); ?>" href="<?php echo esc_url($metric_url); ?>" aria-label="<?php echo esc_attr(sprintf('Ir a %s', $metric['label'])); ?>">
+                    <span class="rkm-admin-metric-card__label"><?php echo esc_html($metric['label']); ?></span>
+                    <strong class="rkm-admin-metric-card__value"><?php echo esc_html((string) $metric['value']); ?></strong>
+                    <p class="rkm-admin-metric-card__meta"><?php echo esc_html($metric['meta']); ?></p>
+                </a>
+                <?php else : ?>
+                <article class="<?php echo esc_attr($metric_classes); ?>">
                     <span class="rkm-admin-metric-card__label"><?php echo esc_html($metric['label']); ?></span>
                     <strong class="rkm-admin-metric-card__value"><?php echo esc_html((string) $metric['value']); ?></strong>
                     <p class="rkm-admin-metric-card__meta"><?php echo esc_html($metric['meta']); ?></p>
                 </article>
+                <?php endif; ?>
             <?php endforeach; ?>
         </section>
 

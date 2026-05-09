@@ -49,4 +49,11 @@ $is_vendor_user = class_exists('RKM_Permissions') && RKM_Permissions::is_rkm_ven
            class="rkm-subnav__link <?php echo ($current === RKM_Sellers::get_section_key()) ? 'is-active' : ''; ?>">
             Panel vendedor
         </a>
+    <?php endif; ?>
+
+    <?php if (class_exists('RKM_Operational_Orders') && RKM_Operational_Orders::can_access()) : ?>
+        <a href="<?php echo esc_url(RKM_Operational_Orders::get_section_url()); ?>"
+           class="rkm-subnav__link <?php echo ($current === RKM_Operational_Orders::get_section_key()) ? 'is-active' : ''; ?>">
+            Pedidos operativos
+        </a>
     <?php endif; ?></nav>

@@ -25,6 +25,7 @@ $module_labels = [
     'catalogo'       => 'Catalogo',
     'nueva-orden'    => 'Nueva orden',
     'pedidos'        => 'Pedidos',
+    'pedidos-operativos' => 'Pedidos operativos',
     'historial'      => 'Historial',
     'cuenta-corriente' => 'Cuenta corriente',
     'panel-vendedor' => 'Panel vendedor',
@@ -54,6 +55,10 @@ $module_label = isset($module_labels[$section]) ? $module_labels[$section] : 'Si
                 <?php endif; ?>
                 <span class="rkm-private-header-pro__brand-fallback" <?php echo $brand_logo !== '' ? 'style="display:none;"' : ''; ?>>
                     <?php echo esc_html($brand_name); ?>
+                </span>
+                <span class="rkm-private-header-pro__brand-copy">
+                    <strong>RepuestosKM ERP</strong>
+                    <small>Gestion integral de repuestos</small>
                 </span>
             </a>
         </div>
@@ -117,6 +122,9 @@ $module_label = isset($module_labels[$section]) ? $module_labels[$section] : 'Si
                     <?php endif; ?>
                     <?php if (class_exists('RKM_Current_Account') && RKM_Current_Account::can_admin_access()) : ?>
                         <a href="<?php echo esc_url(RKM_Current_Account::get_admin_section_url()); ?>">Pagos clientes</a>
+                    <?php endif; ?>
+                    <?php if (class_exists('RKM_Operational_Orders') && RKM_Operational_Orders::can_access()) : ?>
+                        <a href="<?php echo esc_url(RKM_Operational_Orders::get_section_url()); ?>">Pedidos operativos</a>
                     <?php endif; ?>
                     <?php if (class_exists('RKM_Current_Account') && RKM_Current_Account::can_customer_access()) : ?>
                         <a href="<?php echo esc_url(RKM_Current_Account::get_customer_section_url()); ?>">Cuenta corriente</a>

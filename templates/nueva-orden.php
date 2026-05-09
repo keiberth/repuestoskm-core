@@ -193,6 +193,7 @@ $shipping_address = [
 $active_payment_methods = class_exists('RKM_Payment_Methods') ? RKM_Payment_Methods::get_active_methods() : [];
 $payment_terms_settings = class_exists('RKM_Payment_Terms') ? RKM_Payment_Terms::get_settings() : [];
 $active_payment_terms = class_exists('RKM_Payment_Terms') ? RKM_Payment_Terms::get_active_terms() : [];
+$bcv_rate = isset($data['bcv_rate']) && is_array($data['bcv_rate']) ? $data['bcv_rate'] : null;
 
 if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
     $repeat_order_id = absint($_GET['repeat_order']);
@@ -219,7 +220,7 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
 ?>
 
 <div class="rkm-app rkm-module-app">
-    <div class="rkm-container">
+    <div class="rkm-container rkm-branded-layout">
         <?php include plugin_dir_path(__FILE__) . 'partials/private-header.php'; ?>
 
         <div class="rkm-page-header">
@@ -309,6 +310,7 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
                             $name        = $product->get_name();
                             $price       = (float) $product->get_price();
                             $price_html  = $product->get_price_html();
+                            $price_bs    = function_exists('rkm_get_product_bcv_price') ? rkm_get_product_bcv_price($product, $bcv_rate) : '';
                             $sku         = $product->get_sku();
                             $stock_quantity = $product->get_stock_quantity();
                             $in_stock    = $product->is_in_stock();
@@ -378,6 +380,7 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
                                 data-product-name="<?php echo esc_attr($name); ?>"
                                 data-product-sku="<?php echo esc_attr($sku ?: 'Sin SKU'); ?>"
                                 data-product-price="<?php echo esc_attr(wp_strip_all_tags($price_html ?: 'Sin precio')); ?>"
+                                data-product-price-bs="<?php echo esc_attr($price_bs); ?>"
                                 data-product-stock="<?php echo esc_attr($stock_label); ?>"
                                 data-product-description="<?php echo esc_attr($description ?: 'Este producto no tiene descripcion corta.'); ?>"
                                 data-product-url="<?php echo esc_url($product_url); ?>"
@@ -414,6 +417,12 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
                                     <p class="rkm-product-card__price">
                                         <?php echo wp_kses_post($price_html ?: 'Sin precio'); ?>
                                     </p>
+
+                                    <?php if ($price_bs !== '') : ?>
+                                        <p class="rkm-product-card__price-bs"><?php echo esc_html($price_bs); ?></p>
+                                    <?php else : ?>
+                                        <p class="rkm-product-card__price-bs rkm-product-card__price-bs--muted">Tasa BCV no disponible</p>
+                                    <?php endif; ?>
 
                                     <div class="rkm-product-card__controls">
                                         <label class="rkm-product-card__qty" aria-label="Cantidad a agregar">
@@ -608,6 +617,7 @@ if (isset($_GET['repeat_order']) && function_exists('wc_get_order')) {
                         <div class="rkm-product-quick-view__meta-item">
                             <span class="rkm-product-quick-view__meta-label">Precio</span>
                             <strong id="rkmProductQuickViewPrice"></strong>
+                            <small id="rkmProductQuickViewPriceBs" class="rkm-product-card__price-bs"></small>
                         </div>
 
                         <div class="rkm-product-quick-view__meta-item">

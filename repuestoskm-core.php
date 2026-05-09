@@ -36,6 +36,68 @@ if (!function_exists('rkm_core_asset_version')) {
     }
 }
 
+if (!function_exists('rkm_parse_localized_decimal')) {
+    function rkm_parse_localized_decimal($value) {
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
+
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return 0;
+        }
+
+        $value = preg_replace('/[^0-9\.,]/', '', $value);
+
+        if (strpos($value, ',') !== false && strpos($value, '.') !== false) {
+            $value = str_replace('.', '', $value);
+            $value = str_replace(',', '.', $value);
+        } elseif (strpos($value, ',') !== false) {
+            $value = str_replace(',', '.', $value);
+        }
+
+        return is_numeric($value) ? (float) $value : 0;
+    }
+}
+
+if (!function_exists('rkm_get_bcv_rate')) {
+    function rkm_get_bcv_rate($rate_data = null) {
+        if (!is_array($rate_data) && class_exists('RKM_Dashboard')) {
+            $rate_data = (new RKM_Dashboard())->get_bcv_usd_rate();
+        }
+
+        if (!is_array($rate_data) || empty($rate_data['value'])) {
+            return 0;
+        }
+
+        return rkm_parse_localized_decimal($rate_data['value']);
+    }
+}
+
+if (!function_exists('rkm_format_bolivares')) {
+    function rkm_format_bolivares($amount) {
+        return 'Bs. ' . number_format((float) $amount, 2, ',', '.');
+    }
+}
+
+if (!function_exists('rkm_get_product_bcv_price')) {
+    function rkm_get_product_bcv_price($product, $rate_data = null) {
+        if (!$product || !is_object($product) || !method_exists($product, 'get_price')) {
+            return '';
+        }
+
+        $usd_price = (float) $product->get_price();
+        $bcv_rate = rkm_get_bcv_rate($rate_data);
+
+        if ($usd_price <= 0 || $bcv_rate <= 0) {
+            return '';
+        }
+
+        return rkm_format_bolivares($usd_price * $bcv_rate);
+    }
+}
+
 require_once RKM_CORE_PATH . 'includes/class-rkm-loader.php';
 require_once RKM_CORE_PATH . 'includes/class-rkm-permissions.php';
 require_once RKM_CORE_PATH . 'includes/class-rkm-auth.php';

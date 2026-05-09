@@ -831,6 +831,8 @@ body.rkm-login-ui .rkm-login-page.rkm-login-screen {
 }
 
 body.rkm-login-ui .rkm-login-screen__brand {
+    position: relative;
+    overflow: hidden;
     display: flex;
     min-height: 680px;
     padding: 46px;
@@ -841,23 +843,42 @@ body.rkm-login-ui .rkm-login-screen__brand {
 }
 
 body.rkm-login-ui .rkm-login-screen__brand-inner {
+    position: relative;
+    z-index: 1;
     width: 100%;
     min-height: 100%;
     gap: 34px;
 }
 
+body.rkm-login-ui .rkm-login-screen__brand::after {
+    content: "";
+    position: absolute;
+    right: -56px;
+    bottom: 28px;
+    width: min(520px, 68%);
+    height: min(320px, 48%);
+    background-image: url('../img/logo.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    opacity: 0.11;
+    pointer-events: none;
+}
+
 body.rkm-login-ui .rkm-login-screen__badge {
     min-height: 72px;
-    padding: 10px 18px 10px 10px;
+    padding: 12px 20px 12px 12px;
     background: rgba(255, 255, 255, 0.09);
     border-color: rgba(255, 255, 255, 0.16);
     color: rgba(226, 232, 240, 0.9);
 }
 
 body.rkm-login-ui .rkm-login-screen__logo {
-    width: 54px;
-    height: 54px;
-    flex-basis: 54px;
+    width: 68px;
+    height: 68px;
+    flex-basis: 68px;
+    object-fit: contain;
+    filter: saturate(1.08) contrast(1.04);
 }
 
 body.rkm-login-ui .rkm-login-screen__copy {

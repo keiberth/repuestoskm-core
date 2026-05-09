@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const title = document.getElementById("rkmCatalogModalTitle");
     const sku = document.getElementById("rkmCatalogModalSku");
     const price = document.getElementById("rkmCatalogModalPrice");
+    const priceBs = document.getElementById("rkmCatalogModalPriceBs");
     const stock = document.getElementById("rkmCatalogModalStock");
     const description = document.getElementById("rkmCatalogModalDescription");
     let lastTrigger = null;
@@ -30,6 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
         setText(title, productName, "Producto");
         setText(sku, trigger.dataset.productSku, "Sin SKU");
         setText(price, trigger.dataset.productPrice, "Sin precio");
+        setText(priceBs, trigger.dataset.productPriceBs, "");
         setText(stock, trigger.dataset.productStock, "Sin stock");
         setText(description, trigger.dataset.productDescription, "Producto disponible para consultar.");
 

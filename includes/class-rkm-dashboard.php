@@ -173,6 +173,23 @@ class RKM_Dashboard {
                 true
             );
         }
+
+        if ($section === 'pedidos-operativos') {
+            wp_enqueue_style(
+                'rkm-admin-orders-css',
+                RKM_CORE_URL . 'assets/css/admin-orders.css',
+                ['rkm-pedidos-css'],
+                rkm_core_asset_version('assets/css/admin-orders.css')
+            );
+
+            wp_enqueue_script(
+                'rkm-admin-orders-js',
+                RKM_CORE_URL . 'assets/js/admin-orders.js',
+                [],
+                rkm_core_asset_version('assets/js/admin-orders.js'),
+                true
+            );
+        }
     }
 
     public function force_enqueue_assets() {
@@ -234,9 +251,20 @@ class RKM_Dashboard {
                     'limit'       => -1,
                     'orderby'     => 'date',
                     'order'       => 'DESC',
-                    'status'      => ['pending', 'on-hold', 'processing', 'en-revision'],
+                    'status'      => class_exists('RKM_Order_Statuses')
+                        ? RKM_Order_Statuses::get_active_statuses()
+                        : ['rkm-review', 'pending', 'on-hold', 'processing', 'en-revision'],
                 ]) : [];
                 $template = RKM_CORE_PATH . 'templates/pedidos.php';
+                break;
+
+            case 'pedidos-operativos':
+                if (class_exists('RKM_Operational_Orders')) {
+                    (new RKM_Operational_Orders())->render_page($data);
+                    return;
+                }
+
+                $template = RKM_CORE_PATH . 'templates/dashboard.php';
                 break;
 
             case 'historial':
@@ -885,7 +913,7 @@ GRAPHQL;
 
         $orders = wc_get_orders([
             'customer_id' => $user_id,
-            'status'      => ['pending'],
+            'status'      => ['rkm-review', 'pending'],
             'limit'       => -1,
         ]);
 

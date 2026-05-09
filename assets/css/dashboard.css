@@ -573,12 +573,28 @@
         border-color 0.2s ease;
 }
 
+.rkm-admin-metric-card--clickable {
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
 .rkm-admin-metric-card:hover {
     transform: translateY(-3px);
     box-shadow:
         0 24px 56px rgba(15, 23, 42, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.9);
     border-color: rgba(147, 197, 253, 0.9);
+}
+
+.rkm-admin-metric-card--clickable:hover,
+.rkm-admin-metric-card--clickable:focus-visible {
+    box-shadow:
+        0 26px 60px rgba(15, 23, 42, 0.14),
+        0 0 0 3px rgba(245, 158, 11, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    border-color: rgba(245, 158, 11, 0.95);
+    outline: none;
 }
 
 .rkm-admin-metric-card::after {
@@ -916,22 +932,61 @@
 /* RKM ADMIN DASHBOARD - GRID + CONTRAST FIX */
 
 .rkm-admin-dashboard-page {
+    position: relative;
+    isolation: isolate;
     background: #f3f6fb;
 }
 
 .rkm-admin-dashboard-page .rkm-module-shell {
+    position: relative;
+    z-index: 1;
     max-width: 1220px;
     margin: 0 auto;
     padding: 28px 24px 36px;
 }
 
+.rkm-admin-dashboard__hero,
+.rkm-admin-dashboard__metrics,
+.rkm-admin-dashboard__grid,
+.rkm-admin-notes {
+    position: relative;
+    z-index: 1;
+}
+
 .rkm-admin-dashboard__hero {
+    position: relative;
+    overflow: hidden;
     padding: 24px 28px;
     margin-bottom: 22px;
     border-radius: 22px;
     background: linear-gradient(135deg, #eef4ff 0%, #ffffff 100%);
     border: 1px solid #93c5fd;
     box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+.rkm-admin-dashboard__hero::after {
+    content: "";
+    position: absolute;
+    right: 42px;
+    top: 50%;
+    width: clamp(170px, 16vw, 220px);
+    height: clamp(116px, 12vw, 154px);
+    background-image: url('../img/logo.png');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
+    opacity: 0.22;
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+
+.rkm-admin-dashboard__hero > * {
+    position: relative;
+    z-index: 1;
+}
+
+.rkm-admin-dashboard__hero-copy {
+    max-width: calc(100% - 260px);
 }
 
 .rkm-admin-dashboard__hero h2 {
@@ -1049,6 +1104,14 @@
 
     .rkm-admin-dashboard__hero {
         padding: 22px 18px;
+    }
+
+    .rkm-admin-dashboard__hero::after {
+        display: none;
+    }
+
+    .rkm-admin-dashboard__hero-copy {
+        max-width: 100%;
     }
 
     .rkm-admin-dashboard__metrics {

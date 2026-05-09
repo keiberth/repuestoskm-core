@@ -8,7 +8,7 @@ $current_section = 'panel';
 ?>
 
 <div class="rkm-app rkm-module-app">
-    <div class="rkm-container rkm-dashboard-wrapper">
+    <div class="rkm-container rkm-dashboard-wrapper rkm-branded-layout">
         <?php include plugin_dir_path(__FILE__) . 'partials/private-header.php'; ?>
 
         <div class="rkm-dashboard-header">

@@ -87,7 +87,10 @@ class RKM_Orders {
             }
 
             $this->apply_payment_context_to_order($order, $payment_context);
-            $order->update_status('pending', 'Pedido generado desde Portal del Cliente');
+            $order->update_meta_data('_rkm_order_flow', 'operational');
+            $order->update_meta_data('_rkm_initial_status', RKM_Order_Statuses::REVIEW);
+            $order->save();
+            $order->update_status(RKM_Order_Statuses::REVIEW, 'Pedido generado desde Portal del Cliente para revision operativa RKM.');
 
             if ($actor_user_id !== $order_customer_id && $actor_user instanceof WP_User) {
                 $actor_name = $actor_user->display_name ? $actor_user->display_name : $actor_user->user_login;

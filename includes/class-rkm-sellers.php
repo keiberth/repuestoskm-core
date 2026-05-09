@@ -123,7 +123,7 @@ class RKM_Sellers {
             [
                 'label' => 'Pedidos activos',
                 'value' => $this->get_active_orders_count(),
-                'meta'  => 'Estados pending y processing de tu cartera',
+                'meta'  => 'Pedidos en revision, confirmados o en proceso',
                 'tone'  => 'warning',
             ],
             [
@@ -206,7 +206,7 @@ class RKM_Sellers {
             [
                 'label'       => 'Ver pedidos',
                 'description' => 'Abrir el listado actual de pedidos del sistema.',
-                'url'         => home_url('/mi-cuenta/panel/?section=pedidos'),
+                'url'         => class_exists('RKM_Operational_Orders') ? RKM_Operational_Orders::get_section_url() : home_url('/mi-cuenta/panel/?section=pedidos-operativos'),
             ],
         ];
     }
@@ -230,7 +230,9 @@ class RKM_Sellers {
         }
 
         $orders = wc_get_orders($this->get_customer_orders_query_args([
-            'status'   => ['pending', 'processing'],
+            'status'   => class_exists('RKM_Order_Statuses')
+                ? RKM_Order_Statuses::get_active_statuses()
+                : ['rkm-review', 'pending', 'processing'],
             'limit'    => 1,
             'paginate' => true,
         ]));

@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const title = document.getElementById("rkmProductQuickViewTitle");
     const sku = document.getElementById("rkmProductQuickViewSku");
     const price = document.getElementById("rkmProductQuickViewPrice");
+    const priceBs = document.getElementById("rkmProductQuickViewPriceBs");
     const stock = document.getElementById("rkmProductQuickViewStock");
     const description = document.getElementById("rkmProductQuickViewDescription");
     const primaryAction = document.getElementById("rkmProductQuickViewPrimaryAction");
@@ -128,6 +129,9 @@ document.addEventListener("DOMContentLoaded", function () {
         title.textContent = card.dataset.productName || "Producto";
         sku.textContent = card.dataset.productSku || "Sin SKU";
         price.textContent = card.dataset.productPrice || "Sin precio";
+        if (priceBs) {
+            priceBs.textContent = card.dataset.productPriceBs || "";
+        }
         stock.textContent = card.dataset.productStock || "Sin stock";
         description.textContent = card.dataset.productDescription || "Este producto no tiene descripcion corta.";
         primaryAction.href = card.dataset.productUrl || primaryAction.href;

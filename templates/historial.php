@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 ?>
 
 <div class="rkm-app rkm-module-app">
-    <div class="rkm-container">
+    <div class="rkm-container rkm-branded-layout">
         <?php include plugin_dir_path(__FILE__) . 'partials/private-header.php'; ?>
         <div class="rkm-page-header">
             <h1>Historial</h1>
