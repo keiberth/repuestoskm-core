@@ -118,6 +118,19 @@
     border-color: rgba(196, 234, 229, 0.95);
 }
 
+.rkm-order-card__metric--credit {
+    background: #eff6ff;
+    border-color: rgba(191, 219, 254, 0.95);
+}
+
+.rkm-order-card__metric--credit .rkm-order-card__label {
+    color: #1d4ed8;
+}
+
+.rkm-order-card__metric--credit span:last-child {
+    line-height: 1.45;
+}
+
 .rkm-order-card__metric span:last-child,
 .rkm-order-card__metric strong {
     font-size: 15px;

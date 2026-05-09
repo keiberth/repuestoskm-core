@@ -17,6 +17,8 @@ class RKM_Operational_Orders {
         add_action('wp_ajax_rkm_confirm_operational_order', [$this, 'ajax_confirm_order']);
         add_action('wp_ajax_rkm_send_operational_order_to_warehouse', [$this, 'ajax_send_to_warehouse']);
         add_action('wp_ajax_rkm_update_operational_order', [$this, 'ajax_update_order']);
+        add_action('woocommerce_order_status_changed', [$this, 'maybe_start_credit_term'], 20, 4);
+        add_action('woocommerce_order_status_changed', [$this, 'maybe_log_operational_status_transition'], 30, 4);
     }
 
     public static function can_access($user = null) {
@@ -41,6 +43,294 @@ class RKM_Operational_Orders {
 
     public static function get_nonce_action() {
         return self::NONCE_ACTION;
+    }
+
+    public static function get_credit_days() {
+        return 20;
+    }
+
+    public static function get_audit_actor_context($user = null) {
+        if (!$user instanceof WP_User) {
+            $user = wp_get_current_user();
+        }
+
+        if (!$user instanceof WP_User) {
+            return [
+                'user_label' => 'Sistema',
+                'role_label' => 'Sistema',
+            ];
+        }
+
+        $user_label = $user->display_name !== ''
+            ? $user->display_name
+            : ($user->user_login !== '' ? $user->user_login : ('Usuario #' . (int) $user->ID));
+
+        return [
+            'user_label' => $user_label,
+            'role_label' => self::get_user_role_label_from_user($user),
+        ];
+    }
+
+    public static function add_audit_event($order, $action, $details = '', $user = null, $timestamp = null, $old_value = null, $new_value = null) {
+        if (!$order || !method_exists($order, 'get_id')) {
+            return '';
+        }
+
+        $action = self::clean_audit_text($action);
+        $details = self::clean_audit_text($details);
+        $title = $action !== '' ? $action : 'Movimiento operativo';
+        $message = $details !== '' ? $details : $title;
+
+        if (class_exists('RKM_Order_Audit_Log')) {
+            $inserted = RKM_Order_Audit_Log::add_event(
+                $order->get_id(),
+                $title,
+                $title,
+                $message,
+                $old_value,
+                $new_value
+            );
+
+            if ($inserted) {
+                return $message;
+            }
+        }
+
+        if (method_exists($order, 'add_order_note')) {
+            $context = self::get_audit_actor_context($user);
+            $timestamp = is_numeric($timestamp) ? (int) $timestamp : current_time('timestamp');
+            $legacy_message = sprintf(
+                '[RKM AUDIT] %s por %s (%s) el %s.',
+                $title,
+                $context['user_label'],
+                $context['role_label'],
+                wp_date('d/m/Y H:i', $timestamp)
+            );
+
+            if ($message !== '') {
+                $legacy_message .= "\n" . $message;
+            }
+
+            $order->add_order_note($legacy_message, false, true);
+        }
+
+        return $message;
+    }
+
+    private static function clean_audit_text($value) {
+        $value = html_entity_decode(wp_strip_all_tags((string) $value), ENT_QUOTES, 'UTF-8');
+        $value = str_replace("\xc2\xa0", ' ', $value);
+
+        return trim(preg_replace('/\s+/', ' ', $value));
+    }
+
+    private static function get_user_role_label_from_user($user) {
+        if (!$user instanceof WP_User) {
+            return 'Sistema';
+        }
+
+        $roles = is_array($user->roles) ? $user->roles : [];
+
+        if (empty($roles)) {
+            return 'Usuario';
+        }
+
+        $role = (string) reset($roles);
+        $map = [
+            'administrator' => 'Administrador',
+            'shop_manager' => 'Encargado',
+            'seller' => 'Vendedor',
+            'vendor' => 'Vendedor',
+            'vendedor' => 'Vendedor',
+            'customer' => 'Cliente',
+        ];
+
+        if (isset($map[$role])) {
+            return $map[$role];
+        }
+
+        return ucwords(str_replace(['-', '_'], ' ', $role));
+    }
+
+    public static function get_credit_context($order) {
+        if (is_numeric($order)) {
+            $order = function_exists('wc_get_order') ? wc_get_order(absint($order)) : null;
+        }
+
+        if (!$order || !method_exists($order, 'get_meta')) {
+            return [
+                'has_credit' => false,
+                'days' => self::get_credit_days(),
+            ];
+        }
+
+        $payment_term_key = (string) $order->get_meta('_rkm_payment_term', true);
+        $credit_balance = (float) $order->get_meta('_rkm_credit_balance', true);
+        $started_at_raw = (string) $order->get_meta('_rkm_credit_started_at', true);
+        $due_at_raw = (string) $order->get_meta('_rkm_credit_due_at', true);
+        $days = absint($order->get_meta('_rkm_credit_days', true));
+        $days = $days > 0 ? $days : self::get_credit_days();
+        $is_credit_term = in_array($payment_term_key, ['credit', 'mixed'], true);
+        $has_credit = $is_credit_term && $credit_balance > 0;
+        $started_timestamp = $started_at_raw !== '' ? strtotime($started_at_raw) : 0;
+        $due_timestamp = $due_at_raw !== '' ? strtotime($due_at_raw) : 0;
+        $completed = method_exists($order, 'get_date_completed') ? $order->get_date_completed() : null;
+        $delivery_timestamp = $completed ? (int) $completed->getTimestamp() : 0;
+
+        if ($started_timestamp <= 0 && $delivery_timestamp > 0 && $has_credit) {
+            $started_timestamp = $delivery_timestamp;
+        }
+
+        if ($due_timestamp <= 0 && $started_timestamp > 0 && $has_credit) {
+            $due_timestamp = $started_timestamp + (DAY_IN_SECONDS * $days);
+        }
+
+        $now = current_time('timestamp');
+        $remaining_days = 0;
+        if ($due_timestamp > 0) {
+            $remaining_seconds = $due_timestamp - $now;
+            $remaining_days = (int) floor($remaining_seconds / DAY_IN_SECONDS);
+        }
+
+        $started_label = $started_timestamp > 0 ? wp_date('d/m/Y', $started_timestamp) : '';
+        $due_label = $due_timestamp > 0 ? wp_date('d/m/Y', $due_timestamp) : '';
+        $delivery_label = $delivery_timestamp > 0 ? wp_date('d/m/Y', $delivery_timestamp) : '';
+
+        $status_label = '';
+
+        if (!$has_credit) {
+            $status_label = '';
+        } elseif ($started_timestamp <= 0) {
+            $status_label = 'El plazo de 20 dias comenzara a correr cuando el pedido sea marcado como entregado.';
+        } elseif ($remaining_days >= 0) {
+            $status_label = $remaining_days === 0
+                ? 'Vence hoy'
+                : sprintf('%d dias restantes', $remaining_days);
+        } else {
+            $status_label = sprintf('Vencido hace %d dias', abs($remaining_days));
+        }
+
+        $payment_term_label = (string) $order->get_meta('_rkm_payment_term_label', true);
+        if ($payment_term_label === '') {
+            $payment_term_label = (string) $order->get_meta('_rkm_payment_term', true);
+        }
+        if ($payment_term_label === '') {
+            $payment_term_label = '-';
+        }
+
+        return [
+            'has_credit' => $has_credit,
+            'days' => $days,
+            'payment_term_key' => $payment_term_key,
+            'payment_term_label' => $payment_term_label,
+            'credit_balance' => $credit_balance,
+            'started_at' => $started_at_raw !== '' ? $started_at_raw : '',
+            'started_label' => $started_label,
+            'due_at' => $due_at_raw !== '' ? $due_at_raw : ($due_timestamp > 0 ? wp_date('Y-m-d H:i:s', $due_timestamp) : ''),
+            'due_label' => $due_label,
+            'delivery_label' => $delivery_label,
+            'remaining_days' => $remaining_days,
+            'status_label' => $status_label,
+            'notice' => $started_timestamp <= 0
+                ? 'El cliente dispone de 20 dias de credito desde la fecha de entrega del pedido.'
+                : sprintf('El cliente dispone de 20 dias de credito desde la entrega del pedido. Vence el %s.', $due_label),
+        ];
+    }
+
+    public function maybe_start_credit_term($order_id, $old_status, $new_status, $order) {
+        if ($new_status !== 'completed' || !$order) {
+            return;
+        }
+
+        $credit_context = self::get_credit_context($order);
+        $user = wp_get_current_user();
+        $delivery_label = wp_date('d/m/Y', current_time('timestamp'));
+        $previous_credit_started_at = $order->get_meta('_rkm_credit_started_at', true);
+        $previous_credit_due_at = $order->get_meta('_rkm_credit_due_at', true);
+        $previous_credit_days = $order->get_meta('_rkm_credit_days', true);
+
+        self::add_audit_event(
+            $order,
+            'Pedido entregado',
+            'Pedido marcado como entregado.',
+            $user,
+            current_time('timestamp'),
+            $old_status,
+            'completed'
+        );
+
+        if (empty($credit_context['has_credit'])) {
+            return;
+        }
+
+        if ($order->get_meta('_rkm_credit_started_at', true) !== '' && $order->get_meta('_rkm_credit_due_at', true) !== '') {
+            return;
+        }
+
+        $started_timestamp = current_time('timestamp');
+        $days = !empty($credit_context['days']) ? absint($credit_context['days']) : self::get_credit_days();
+        $due_timestamp = $started_timestamp + (DAY_IN_SECONDS * $days);
+        $started_at = wp_date('Y-m-d H:i:s', $started_timestamp);
+        $due_at = wp_date('Y-m-d H:i:s', $due_timestamp);
+        $due_label = wp_date('d/m/Y', $due_timestamp);
+
+        $order->update_meta_data('_rkm_credit_started_at', $started_at);
+        $order->update_meta_data('_rkm_credit_due_at', $due_at);
+        $order->update_meta_data('_rkm_credit_days', $days);
+        $order->save();
+
+        self::add_audit_event(
+            $order,
+            sprintf('Plazo de credito de %d dias iniciado', $days),
+            sprintf(
+                'Se inicio plazo de credito de %d dias desde la entrega. Entregado: %s. Vencimiento: %s.',
+                $days,
+                $delivery_label,
+                $due_label
+            ),
+            $user,
+            $started_timestamp,
+            [
+                'started_at' => $previous_credit_started_at,
+                'due_at' => $previous_credit_due_at,
+                'days' => $previous_credit_days,
+            ],
+            [
+                'started_at' => $started_at,
+                'due_at' => $due_at,
+                'days' => $days,
+            ]
+        );
+    }
+
+    public function maybe_log_operational_status_transition($order_id, $old_status, $new_status, $order) {
+        if (!$order || $old_status === $new_status) {
+            return;
+        }
+
+        $tracked_statuses = [
+            class_exists('RKM_Order_Statuses') ? RKM_Order_Statuses::READY : 'rkm-ready',
+            class_exists('RKM_Order_Statuses') ? RKM_Order_Statuses::DISPATCHED : 'rkm-dispatched',
+            'cancelled',
+        ];
+
+        if (!in_array($new_status, $tracked_statuses, true)) {
+            return;
+        }
+
+        $user = wp_get_current_user();
+        $status_label = self::get_operational_status_label($new_status);
+        $old_label = self::get_operational_status_label($old_status);
+
+        self::add_audit_event(
+            $order,
+            $status_label !== '' ? $status_label : 'Estado cambiado',
+            sprintf('Estado cambiado de %s a %s.', $old_label, $status_label),
+            $user,
+            current_time('timestamp'),
+            $old_status,
+            $new_status
+        );
     }
 
     public static function get_list_statuses() {
@@ -123,17 +413,18 @@ class RKM_Operational_Orders {
         }
 
         $user = wp_get_current_user();
-        $user_label = $user instanceof WP_User && $user->display_name !== ''
-            ? $user->display_name
-            : ('Usuario #' . get_current_user_id());
         $confirmed_at = current_time('mysql');
-        $note = sprintf(
-            'Pedido confirmado por %s el %s.',
-            $user_label,
-            wp_date('d/m/Y H:i', current_time('timestamp'))
+        self::add_audit_event(
+            $order,
+            'Pedido confirmado',
+            'Pedido confirmado correctamente. Stock descontado correctamente.',
+            $user,
+            current_time('timestamp'),
+            $order->get_status(),
+            RKM_Order_Statuses::CONFIRMED
         );
 
-        $order->update_status(RKM_Order_Statuses::CONFIRMED, $note);
+        $order->update_status(RKM_Order_Statuses::CONFIRMED, '');
 
         wp_send_json_success([
             'message' => 'Pedido confirmado correctamente.',
@@ -172,21 +463,21 @@ class RKM_Operational_Orders {
         }
 
         $user = wp_get_current_user();
-        $user_label = $user instanceof WP_User && $user->display_name !== ''
-            ? $user->display_name
-            : ('Usuario #' . get_current_user_id());
         $sent_at = current_time('mysql');
-        $sent_at_label = wp_date('d/m/Y H:i', current_time('timestamp'));
-        $note = sprintf(
-            'Pedido enviado a almacen por %s el %s.',
-            $user_label,
-            $sent_at_label
+        self::add_audit_event(
+            $order,
+            'Enviado a almacen',
+            'Pedido enviado a almacen correctamente.',
+            $user,
+            current_time('timestamp'),
+            $order->get_status(),
+            RKM_Order_Statuses::WAREHOUSE
         );
 
         $order->update_meta_data('_rkm_sent_to_warehouse_at', $sent_at);
         $order->update_meta_data('_rkm_sent_to_warehouse_by', get_current_user_id());
         $order->save();
-        $order->update_status(RKM_Order_Statuses::WAREHOUSE, $note);
+        $order->update_status(RKM_Order_Statuses::WAREHOUSE, '');
 
         wp_send_json_success([
             'message' => 'Pedido enviado a almacen correctamente.',
@@ -224,6 +515,16 @@ class RKM_Operational_Orders {
             wp_send_json_error(['message' => 'Solo se pueden editar pedidos en revision o pendientes.'], 409);
         }
 
+        $previous_payment_snapshot = [
+            'term_key' => (string) $order->get_meta('_rkm_payment_term', true),
+            'term_label' => $this->get_order_meta_label($order, '_rkm_payment_term_label', '_rkm_payment_term'),
+            'payment_method_id' => (string) $order->get_meta('_rkm_payment_method_id', true),
+            'payment_method_label' => $this->get_order_meta_label($order, '_rkm_payment_method_label', '_rkm_payment_method_id'),
+            'upfront_amount' => (float) $order->get_meta('_rkm_upfront_amount', true),
+            'credit_balance' => (float) $order->get_meta('_rkm_credit_balance', true),
+            'cash_discount_amount' => (float) $order->get_meta('_rkm_cash_discount_amount', true),
+            'payment_note' => (string) $order->get_meta('_rkm_payment_note', true),
+        ];
         $items_payload = isset($_POST['items']) ? wp_unslash($_POST['items']) : [];
         $items_payload = is_array($items_payload) ? $items_payload : [];
         $quantity_result = $this->update_order_item_quantities($order, $items_payload);
@@ -253,43 +554,132 @@ class RKM_Operational_Orders {
         }
 
         $user = wp_get_current_user();
-        $user_label = $user instanceof WP_User && $user->display_name !== ''
-            ? $user->display_name
-            : ('Usuario #' . get_current_user_id());
         $changes = isset($quantity_result['changes']) && is_array($quantity_result['changes'])
             ? $quantity_result['changes']
             : [];
-        $note_lines = [
-            sprintf(
-                'Pedido editado por %s el %s.',
-                $user_label,
-                wp_date('d/m/Y H:i', current_time('timestamp'))
-            ),
-        ];
+        $quantity_items = isset($quantity_result['items']) && is_array($quantity_result['items'])
+            ? $quantity_result['items']
+            : [];
 
         if (!empty($changes)) {
-            $note_lines[] = 'Cantidades actualizadas: ' . implode('; ', $changes) . '.';
+            $quantity_old = [];
+            $quantity_new = [];
+            foreach ($quantity_items as $change) {
+                if (!is_array($change)) {
+                    continue;
+                }
+
+                $item_name = isset($change['name']) ? $this->clean_text($change['name']) : '';
+                $old_quantity = isset($change['old_quantity']) ? (int) $change['old_quantity'] : 0;
+                $new_quantity = isset($change['new_quantity']) ? (int) $change['new_quantity'] : 0;
+                $quantity_old[] = [
+                    'name' => $item_name,
+                    'quantity' => $old_quantity,
+                ];
+                $quantity_new[] = [
+                    'name' => $item_name,
+                    'quantity' => $new_quantity,
+                ];
+            }
+
+            self::add_audit_event(
+                $order,
+                'Cantidades modificadas',
+                'Cantidades actualizadas: ' . implode('; ', $changes) . '.',
+                $user,
+                current_time('timestamp'),
+                $quantity_old,
+                $quantity_new
+            );
         }
 
         if ($payment_update_enabled && is_array($payment_context)) {
-            $note_lines[] = sprintf('Condicion de pago: %s.', $payment_context['term_label']);
+            $payment_old = [
+                'term_key' => $previous_payment_snapshot['term_key'],
+                'term_label' => $previous_payment_snapshot['term_label'],
+                'payment_method_id' => $previous_payment_snapshot['payment_method_id'],
+                'payment_method_label' => $previous_payment_snapshot['payment_method_label'],
+                'upfront_amount' => $previous_payment_snapshot['upfront_amount'],
+                'credit_balance' => $previous_payment_snapshot['credit_balance'],
+                'cash_discount_amount' => $previous_payment_snapshot['cash_discount_amount'],
+                'payment_note' => $previous_payment_snapshot['payment_note'],
+            ];
+            $payment_new = [
+                'term_key' => $payment_context['term_key'],
+                'term_label' => $payment_context['term_label'],
+                'payment_method_id' => $payment_context['payment_method_id'],
+                'payment_method_label' => $payment_context['payment_method_label'],
+                'upfront_amount' => $payment_context['upfront_amount'],
+                'credit_balance' => $payment_context['credit_balance'],
+                'cash_discount_amount' => $payment_context['cash_discount_amount'],
+                'payment_note' => $payment_context['payment_note'],
+            ];
 
-            if (!empty($payment_context['payment_method_label'])) {
-                $note_lines[] = sprintf('Forma de pago: %s.', $payment_context['payment_method_label']);
-            }
+            $payment_changed = $payment_old !== $payment_new;
 
-            if (!empty($payment_context['upfront_amount'])) {
-                $note_lines[] = sprintf('Monto inicial: %s.', wc_price($payment_context['upfront_amount']));
-            }
+            if ($payment_changed) {
+                $payment_details = [];
 
-            if (!empty($payment_context['credit_balance'])) {
-                $note_lines[] = sprintf('Saldo a credito: %s.', wc_price($payment_context['credit_balance']));
+                if ($payment_old['term_label'] !== $payment_new['term_label']) {
+                    $payment_details[] = sprintf(
+                        'Condicion de pago modificada: %s -> %s.',
+                        $payment_old['term_label'],
+                        $payment_new['term_label']
+                    );
+                }
+
+                if ($payment_old['payment_method_label'] !== $payment_new['payment_method_label']) {
+                    $payment_details[] = sprintf(
+                        'Forma de pago modificada: %s -> %s.',
+                        $payment_old['payment_method_label'] !== '' ? $payment_old['payment_method_label'] : 'Sin forma de pago',
+                        $payment_new['payment_method_label'] !== '' ? $payment_new['payment_method_label'] : 'Sin forma de pago'
+                    );
+                }
+
+                if ((float) $payment_old['upfront_amount'] !== (float) $payment_new['upfront_amount']) {
+                    $payment_details[] = sprintf(
+                        'Monto inicial: %s -> %s.',
+                        $this->clean_money_text(wc_price((float) $payment_old['upfront_amount'])),
+                        $this->clean_money_text(wc_price((float) $payment_new['upfront_amount']))
+                    );
+                }
+
+                if ((float) $payment_old['credit_balance'] !== (float) $payment_new['credit_balance']) {
+                    $payment_details[] = sprintf(
+                        'Saldo a credito: %s -> %s.',
+                        $this->clean_money_text(wc_price((float) $payment_old['credit_balance'])),
+                        $this->clean_money_text(wc_price((float) $payment_new['credit_balance']))
+                    );
+                }
+
+                if ((float) $payment_old['cash_discount_amount'] !== (float) $payment_new['cash_discount_amount']) {
+                    $payment_details[] = sprintf(
+                        'Descuento contado: %s -> %s.',
+                        $this->clean_money_text(wc_price((float) $payment_old['cash_discount_amount'])),
+                        $this->clean_money_text(wc_price((float) $payment_new['cash_discount_amount']))
+                    );
+                }
+
+                if ($payment_old['payment_note'] !== $payment_new['payment_note']) {
+                    $payment_details[] = sprintf(
+                        'Nota de pago: %s -> %s.',
+                        $payment_old['payment_note'] !== '' ? $payment_old['payment_note'] : 'Sin nota',
+                        $payment_new['payment_note'] !== '' ? $payment_new['payment_note'] : 'Sin nota'
+                    );
+                }
+
+                self::add_audit_event(
+                    $order,
+                    'Condicion de pago modificada',
+                    implode("\n", $payment_details),
+                    $user,
+                    current_time('timestamp'),
+                    $payment_old,
+                    $payment_new
+                );
             }
-        } else {
-            $note_lines[] = 'Condicion de pago sin cambios.';
         }
 
-        $order->add_order_note(implode("\n", $note_lines));
         $order->save();
 
         wp_send_json_success([
@@ -300,7 +690,15 @@ class RKM_Operational_Orders {
 
     private function reduce_stock_for_confirmation($order) {
         if ($order->get_meta('_rkm_stock_reduced', true) === 'yes') {
-            $order->add_order_note('Stock no descontado nuevamente: _rkm_stock_reduced ya estaba marcado como yes.');
+            self::add_audit_event(
+                $order,
+                'Stock descontado',
+                'Stock no descontado nuevamente: _rkm_stock_reduced ya estaba marcado como yes.',
+                null,
+                null,
+                'yes',
+                'yes'
+            );
             return true;
         }
 
@@ -319,7 +717,15 @@ class RKM_Operational_Orders {
 
         $order->update_meta_data('_rkm_stock_reduced', 'yes');
         $order->save();
-        $order->add_order_note('Stock descontado al confirmar pedido RKM.');
+        self::add_audit_event(
+            $order,
+            'Stock descontado',
+            'Stock descontado al confirmar pedido RKM.',
+            null,
+            null,
+            'no',
+            'yes'
+        );
 
         return true;
     }
@@ -403,6 +809,9 @@ class RKM_Operational_Orders {
 
         $date_created = $order->get_date_created();
         $status = $order->get_status();
+        $assigned_vendor = $this->get_assigned_vendor_data($order);
+        $operational_history = $this->get_operational_history($order);
+        $credit_context = self::get_credit_context($order);
 
         return [
             'id' => (int) $order->get_id(),
@@ -413,7 +822,7 @@ class RKM_Operational_Orders {
             'date' => $date_created ? $date_created->date_i18n('d/m/Y H:i') : 'Sin fecha',
             'total' => $this->clean_money_text($order->get_formatted_order_total()),
             'status' => $status,
-            'status_label' => function_exists('wc_get_order_status_name') ? wc_get_order_status_name($status) : ucfirst($status),
+            'status_label' => $this->get_operational_status_label($status),
             'payment_term' => $this->get_order_meta_label($order, '_rkm_payment_term_label', '_rkm_payment_term'),
             'payment_term_key' => (string) $order->get_meta('_rkm_payment_term', true),
             'payment_method' => $this->get_order_meta_label($order, '_rkm_payment_method_label', '_rkm_payment_method_id'),
@@ -426,10 +835,137 @@ class RKM_Operational_Orders {
             'cash_discount_display' => $this->clean_money_text(wc_price((float) $order->get_meta('_rkm_cash_discount_amount', true))),
             'payment_note' => (string) $order->get_meta('_rkm_payment_note', true),
             'customer_note' => (string) $order->get_customer_note(),
-            'internal_notes' => $this->get_internal_notes($order),
+            'assigned_vendor_id' => (int) $assigned_vendor['id'],
+            'assigned_vendor_name' => $assigned_vendor['name'],
+            'assigned_vendor_email' => $assigned_vendor['email'],
+            'assigned_vendor_role' => $assigned_vendor['role'],
+            'assigned_vendor_label' => $assigned_vendor['label'],
+            'credit_context' => $credit_context,
+            'credit_has_balance' => !empty($credit_context['has_credit']),
+            'credit_days' => isset($credit_context['days']) ? (int) $credit_context['days'] : self::get_credit_days(),
+            'credit_started_at' => $credit_context['started_at'] ?? '',
+            'credit_started_label' => $credit_context['started_label'] ?? '',
+            'credit_due_at' => $credit_context['due_at'] ?? '',
+            'credit_due_label' => $credit_context['due_label'] ?? '',
+            'credit_delivery_label' => $credit_context['delivery_label'] ?? '',
+            'credit_remaining_days' => isset($credit_context['remaining_days']) ? (int) $credit_context['remaining_days'] : 0,
+            'credit_status_label' => $credit_context['status_label'] ?? '',
+            'credit_notice' => $credit_context['notice'] ?? '',
+            'operational_history' => $operational_history,
+            'audit_timeline' => $operational_history,
+            'internal_notes' => $operational_history,
             'items' => $this->format_order_items($order),
             'is_editable' => in_array($status, self::get_editable_statuses(), true),
         ];
+    }
+
+    private function get_operational_status_label($status) {
+        $status = (string) $status;
+
+        if (in_array($status, self::get_review_statuses(), true)) {
+            return 'En revision';
+        }
+
+        if (function_exists('wc_get_order_status_name')) {
+            return wc_get_order_status_name($status);
+        }
+
+        return ucfirst($status);
+    }
+
+    private function get_assigned_vendor_data($order) {
+        $default = [
+            'id' => 0,
+            'name' => '',
+            'email' => '',
+            'role' => '',
+            'label' => 'Sin vendedor asignado',
+        ];
+
+        if (!class_exists('RKM_Assignments')) {
+            return $default;
+        }
+
+        $customer = $this->get_order_customer_user($order);
+
+        if (!$customer instanceof WP_User || empty($customer->ID)) {
+            return $default;
+        }
+
+        $assigned_vendor_id = (int) RKM_Assignments::get_assigned_vendor_id($customer);
+
+        if ($assigned_vendor_id <= 0) {
+            return $default;
+        }
+
+        $vendor = get_user_by('id', $assigned_vendor_id);
+
+        if (!$vendor instanceof WP_User) {
+            return $default;
+        }
+
+        $vendor_name = $vendor->display_name !== '' ? $vendor->display_name : $vendor->user_login;
+        $vendor_email = $vendor->user_email !== '' ? $vendor->user_email : '';
+        $vendor_role = $this->get_user_role_label($vendor);
+
+        return [
+            'id' => (int) $vendor->ID,
+            'name' => $vendor_name,
+            'email' => $vendor_email,
+            'role' => $vendor_role,
+            'label' => $vendor_email !== ''
+                ? sprintf('%s · %s', $vendor_name, $vendor_email)
+                : $vendor_name,
+        ];
+    }
+
+    private function get_order_customer_user($order) {
+        if (method_exists($order, 'get_user')) {
+            $customer = $order->get_user();
+            if ($customer instanceof WP_User) {
+                return $customer;
+            }
+        }
+
+        $billing_email = $order->get_billing_email();
+
+        if ($billing_email !== '') {
+            $customer = get_user_by('email', $billing_email);
+
+            if ($customer instanceof WP_User) {
+                return $customer;
+            }
+        }
+
+        return null;
+    }
+
+    private function get_user_role_label($user) {
+        if (!$user instanceof WP_User) {
+            return 'Sistema';
+        }
+
+        $roles = is_array($user->roles) ? $user->roles : [];
+
+        if (empty($roles)) {
+            return 'Usuario';
+        }
+
+        $role = (string) reset($roles);
+        $map = [
+            'administrator' => 'Administrador',
+            'shop_manager' => 'Encargado',
+            'seller' => 'Vendedor',
+            'vendor' => 'Vendedor',
+            'vendedor' => 'Vendedor',
+            'customer' => 'Cliente',
+        ];
+
+        if (isset($map[$role])) {
+            return $map[$role];
+        }
+
+        return ucwords(str_replace(['-', '_'], ' ', $role));
     }
 
     private function get_order_meta_label($order, $label_key, $fallback_key) {
@@ -481,6 +1017,22 @@ class RKM_Operational_Orders {
     }
 
     private function get_internal_notes($order) {
+        return $this->get_operational_history($order);
+    }
+
+    private function get_operational_history($order) {
+        if (!$order || !method_exists($order, 'get_id')) {
+            return [];
+        }
+
+        if (class_exists('RKM_Order_Audit_Log')) {
+            $events = RKM_Order_Audit_Log::get_events($order->get_id());
+
+            if (!empty($events)) {
+                return $events;
+            }
+        }
+
         if (!function_exists('wc_get_order_notes')) {
             return [];
         }
@@ -488,7 +1040,7 @@ class RKM_Operational_Orders {
         $notes = wc_get_order_notes([
             'order_id' => $order->get_id(),
             'type' => 'internal',
-            'limit' => 5,
+            'limit' => -1,
             'orderby' => 'date_created',
             'order' => 'DESC',
         ]);
@@ -497,12 +1049,128 @@ class RKM_Operational_Orders {
             return [];
         }
 
-        return array_map(function ($note) {
-            return [
-                'date' => !empty($note->date_created) ? $this->clean_text($note->date_created->date_i18n('d/m/Y H:i')) : '',
-                'content' => $this->clean_text($note->content),
-            ];
+        $history = array_map(function ($note) {
+            return $this->format_operational_history_note($note);
         }, $notes);
+
+        $history = array_filter($history, static function ($entry) {
+            return is_array($entry);
+        });
+
+        return array_values($history);
+    }
+
+    private function format_operational_history_note($note) {
+        $content = $this->clean_text($note->content ?? '');
+        $author = $this->clean_text($note->added_by ?? $note->author ?? '');
+        $author_user = null;
+
+        if ($author !== '') {
+            $author_user = get_user_by('login', sanitize_user($author, true));
+
+            if (!$author_user instanceof WP_User && is_numeric($author)) {
+                $author_user = get_user_by('id', absint($author));
+            }
+
+            if (!$author_user instanceof WP_User) {
+                $author_user = get_user_by('slug', sanitize_title($author));
+            }
+        }
+
+        $user_label = $author_user instanceof WP_User
+            ? ($author_user->display_name !== '' ? $author_user->display_name : $author_user->user_login)
+            : ($author !== '' ? $author : 'Sistema');
+        $role_label = $this->get_user_role_label($author_user);
+        $action_label = $this->classify_operational_history_action($content);
+        $detail = $this->build_operational_history_detail($content, $action_label);
+        $date_label = !empty($note->date_created)
+            ? $this->clean_text($note->date_created->date_i18n('d/m/Y H:i'))
+            : '';
+
+        return [
+            'date' => $date_label,
+            'timestamp' => !empty($note->date_created) ? (int) $note->date_created->getTimestamp() : 0,
+            'user' => $user_label,
+            'role' => $role_label,
+            'action' => $action_label,
+            'detail' => $detail,
+        ];
+    }
+
+    private function classify_operational_history_action($content) {
+        $text = strtolower($this->clean_text($content));
+
+        if ($text === '') {
+            return 'Movimiento operativo';
+        }
+
+        if (strpos($text, 'pedido confirmado') !== false || strpos($text, 'confirmado por') !== false) {
+            return 'Pedido confirmado';
+        }
+
+        if (strpos($text, 'pedido entregado') !== false || strpos($text, 'entregado por') !== false) {
+            return 'Entregado';
+        }
+
+        if (strpos($text, 'pedido enviado a almacen') !== false || strpos($text, 'enviado a almacen') !== false) {
+            return 'Enviado a almacén';
+        }
+
+        if (strpos($text, 'estado cambiado a listo para despacho') !== false || strpos($text, 'listo para despacho') !== false) {
+            return 'Listo para despacho';
+        }
+
+        if (strpos($text, 'estado cambiado a despachado') !== false || strpos($text, 'despachado') !== false) {
+            return 'Despachado';
+        }
+
+        if (strpos($text, 'stock descontado') !== false) {
+            return 'Stock descontado';
+        }
+
+        if (strpos($text, 'pedido editado') !== false) {
+            return 'Pedido editado';
+        }
+
+        if (strpos($text, 'pago configurado') !== false) {
+            return 'Pago configurado';
+        }
+
+        if (strpos($text, 'plazo de credito') !== false || strpos($text, 'credito iniciado') !== false) {
+            return 'Credito iniciado';
+        }
+
+        if (strpos($text, 'cantidades actualizadas') !== false || strpos($text, 'cantidad') !== false) {
+            return 'Cantidades modificadas';
+        }
+
+        if (strpos($text, 'condicion de pago') !== false || strpos($text, 'forma de pago') !== false || strpos($text, 'monto inicial') !== false) {
+            return 'Condición de pago modificada';
+        }
+
+        if (strpos($text, 'pedido cancelado') !== false || strpos($text, 'cancelado') !== false) {
+            return 'Pedido cancelado';
+        }
+
+        if (strpos($text, 'pedido generado') !== false || strpos($text, 'pedido creado') !== false || strpos($text, 'pedido creacion') !== false) {
+            return 'Pedido creado';
+        }
+
+        if (strpos($text, 'estado') !== false && strpos($text, 'cambi') !== false) {
+            return 'Estado cambiado';
+        }
+
+        return 'Actualización operativa';
+    }
+
+    private function build_operational_history_detail($content, $action_label) {
+        $detail = trim($content);
+
+        if ($detail === '') {
+            return $action_label;
+        }
+
+        return $detail;
     }
 
     private function clean_text($value) {
@@ -539,6 +1207,7 @@ class RKM_Operational_Orders {
         }
 
         $changes = [];
+        $items = [];
 
         foreach ($order->get_items() as $item_id => $item) {
             if (!array_key_exists((int) $item_id, $posted_quantities)) {
@@ -573,6 +1242,12 @@ class RKM_Operational_Orders {
 
             if ($quantity !== $current_quantity) {
                 $changes[] = sprintf('%s de %d a %d', $item->get_name(), $current_quantity, $quantity);
+                $items[] = [
+                    'item_id' => (int) $item_id,
+                    'name' => $item->get_name(),
+                    'old_quantity' => $current_quantity,
+                    'new_quantity' => $quantity,
+                ];
             }
 
             $item->set_quantity($quantity);
@@ -581,7 +1256,10 @@ class RKM_Operational_Orders {
             $item->save();
         }
 
-        return ['changes' => $changes];
+        return [
+            'changes' => $changes,
+            'items' => $items,
+        ];
     }
 
     private function resolve_payment_context_from_request($order) {

@@ -21,7 +21,9 @@ class RKM_Loader {
         require_once RKM_CORE_PATH . 'includes/class-rkm-products.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-sellers.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-order-statuses.php';
+        require_once RKM_CORE_PATH . 'includes/class-rkm-order-audit-log.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-operational-orders.php';
+        require_once RKM_CORE_PATH . 'includes/class-rkm-warehouse.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-orders.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-redirects.php';
         require_once RKM_CORE_PATH . 'includes/class-rkm-orders-actions.php';
@@ -41,7 +43,9 @@ class RKM_Loader {
         (new RKM_Sellers())->init();
         (new RKM_Order_Statuses())->init();
         (new RKM_Operational_Orders())->init();
+        (new RKM_Warehouse())->init();
         (new RKM_Orders())->init();
+        add_action('init', ['RKM_Order_Audit_Log', 'maybe_install_schema']);
         $redirects = new RKM_Redirects();
         $redirects->init();
         $order_actions = new RKM_Orders_Actions();

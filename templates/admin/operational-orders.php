@@ -70,28 +70,28 @@ $pending_review_count = count(array_filter($orders, static function ($order) use
                     </div>
                 </div>
 
-                <div class="rkm-admin-orders-filters" data-rkm-order-filters>
-                    <button type="button" class="rkm-admin-orders-filter is-active" data-rkm-order-filter="all">
+                <div class="rkm-admin-orders-filters rkm-admin-orders__filters" data-rkm-order-filters>
+                    <button type="button" class="rkm-admin-orders-filter rkm-admin-orders__filter is-active" data-rkm-order-filter="all">
                         <span>Todos</span>
                         <strong data-rkm-filter-count="all">0</strong>
                     </button>
-                    <button type="button" class="rkm-admin-orders-filter" data-rkm-order-filter="pending">
+                    <button type="button" class="rkm-admin-orders-filter rkm-admin-orders__filter" data-rkm-order-filter="pending">
                         <span>Pendientes</span>
                         <strong data-rkm-filter-count="pending">0</strong>
                     </button>
-                    <button type="button" class="rkm-admin-orders-filter" data-rkm-order-filter="confirmed">
+                    <button type="button" class="rkm-admin-orders-filter rkm-admin-orders__filter" data-rkm-order-filter="confirmed">
                         <span>Confirmados</span>
                         <strong data-rkm-filter-count="confirmed">0</strong>
                     </button>
-                    <button type="button" class="rkm-admin-orders-filter" data-rkm-order-filter="warehouse">
+                    <button type="button" class="rkm-admin-orders-filter rkm-admin-orders__filter" data-rkm-order-filter="warehouse">
                         <span>En almacén</span>
                         <strong data-rkm-filter-count="warehouse">0</strong>
                     </button>
-                    <button type="button" class="rkm-admin-orders-filter" data-rkm-order-filter="ready">
+                    <button type="button" class="rkm-admin-orders-filter rkm-admin-orders__filter" data-rkm-order-filter="ready">
                         <span>Listos</span>
                         <strong data-rkm-filter-count="ready">0</strong>
                     </button>
-                    <button type="button" class="rkm-admin-orders-filter" data-rkm-order-filter="dispatched">
+                    <button type="button" class="rkm-admin-orders-filter rkm-admin-orders__filter" data-rkm-order-filter="dispatched">
                         <span>Despachados</span>
                         <strong data-rkm-filter-count="dispatched">0</strong>
                     </button>
@@ -206,14 +206,16 @@ $pending_review_count = count(array_filter($orders, static function ($order) use
                         <strong id="rkmOperationalOrderCustomer"></strong>
                         <small id="rkmOperationalOrderCustomerMeta"></small>
                     </div>
+                    <div class="rkm-admin-order-modal__box rkm-admin-order-modal__box--seller">
+                        <span>Vendedor asignado</span>
+                        <strong id="rkmOperationalOrderSeller"></strong>
+                        <small id="rkmOperationalOrderSellerMeta"></small>
+                    </div>
                     <div class="rkm-admin-order-modal__box rkm-admin-order-modal__box--payment">
                         <span>Pago</span>
-                        <div id="rkmOperationalOrderPaymentReadonly">
+                        <div id="rkmOperationalOrderPaymentReadonly" class="rkm-admin-order-modal__payment-summary">
                             <strong id="rkmOperationalOrderPaymentTerm"></strong>
-                            <small id="rkmOperationalOrderPaymentMethod"></small>
-                            <small id="rkmOperationalOrderPaymentUpfront"></small>
-                            <small id="rkmOperationalOrderPaymentCredit"></small>
-                            <small id="rkmOperationalOrderPaymentNote"></small>
+                            <div class="rkm-admin-order-modal__payment-summary-lines" id="rkmOperationalOrderPaymentSummaryLines"></div>
                         </div>
 
                         <?php if ($can_edit_orders) : ?>
@@ -222,7 +224,7 @@ $pending_review_count = count(array_filter($orders, static function ($order) use
                             <span>Editar condicion de pago</span>
                         </label>
 
-                        <div class="rkm-admin-order-modal__payment-form" id="rkmOperationalOrderEditPanel" hidden>
+                        <div class="rkm-admin-order-modal__payment-form rkm-admin-order-modal__payment-edit-fields" id="rkmOperationalOrderEditPanel" hidden aria-hidden="true">
                             <label>
                                 <span>Condicion</span>
                                 <select id="rkmOperationalOrderPaymentTermInput">
@@ -279,7 +281,7 @@ $pending_review_count = count(array_filter($orders, static function ($order) use
 
                 <section class="rkm-admin-order-modal__section">
                     <div class="rkm-admin-order-modal__section-head">
-                        <h3>Notas internas</h3>
+                        <h3>Historial operativo</h3>
                     </div>
                     <div class="rkm-admin-order-modal__notes" id="rkmOperationalOrderNotes"></div>
                 </section>

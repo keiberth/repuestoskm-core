@@ -22,12 +22,11 @@
         var status = document.getElementById("rkmOperationalOrderModalStatus");
         var customer = document.getElementById("rkmOperationalOrderCustomer");
         var customerMeta = document.getElementById("rkmOperationalOrderCustomerMeta");
+        var seller = document.getElementById("rkmOperationalOrderSeller");
+        var sellerMeta = document.getElementById("rkmOperationalOrderSellerMeta");
         var paymentReadonly = document.getElementById("rkmOperationalOrderPaymentReadonly");
         var paymentTerm = document.getElementById("rkmOperationalOrderPaymentTerm");
-        var paymentMethod = document.getElementById("rkmOperationalOrderPaymentMethod");
-        var paymentUpfront = document.getElementById("rkmOperationalOrderPaymentUpfront");
-        var paymentCredit = document.getElementById("rkmOperationalOrderPaymentCredit");
-        var paymentNote = document.getElementById("rkmOperationalOrderPaymentNote");
+        var paymentSummaryLines = document.getElementById("rkmOperationalOrderPaymentSummaryLines");
         var total = document.getElementById("rkmOperationalOrderTotal");
         var totalHint = document.getElementById("rkmOperationalOrderTotalHint");
         var items = document.getElementById("rkmOperationalOrderItems");
@@ -168,35 +167,66 @@
         }
 
         function renderPaymentSummary(order) {
+            var paymentMethodText = decodeHtml(order.payment_method || "").trim();
+            var upfrontText = decodeHtml(order.upfront_amount_display || "").trim();
+            var creditText = decodeHtml(order.credit_balance_display || "").trim();
+            var paymentNoteText = decodeHtml(order.payment_note || "").trim();
+            var creditContext = order.credit_context || {};
+            var hasCreditTerm = Boolean(creditContext.has_credit);
+            var creditNoticeText = decodeHtml(creditContext.notice || "").trim();
+            var startedLabelText = decodeHtml(creditContext.started_label || "").trim();
+            var dueLabelText = decodeHtml(creditContext.due_label || "").trim();
+            var statusLabelText = decodeHtml(creditContext.status_label || "").trim();
+            var lines = [];
+
             if (paymentTerm) {
                 paymentTerm.textContent = "Condicion: " + (order.payment_term || "-");
             }
 
-            if (paymentMethod) {
-                paymentMethod.textContent = "Forma: " + (order.payment_method || "-");
+            if (paymentMethodText && paymentMethodText !== "-") {
+                lines.push('<span>Forma: ' + escapeHtml(paymentMethodText) + '</span>');
+            } else {
+                lines.push('<span>Forma: Sin forma de pago</span>');
             }
 
-            if (paymentUpfront) {
-                var hasUpfront = Number(order.upfront_amount || 0) > 0;
-                paymentUpfront.hidden = !hasUpfront;
-                paymentUpfront.textContent = hasUpfront ? "Monto inicial: " + decodeHtml(order.upfront_amount_display || "") : "";
+            if (Number(order.upfront_amount || 0) > 0 && upfrontText !== "") {
+                lines.push('<span>Monto inicial: ' + escapeHtml(upfrontText) + '</span>');
             }
 
-            if (paymentCredit) {
-                var hasCredit = Number(order.credit_balance || 0) > 0;
-                paymentCredit.hidden = !hasCredit;
-                paymentCredit.textContent = hasCredit ? "Saldo a credito: " + decodeHtml(order.credit_balance_display || "") : "";
+            if (Number(order.credit_balance || 0) > 0 && creditText !== "") {
+                lines.push('<span>Saldo a credito: ' + escapeHtml(creditText) + '</span>');
             }
 
-            if (paymentNote) {
-                paymentNote.hidden = !order.payment_note;
-                paymentNote.textContent = order.payment_note ? "Nota: " + decodeHtml(order.payment_note) : "";
+            if (paymentNoteText) {
+                lines.push('<span>Nota: ' + escapeHtml(paymentNoteText) + '</span>');
+            }
+
+            if (hasCreditTerm && creditNoticeText) {
+                lines.push('<span class="rkm-admin-order-modal__payment-summary-note">' + escapeHtml(creditNoticeText) + '</span>');
+            }
+
+            if (hasCreditTerm && startedLabelText && dueLabelText) {
+                lines.push('<span>Entregado: ' + escapeHtml(startedLabelText) + ' | Vence credito: ' + escapeHtml(dueLabelText) + '</span>');
+            }
+
+            if (hasCreditTerm && startedLabelText && statusLabelText) {
+                lines.push('<span>Estado credito: ' + escapeHtml(statusLabelText) + '</span>');
+            }
+
+            if (paymentSummaryLines) {
+                paymentSummaryLines.innerHTML = lines.join("");
+                paymentSummaryLines.hidden = lines.length === 0;
             }
         }
 
         function setPaymentEditing(enabled) {
             if (editPanel) {
                 editPanel.hidden = !enabled;
+                editPanel.setAttribute("aria-hidden", enabled ? "false" : "true");
+            }
+
+            if (paymentReadonly) {
+                paymentReadonly.hidden = enabled;
             }
 
             if (paymentEditToggle) {
@@ -211,12 +241,30 @@
                 if (total) {
                     total.textContent = decodeHtml(order.total || "-");
                 }
-
-                if (totalHint) {
-                    totalHint.hidden = true;
-                    totalHint.textContent = "";
-                }
             }
+
+            if (totalHint) {
+                totalHint.hidden = true;
+                totalHint.textContent = "";
+            }
+        }
+
+        function renderSellerSummary(order) {
+            if (!seller || !sellerMeta) {
+                return;
+            }
+
+            var sellerName = decodeHtml(order.assigned_vendor_name || "");
+            var sellerEmail = decodeHtml(order.assigned_vendor_email || "");
+            var sellerRole = decodeHtml(order.assigned_vendor_role || "");
+            var hasSeller = Boolean(sellerName);
+
+            seller.textContent = hasSeller ? sellerName : "Sin vendedor asignado";
+            sellerMeta.textContent = hasSeller
+                ? [sellerEmail, sellerRole].filter(function (value) {
+                    return value;
+                }).join(" · ") || "Asignado al cliente del pedido."
+                : "Sin asignacion comercial para este cliente.";
         }
 
         function renderItems(order) {
@@ -286,48 +334,45 @@
         }
 
         function renderNotes(order) {
-            var noteBlocks = [];
+            var history = Array.isArray(order.audit_timeline)
+                ? order.audit_timeline
+                : (Array.isArray(order.operational_history)
+                    ? order.operational_history
+                    : (Array.isArray(order.internal_notes) ? order.internal_notes : []));
 
-            if (order.payment_note) {
-                noteBlocks.push({
-                    label: "Observacion de pago",
-                    content: decodeHtml(order.payment_note)
-                });
-            }
-
-            if (order.customer_note) {
-                noteBlocks.push({
-                    label: "Nota del pedido",
-                    content: decodeHtml(order.customer_note)
-                });
-            }
-
-            if (Array.isArray(order.internal_notes)) {
-                order.internal_notes.forEach(function (note) {
-                    if (!note.content) {
-                        return;
-                    }
-
-                    noteBlocks.push({
-                        label: decodeHtml(note.date || "Nota interna"),
-                        content: decodeHtml(note.content)
-                    });
-                });
-            }
-
-            if (!noteBlocks.length) {
-                notes.innerHTML = '<p class="rkm-admin-order-modal__empty">No hay notas internas registradas.</p>';
+            if (!history.length) {
+                notes.innerHTML = '<p class="rkm-admin-order-modal__empty">No hay historial operativo registrado.</p>';
                 return;
             }
 
-            notes.innerHTML = noteBlocks.map(function (note) {
+            notes.innerHTML = history.map(function (entry) {
+                var metaBits = [];
+                var dateText = decodeHtml(entry.date || "");
+                var userText = decodeHtml(entry.user || "");
+                var roleText = decodeHtml(entry.role || "");
+                var actionText = decodeHtml(entry.action || "Movimiento operativo");
+                var detailText = decodeHtml(entry.detail || "");
+
+                if (dateText) {
+                    metaBits.push(dateText);
+                }
+                if (userText) {
+                    metaBits.push(userText);
+                }
+                if (roleText && roleText !== userText) {
+                    metaBits.push(roleText);
+                }
+
                 return [
-                    '<div class="rkm-admin-order-modal__note">',
-                        '<span>' + escapeHtml(decodeHtml(note.label)) + '</span>',
-                        '<p>' + escapeHtml(decodeHtml(note.content)) + '</p>',
+                    '<div class="rkm-admin-order-modal__note rkm-admin-order-modal__history-item">',
+                        '<span>' + escapeHtml(metaBits.join(" · ")) + '</span>',
+                        '<strong>' + escapeHtml(actionText) + '</strong>',
+                        '<p>' + escapeHtml(detailText) + '</p>',
                     '</div>'
                 ].join("");
             }).join("");
+
+            notes.scrollTop = 0;
         }
 
         function isConfirmable(order) {
@@ -634,6 +679,7 @@
             applyOrderFilter(activeFilter);
 
             if (String(activeOrderId) === String(order.id)) {
+                renderSellerSummary(order);
                 renderPaymentSummary(order);
                 total.textContent = decodeHtml(order.total || "-");
                 renderItems(order);
@@ -853,6 +899,7 @@
             customerMeta.textContent = [order.customer_email, order.customer_phone].filter(function (value) {
                 return value && value !== "-";
             }).join(" - ") || "Sin datos de contacto";
+            renderSellerSummary(order);
             renderPaymentSummary(order);
             total.textContent = decodeHtml(order.total || "-");
             if (totalHint) {

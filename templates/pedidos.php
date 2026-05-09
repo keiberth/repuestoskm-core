@@ -34,6 +34,9 @@ if (!defined('ABSPATH')) {
                     $status_key   = $order->get_status();
                     $status_label = wc_get_order_status_name($status_key);
                     $status_slug  = sanitize_html_class('status-' . $status_key);
+                    $credit_context = class_exists('RKM_Operational_Orders')
+                        ? RKM_Operational_Orders::get_credit_context($order)
+                        : ['has_credit' => false];
                     $cancelable_statuses = class_exists('RKM_Orders_Actions')
                         ? RKM_Orders_Actions::get_cancelable_statuses()
                         : ['pending', 'on-hold', 'processing'];
@@ -89,6 +92,21 @@ if (!defined('ABSPATH')) {
                                 <span class="rkm-order-card__label">Seguimiento</span>
                                 <span>Podés ver detalle y estado actual del pedido.</span>
                             </div>
+
+                            <?php if (!empty($credit_context['has_credit'])) : ?>
+                                <div class="rkm-order-card__metric rkm-order-card__metric--credit">
+                                    <span class="rkm-order-card__label">Crédito</span>
+                                    <?php if ($status_key === 'completed') : ?>
+                                        <span>
+                                            Entregado: <?php echo esc_html($credit_context['delivery_label'] ?: '-'); ?><br>
+                                            Vence crédito: <?php echo esc_html($credit_context['due_label'] ?: '-'); ?><br>
+                                            Estado crédito: <?php echo esc_html($credit_context['status_label'] ?: 'Pendiente'); ?>
+                                        </span>
+                                    <?php else : ?>
+                                        <span><?php echo esc_html($credit_context['notice'] ?: 'El cliente dispone de 20 días de crédito desde la fecha de entrega del pedido.'); ?></span>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
 
                         <div class="rkm-order-card__footer">

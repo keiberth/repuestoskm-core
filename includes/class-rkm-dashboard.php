@@ -190,6 +190,23 @@ class RKM_Dashboard {
                 true
             );
         }
+
+        if ($section === 'almacen') {
+            wp_enqueue_style(
+                'rkm-warehouse-css',
+                RKM_CORE_URL . 'assets/css/warehouse-orders.css',
+                ['rkm-pedidos-css'],
+                rkm_core_asset_version('assets/css/warehouse-orders.css')
+            );
+
+            wp_enqueue_script(
+                'rkm-warehouse-js',
+                RKM_CORE_URL . 'assets/js/warehouse-orders.js',
+                [],
+                rkm_core_asset_version('assets/js/warehouse-orders.js'),
+                true
+            );
+        }
     }
 
     public function force_enqueue_assets() {
@@ -261,6 +278,15 @@ class RKM_Dashboard {
             case 'pedidos-operativos':
                 if (class_exists('RKM_Operational_Orders')) {
                     (new RKM_Operational_Orders())->render_page($data);
+                    return;
+                }
+
+                $template = RKM_CORE_PATH . 'templates/dashboard.php';
+                break;
+
+            case 'almacen':
+                if (class_exists('RKM_Warehouse')) {
+                    (new RKM_Warehouse())->render_page($data);
                     return;
                 }
 

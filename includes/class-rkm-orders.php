@@ -90,15 +90,37 @@ class RKM_Orders {
             $order->update_meta_data('_rkm_order_flow', 'operational');
             $order->update_meta_data('_rkm_initial_status', RKM_Order_Statuses::REVIEW);
             $order->save();
-            $order->update_status(RKM_Order_Statuses::REVIEW, 'Pedido generado desde Portal del Cliente para revision operativa RKM.');
+            $order->update_status(RKM_Order_Statuses::REVIEW, '');
 
-            if ($actor_user_id !== $order_customer_id && $actor_user instanceof WP_User) {
-                $actor_name = $actor_user->display_name ? $actor_user->display_name : $actor_user->user_login;
-                $customer_name = $order_customer instanceof WP_User
-                    ? ($order_customer->display_name ? $order_customer->display_name : $order_customer->user_login)
-                    : 'cliente seleccionado';
+            $actor_name = $actor_user instanceof WP_User
+                ? ($actor_user->display_name ? $actor_user->display_name : $actor_user->user_login)
+                : 'Sistema';
+            $customer_name = $order_customer instanceof WP_User
+                ? ($order_customer->display_name ? $order_customer->display_name : $order_customer->user_login)
+                : 'cliente seleccionado';
+            $creation_details = sprintf(
+                'Pedido creado desde Portal del Cliente para revision operativa RKM. Actor: %s. Cliente: %s.',
+                $actor_name,
+                $customer_name
+            );
 
-                $order->add_order_note(sprintf('Pedido generado por %s para %s.', $actor_name, $customer_name));
+            if (class_exists('RKM_Order_Audit_Log')) {
+                RKM_Order_Audit_Log::add_event(
+                    $order->get_id(),
+                    'Pedido creado',
+                    'Pedido creado',
+                    $creation_details,
+                    null,
+                    [
+                        'actor' => $actor_name,
+                        'customer' => $customer_name,
+                        'order_total' => (float) $order->get_total(),
+                    ]
+                );
+            } elseif (class_exists('RKM_Operational_Orders') && method_exists('RKM_Operational_Orders', 'add_audit_event')) {
+                RKM_Operational_Orders::add_audit_event($order, 'Pedido creado', $creation_details, $actor_user);
+            } else {
+                $order->add_order_note($creation_details);
             }
 
             wp_send_json_success($this->build_success_response($order, $actor_user, $order_customer_id, $order_customer));
@@ -194,6 +216,9 @@ class RKM_Orders {
             return $payment_method;
         }
 
+        $method_id = is_array($payment_method) && isset($payment_method['id']) ? sanitize_key($payment_method['id']) : '';
+        $method_label = is_array($payment_method) && isset($payment_method['name']) ? sanitize_text_field($payment_method['name']) : '';
+
         return [
             'term_key'              => $payment_term_key,
             'term_label'            => $payment_term['label'],
@@ -204,6 +229,8 @@ class RKM_Orders {
             'upfront_amount'        => $upfront_amount,
             'credit_balance'        => $credit_balance,
             'payment_method'        => $payment_method,
+            'payment_method_id'     => $method_id,
+            'payment_method_label'   => $method_label,
             'payment_note'          => $this->get_payment_note_from_request(),
         ];
     }
@@ -301,7 +328,30 @@ class RKM_Orders {
             $note_lines[] = 'Observacion de pago: ' . $payment_note;
         }
 
-        $order->add_order_note(implode("\n", $note_lines));
+        if (class_exists('RKM_Order_Audit_Log')) {
+            RKM_Order_Audit_Log::add_event(
+                $order->get_id(),
+                'Pago configurado',
+                'Pago configurado',
+                implode("\n", $note_lines),
+                null,
+                [
+                    'term_key' => $payment_context['term_key'],
+                    'term_label' => $payment_context['term_label'],
+                    'cash_discount_percent' => $payment_context['cash_discount_percent'],
+                    'cash_discount_amount' => $payment_context['cash_discount_amount'],
+                    'upfront_amount' => $payment_context['upfront_amount'],
+                    'credit_balance' => $payment_context['credit_balance'],
+                    'payment_method_id' => $method_id,
+                    'payment_method_label' => $method_label,
+                    'payment_note' => $payment_note,
+                ]
+            );
+        } elseif (class_exists('RKM_Operational_Orders') && method_exists('RKM_Operational_Orders', 'add_audit_event')) {
+            RKM_Operational_Orders::add_audit_event($order, 'Pago configurado', implode("\n", $note_lines));
+        } else {
+            $order->add_order_note(implode("\n", $note_lines));
+        }
         $order->save();
     }
 

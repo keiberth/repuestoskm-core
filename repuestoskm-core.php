@@ -103,6 +103,7 @@ require_once RKM_CORE_PATH . 'includes/class-rkm-permissions.php';
 require_once RKM_CORE_PATH . 'includes/class-rkm-auth.php';
 require_once RKM_CORE_PATH . 'includes/class-rkm-routes.php';
 require_once RKM_CORE_PATH . 'includes/class-rkm-dashboard.php';
+require_once RKM_CORE_PATH . 'includes/class-rkm-order-audit-log.php';
 require_once RKM_CORE_PATH . 'includes/class-rkm-orders.php';
 
 function rkm_core_init() {
@@ -114,9 +115,11 @@ add_action('plugins_loaded', 'rkm_core_init');
 function rkm_core_activate() {
     require_once RKM_CORE_PATH . 'includes/class-rkm-routes.php';
     require_once RKM_CORE_PATH . 'includes/class-rkm-current-account.php';
+    require_once RKM_CORE_PATH . 'includes/class-rkm-order-audit-log.php';
     $routes = new RKM_Routes();
     $routes->register_endpoints();
     RKM_Current_Account::install_schema();
+    RKM_Order_Audit_Log::install_schema();
     flush_rewrite_rules();
 }
 register_activation_hook(__FILE__, 'rkm_core_activate');

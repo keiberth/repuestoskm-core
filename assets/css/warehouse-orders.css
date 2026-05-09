@@ -1,0 +1,646 @@
+.rkm-warehouse {
+    overflow-x: hidden;
+}
+
+.rkm-warehouse-page__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.rkm-warehouse-back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 0 16px;
+    border: 1px solid rgba(37, 99, 235, 0.18);
+    border-radius: 12px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.rkm-warehouse-shell {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.rkm-warehouse-alert {
+    margin-bottom: 18px;
+    padding: 18px;
+    border: 1px solid rgba(191, 219, 254, 0.92);
+    border-radius: 20px;
+    background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+    box-shadow: 0 14px 30px rgba(37, 99, 235, 0.08);
+}
+
+.rkm-warehouse-alert__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.rkm-warehouse-alert__header h2 {
+    margin: 0 0 6px;
+    color: #0f172a;
+    font-size: 20px;
+    font-weight: 900;
+}
+
+.rkm-warehouse-alert__header p {
+    margin: 0;
+    color: #475569;
+    font-size: 14px;
+}
+
+.rkm-warehouse-alert__count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 12px;
+    border: 1px solid rgba(37, 99, 235, 0.22);
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 18px;
+    font-weight: 900;
+}
+
+.rkm-warehouse-alert__body {
+    padding: 14px 16px;
+    border: 1px solid rgba(191, 219, 254, 0.8);
+    border-radius: 16px;
+    background: #eff6ff;
+}
+
+.rkm-warehouse-alert__body strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #1d4ed8;
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.rkm-warehouse-alert__body p {
+    margin: 0;
+    color: #475569;
+    font-size: 14px;
+}
+
+.rkm-warehouse-panel {
+    padding: 24px;
+    border-radius: 20px;
+    border: 1px solid rgba(203, 213, 225, 0.9);
+    background: #ffffff;
+}
+
+.rkm-warehouse-panel__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.rkm-warehouse-panel__header h2 {
+    margin: 0 0 6px;
+    color: #0f172a;
+    font-size: 22px;
+}
+
+.rkm-warehouse-panel__header p,
+.rkm-warehouse-state-empty p {
+    margin: 0;
+    color: #64748b;
+}
+
+.rkm-warehouse-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 14px 0 12px;
+}
+
+.rkm-warehouse-filter {
+    appearance: none;
+    -webkit-appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 40px;
+    padding: 9px 14px;
+    border: 1px solid rgba(191, 219, 254, 0.95);
+    border-radius: 999px;
+    background: #ffffff;
+    color: #475569;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.rkm-warehouse-filter:hover {
+    transform: translateY(-1px);
+    border-color: rgba(37, 99, 235, 0.34);
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.rkm-warehouse-filter:focus-visible {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
+
+.rkm-warehouse-filter.is-active {
+    border-color: #2563eb;
+    background: #2563eb;
+    color: #ffffff;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.18);
+}
+
+.rkm-warehouse-filter strong {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    min-height: 24px;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.94);
+    color: inherit;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.rkm-warehouse-filter.is-active strong {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.rkm-warehouse-empty {
+    margin: 0 0 12px;
+    padding: 12px 14px;
+    border: 1px dashed rgba(37, 99, 235, 0.24);
+    border-radius: 14px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.rkm-warehouse-state-empty {
+    padding: 18px;
+    border: 1px dashed rgba(148, 163, 184, 0.4);
+    border-radius: 16px;
+    background: #f8fafc;
+}
+
+.rkm-warehouse-state-empty strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #0f172a;
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.rkm-warehouse-table-wrap {
+    overflow-x: auto;
+}
+
+.rkm-warehouse-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.rkm-warehouse-table th {
+    padding: 14px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 800;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0;
+}
+
+.rkm-warehouse-table td {
+    padding: 16px 12px;
+    border-bottom: 1px solid #eef2f7;
+    color: #0f172a;
+    font-size: 14px;
+    vertical-align: top;
+}
+
+.rkm-warehouse-table tbody tr:hover {
+    background: #f8fbff;
+}
+
+.rkm-warehouse-table strong {
+    font-weight: 900;
+}
+
+.rkm-warehouse-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 32px;
+    padding: 0 12px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.rkm-warehouse-status--rkm-warehouse {
+    border-color: rgba(251, 191, 36, 0.28);
+    background: #fffbeb;
+    color: #b45309;
+}
+
+.rkm-warehouse-status--rkm-ready {
+    border-color: rgba(37, 99, 235, 0.22);
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.rkm-warehouse__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+    transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.rkm-warehouse__btn:hover {
+    transform: translateY(-1px);
+}
+
+.rkm-warehouse__btn--secondary {
+    border-color: rgba(37, 99, 235, 0.18);
+    background: #ffffff;
+    color: #1d4ed8;
+}
+
+.rkm-warehouse__btn--secondary:hover {
+    border-color: rgba(37, 99, 235, 0.3);
+    background: #eff6ff;
+}
+
+.rkm-warehouse__btn--primary {
+    border-color: #2563eb;
+    background: #2563eb;
+    color: #ffffff;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.18);
+}
+
+.rkm-warehouse__btn--primary:hover {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+.rkm-warehouse-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: none;
+}
+
+.rkm-warehouse-modal.is-open {
+    display: block;
+}
+
+.rkm-warehouse-modal__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.56);
+}
+
+.rkm-warehouse-modal__dialog {
+    position: relative;
+    z-index: 1;
+    width: min(1040px, calc(100vw - 24px));
+    max-height: calc(100vh - 24px);
+    margin: 12px auto;
+    overflow: hidden;
+    border-radius: 24px;
+    background: #ffffff;
+    box-shadow: 0 30px 60px rgba(15, 23, 42, 0.28);
+}
+
+.rkm-warehouse-modal__close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 2;
+    width: 38px;
+    height: 38px;
+    border: 0;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    cursor: pointer;
+    font-size: 26px;
+    line-height: 1;
+}
+
+.rkm-warehouse-modal__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 24px 24px 18px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.rkm-warehouse-modal__eyebrow {
+    display: inline-flex;
+    margin-bottom: 8px;
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+.rkm-warehouse-modal__header h2 {
+    margin: 0 0 6px;
+    color: #0f172a;
+    font-size: 24px;
+    font-weight: 900;
+}
+
+.rkm-warehouse-modal__header p {
+    margin: 0;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.rkm-warehouse-modal__body {
+    max-height: calc(100vh - 150px);
+    overflow: auto;
+    padding: 20px 24px 24px;
+}
+
+.rkm-warehouse-modal__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.rkm-warehouse-modal__box,
+.rkm-warehouse-modal__section {
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    background: #f8fafc;
+}
+
+.rkm-warehouse-modal__box {
+    padding: 16px 18px;
+}
+
+.rkm-warehouse-modal__box span,
+.rkm-warehouse-modal__section-head h3 {
+    display: block;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+.rkm-warehouse-modal__box strong {
+    display: block;
+    margin-top: 6px;
+    color: #0f172a;
+    font-size: 16px;
+    font-weight: 900;
+}
+
+.rkm-warehouse-modal__box small {
+    display: block;
+    margin-top: 6px;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.rkm-warehouse-modal__section {
+    margin-bottom: 14px;
+    padding: 16px 18px 18px;
+}
+
+.rkm-warehouse-modal__section-head {
+    margin-bottom: 12px;
+}
+
+.rkm-warehouse-modal__items {
+    display: grid;
+    gap: 10px;
+}
+
+.rkm-warehouse-modal__item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #ffffff;
+}
+
+.rkm-warehouse-modal__item strong {
+    display: block;
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.rkm-warehouse-modal__item small {
+    display: block;
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.rkm-warehouse-modal__item-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: right;
+    color: #1e293b;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.rkm-warehouse-modal__notes {
+    display: grid;
+    gap: 10px;
+}
+
+.rkm-warehouse-modal__note {
+    padding: 14px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #ffffff;
+}
+
+.rkm-warehouse-modal__note span {
+    display: block;
+    margin-bottom: 6px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.rkm-warehouse-modal__note strong {
+    display: block;
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.rkm-warehouse-modal__note p {
+    margin: 6px 0 0;
+    color: #475569;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.rkm-warehouse-modal__note-form {
+    display: grid;
+    gap: 8px;
+}
+
+.rkm-warehouse-modal__note-form span {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+.rkm-warehouse-modal__note-form textarea {
+    width: 100%;
+    min-height: 88px;
+    padding: 12px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 14px;
+    background: #ffffff;
+    color: #0f172a;
+    font: inherit;
+    resize: vertical;
+}
+
+.rkm-warehouse-modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.rkm-warehouse-modal__empty {
+    margin: 0;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: #f8fafc;
+    color: #64748b;
+    font-size: 14px;
+    font-style: italic;
+}
+
+.rkm-warehouse-notice {
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.rkm-warehouse-notice.is-success {
+    border: 1px solid rgba(34, 197, 94, 0.18);
+    background: #f0fdf4;
+    color: #166534;
+}
+
+.rkm-warehouse-notice.is-error {
+    border: 1px solid rgba(239, 68, 68, 0.18);
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+body.rkm-modal-open {
+    overflow: hidden;
+}
+
+@media (max-width: 980px) {
+    .rkm-warehouse-page__header,
+    .rkm-warehouse-alert__header,
+    .rkm-warehouse-panel__header {
+        flex-direction: column;
+    }
+
+    .rkm-warehouse-modal__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .rkm-warehouse-shell {
+        padding: 16px;
+    }
+
+    .rkm-warehouse-panel,
+    .rkm-warehouse-alert {
+        padding: 18px;
+    }
+
+    .rkm-warehouse-modal__dialog {
+        width: calc(100vw - 16px);
+        max-height: calc(100vh - 16px);
+        margin: 8px auto;
+        border-radius: 18px;
+    }
+
+    .rkm-warehouse-modal__header,
+    .rkm-warehouse-modal__body {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    .rkm-warehouse-modal__actions {
+        flex-direction: column;
+    }
+
+    .rkm-warehouse__btn {
+        width: 100%;
+    }
+
+    .rkm-warehouse-modal__item {
+        flex-direction: column;
+    }
+
+    .rkm-warehouse-modal__item-meta {
+        text-align: left;
+    }
+}

@@ -14,6 +14,12 @@ class RKM_Permissions {
         return ['seller', 'vendor', 'vendedor', 'shop_manager'];
     }
 
+    public static function get_warehouse_role_candidates() {
+        $roles = ['warehouse', 'almacen', 'inventory_manager', 'stock_manager'];
+
+        return apply_filters('rkm_warehouse_role_candidates', $roles);
+    }
+
     public static function get_vendor_role_for_assignment() {
         foreach (self::get_vendor_role_candidates() as $role) {
             if (get_role($role)) {
@@ -41,6 +47,10 @@ class RKM_Permissions {
             'vendor'        => 'Vendedor',
             'vendedor'      => 'Vendedor',
             'shop_manager'  => 'Vendedor',
+            'warehouse'     => 'Almacen',
+            'almacen'       => 'Almacen',
+            'inventory_manager' => 'Almacen',
+            'stock_manager' => 'Almacen',
         ];
 
         if (isset($labels[$role])) {
@@ -88,6 +98,14 @@ class RKM_Permissions {
         }
 
         return user_can($user, 'manage_options') || self::user_has_role($user, ['administrator']);
+    }
+
+    public static function is_rkm_warehouse($user = null) {
+        return self::user_has_role($user, self::get_warehouse_role_candidates());
+    }
+
+    public static function can_access_warehouse($user = null) {
+        return self::is_rkm_admin($user) || self::is_rkm_warehouse($user);
     }
 
     public static function can_access_rkm_panel($user = null) {

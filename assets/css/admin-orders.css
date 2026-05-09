@@ -103,51 +103,71 @@
     background: #ffffff;
 }
 
-.rkm-admin-orders-filters {
+.rkm-admin-orders-filters,
+.rkm-admin-orders__filters {
     display: flex;
     flex-wrap: wrap;
+    align-items: flex-start;
     gap: 10px;
     margin: 14px 0 12px;
 }
 
-.rkm-admin-orders-filter {
+.rkm-admin-orders-filters > .rkm-admin-orders-filter,
+.rkm-admin-orders__filters > .rkm-admin-orders__filter {
+    appearance: none;
+    -webkit-appearance: none;
     display: inline-flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     gap: 10px;
-    min-height: 42px;
-    padding: 9px 12px;
-    border: 1px solid rgba(203, 213, 225, 0.86);
+    flex: 0 1 auto;
+    min-width: 0;
+    min-height: 40px;
+    padding: 9px 14px;
+    border: 1px solid rgba(191, 219, 254, 0.95);
     border-radius: 999px;
     background: #ffffff;
-    color: #334155;
+    color: #475569;
     cursor: pointer;
     font-family: inherit;
     font-size: 13px;
-    font-weight: 800;
+    font-weight: 700;
     line-height: 1;
+    text-decoration: none;
+    box-shadow: none;
+    outline: none;
     transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
 }
 
-.rkm-admin-orders-filter:hover {
+.rkm-admin-orders-filters > .rkm-admin-orders-filter:hover,
+.rkm-admin-orders__filters > .rkm-admin-orders__filter:hover {
     transform: translateY(-1px);
-    border-color: rgba(37, 99, 235, 0.28);
-    background: #f8fbff;
-    color: #1d4ed8;
-}
-
-.rkm-admin-orders-filter.is-active {
     border-color: rgba(37, 99, 235, 0.34);
     background: #eff6ff;
     color: #1d4ed8;
-    box-shadow: 0 10px 22px rgba(37, 99, 235, 0.08);
 }
 
-.rkm-admin-orders-filter span {
+.rkm-admin-orders-filters > .rkm-admin-orders-filter:focus-visible,
+.rkm-admin-orders__filters > .rkm-admin-orders__filter:focus-visible {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
+
+.rkm-admin-orders-filters > .rkm-admin-orders-filter.is-active,
+.rkm-admin-orders__filters > .rkm-admin-orders__filter.is-active {
+    border-color: #2563eb;
+    background: #2563eb;
+    color: #ffffff;
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.18);
+}
+
+.rkm-admin-orders-filters > .rkm-admin-orders-filter span,
+.rkm-admin-orders__filters > .rkm-admin-orders__filter span {
     white-space: nowrap;
 }
 
-.rkm-admin-orders-filter strong {
+.rkm-admin-orders-filters > .rkm-admin-orders-filter strong,
+.rkm-admin-orders__filters > .rkm-admin-orders__filter strong {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -155,10 +175,15 @@
     min-height: 24px;
     padding: 0 7px;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.94);
     color: inherit;
     font-size: 12px;
-    font-weight: 900;
+    font-weight: 800;
+}
+
+.rkm-admin-orders-filters > .rkm-admin-orders-filter.is-active strong,
+.rkm-admin-orders__filters > .rkm-admin-orders__filter.is-active strong {
+    background: rgba(255, 255, 255, 0.18);
 }
 
 .rkm-admin-orders-filter-empty {
@@ -267,10 +292,12 @@
     white-space: nowrap;
 }
 
-.rkm-admin-orders-status--rkm-review {
-    border-color: #fde68a;
-    background: #fef3c7;
-    color: #92400e;
+.rkm-admin-orders-status--rkm-review,
+.rkm-admin-orders-status--pending,
+.rkm-admin-orders-status--en-revision {
+    border-color: #bfdbfe;
+    background: #dbeafe;
+    color: #1d4ed8;
 }
 
 .rkm-admin-orders-status--rkm-confirmed {
@@ -721,6 +748,11 @@ body.rkm-admin-order-modal-open {
     box-shadow: 0 10px 22px rgba(15, 23, 42, 0.055);
 }
 
+.rkm-admin-orders .rkm-admin-order-modal__box--seller {
+    border-color: rgba(191, 219, 254, 0.98);
+    background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+}
+
 .rkm-admin-orders .rkm-admin-order-modal__box strong {
     margin-top: 5px;
     color: #0f172a;
@@ -754,8 +786,31 @@ body.rkm-admin-order-modal-open {
     font-weight: 900;
 }
 
-.rkm-admin-orders .rkm-admin-order-modal__payment-form[hidden] {
-    display: none;
+.rkm-admin-orders .rkm-admin-order-modal__payment-summary[hidden],
+.rkm-admin-orders .rkm-admin-order-modal__payment-form[hidden],
+.rkm-admin-orders .rkm-admin-order-modal__payment-form[aria-hidden="true"] {
+    display: none !important;
+}
+
+.rkm-admin-orders .rkm-admin-order-modal__payment-summary {
+    display: grid;
+    gap: 8px;
+}
+
+.rkm-admin-orders .rkm-admin-order-modal__payment-summary-lines {
+    display: grid;
+    gap: 5px;
+}
+
+.rkm-admin-orders .rkm-admin-order-modal__payment-summary-lines span {
+    color: #334155;
+    font-size: 12px;
+    font-weight: 650;
+    line-height: 1.35;
+}
+
+.rkm-admin-orders .rkm-admin-order-modal__payment-summary-note {
+    color: #0f172a;
 }
 
 .rkm-admin-orders .rkm-admin-order-modal__payment-form {
@@ -772,6 +827,10 @@ body.rkm-admin-order-modal-open {
     margin-top: 7px;
     padding: 0;
     background: transparent;
+}
+
+.rkm-admin-orders .rkm-admin-order-modal__payment-edit-fields {
+    margin-top: 10px;
 }
 
 .rkm-admin-orders .rkm-admin-order-modal__payment-toggle {
@@ -935,8 +994,33 @@ body.rkm-admin-order-modal-open {
     background: #ffffff;
 }
 
+.rkm-admin-orders .rkm-admin-order-modal__history-item {
+    position: relative;
+    padding-left: 18px;
+}
+
+.rkm-admin-orders .rkm-admin-order-modal__history-item::before {
+    content: "";
+    position: absolute;
+    top: 18px;
+    left: 7px;
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
 .rkm-admin-orders .rkm-admin-order-modal__note span {
     color: #2563eb;
+}
+
+.rkm-admin-orders .rkm-admin-order-modal__note strong {
+    display: block;
+    margin-top: 4px;
+    color: #0f172a;
+    font-size: 15px;
+    font-weight: 900;
 }
 
 .rkm-admin-orders .rkm-admin-order-modal__note p,
@@ -1051,13 +1135,16 @@ body.rkm-admin-order-modal-open {
         align-self: flex-start;
     }
 
-    .rkm-admin-orders-filters {
+    .rkm-admin-orders-filters,
+    .rkm-admin-orders__filters {
         margin-top: 12px;
     }
 
-    .rkm-admin-orders-filter {
-        width: 100%;
+    .rkm-admin-orders-filters > .rkm-admin-orders-filter,
+    .rkm-admin-orders__filters > .rkm-admin-orders__filter {
+        flex: 1 1 100%;
         justify-content: space-between;
+        min-height: 44px;
     }
 
     .rkm-admin-orders-table {
