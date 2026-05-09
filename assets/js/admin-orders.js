@@ -22,14 +22,31 @@
         var status = document.getElementById("rkmOperationalOrderModalStatus");
         var customer = document.getElementById("rkmOperationalOrderCustomer");
         var customerMeta = document.getElementById("rkmOperationalOrderCustomerMeta");
+        var paymentReadonly = document.getElementById("rkmOperationalOrderPaymentReadonly");
         var paymentTerm = document.getElementById("rkmOperationalOrderPaymentTerm");
         var paymentMethod = document.getElementById("rkmOperationalOrderPaymentMethod");
+        var paymentUpfront = document.getElementById("rkmOperationalOrderPaymentUpfront");
+        var paymentCredit = document.getElementById("rkmOperationalOrderPaymentCredit");
+        var paymentNote = document.getElementById("rkmOperationalOrderPaymentNote");
         var total = document.getElementById("rkmOperationalOrderTotal");
+        var totalHint = document.getElementById("rkmOperationalOrderTotalHint");
         var items = document.getElementById("rkmOperationalOrderItems");
         var notes = document.getElementById("rkmOperationalOrderNotes");
+        var editPanel = document.getElementById("rkmOperationalOrderEditPanel");
+        var paymentToggleWrap = document.getElementById("rkmOperationalOrderPaymentToggleWrap");
+        var paymentEditToggle = document.getElementById("rkmOperationalOrderPaymentEditToggle");
+        var paymentTermInput = document.getElementById("rkmOperationalOrderPaymentTermInput");
+        var paymentMethodInput = document.getElementById("rkmOperationalOrderPaymentMethodInput");
+        var upfrontInput = document.getElementById("rkmOperationalOrderUpfrontInput");
+        var creditBalanceInput = document.getElementById("rkmOperationalOrderCreditBalanceInput");
+        var paymentNoteInput = document.getElementById("rkmOperationalOrderPaymentNoteInput");
+        var modalSaveButton = document.getElementById("rkmOperationalOrderSaveBtn");
         var modalConfirmButton = document.getElementById("rkmOperationalOrderConfirmBtn");
         var modalWarehouseButton = document.getElementById("rkmOperationalOrderWarehouseBtn");
         var reviewCount = document.querySelector("[data-rkm-review-count]");
+        var filterButtons = document.querySelectorAll("[data-rkm-order-filter]");
+        var filterEmpty = document.querySelector("[data-rkm-order-filter-empty]");
+        var activeFilter = "all";
         var closeControls = modal.querySelectorAll("[data-rkm-operational-order-close]");
 
         function escapeHtml(value) {
@@ -44,6 +61,7 @@
         function decodeHtml(value) {
             var textarea = document.createElement("textarea");
             textarea.innerHTML = String(value || "");
+            textarea.innerHTML = textarea.value;
             return textarea.value;
         }
 
@@ -51,8 +69,159 @@
             return escapeHtml(decodeHtml(value));
         }
 
+        function getEditableStatuses() {
+            return Array.isArray(window.rkmOperationalOrders.editable_statuses)
+                ? window.rkmOperationalOrders.editable_statuses
+                : [window.rkmOperationalOrders.review_status, "pending", "en-revision"];
+        }
+
+        function isEditable(order) {
+            return Boolean(
+                window.rkmOperationalOrders.can_edit
+                && order
+                && getEditableStatuses().indexOf(order.status) !== -1
+            );
+        }
+
+        function formatMoney(amount) {
+            var decimals = Number(window.rkmOperationalOrders.currency_decimals || 2);
+            var symbol = decodeHtml(window.rkmOperationalOrders.currency_symbol || "$");
+            var value = Number(amount || 0);
+
+            return symbol + value.toLocaleString("es-VE", {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            });
+        }
+
+        function getVisualItemsTotal() {
+            var inputs = items.querySelectorAll("[data-rkm-order-item-quantity]");
+            var sum = 0;
+
+            inputs.forEach(function (input) {
+                var quantity = Math.max(1, parseInt(input.value || "1", 10));
+                var unit = Number(input.getAttribute("data-unit-price") || 0);
+                sum += unit * quantity;
+            });
+
+            return sum;
+        }
+
+        function updatePaymentFormState() {
+            if (!paymentTermInput) {
+                return;
+            }
+
+            var paymentEditing = Boolean(paymentEditToggle && paymentEditToggle.checked);
+            var term = paymentTermInput.value || "";
+            var itemsTotal = getVisualItemsTotal();
+            var discountPercent = term === "cash" ? Number(window.rkmOperationalOrders.cash_discount_percent || 0) : 0;
+            var discountAmount = Math.min(itemsTotal, Math.max(0, itemsTotal * (discountPercent / 100)));
+            var finalTotal = Math.max(0, itemsTotal - discountAmount);
+            var upfront = upfrontInput ? Number(upfrontInput.value || 0) : 0;
+            var creditBalance = 0;
+            var needsPaymentMethod = term === "cash" || term === "mixed";
+
+            if (term === "credit") {
+                creditBalance = finalTotal;
+            } else if (term === "mixed") {
+                creditBalance = Math.max(0, finalTotal - Math.max(0, upfront));
+            }
+
+            if (paymentMethodInput) {
+                paymentMethodInput.disabled = !paymentEditing || !needsPaymentMethod;
+                if (paymentEditing && !needsPaymentMethod) {
+                    paymentMethodInput.value = "";
+                }
+            }
+
+            if (upfrontInput) {
+                upfrontInput.disabled = !paymentEditing || term !== "mixed";
+                upfrontInput.required = paymentEditing && term === "mixed";
+                upfrontInput.max = String(finalTotal);
+
+                if (paymentEditing && term !== "mixed") {
+                    upfrontInput.value = "";
+                }
+            }
+
+            if (paymentTermInput) {
+                paymentTermInput.disabled = !paymentEditing;
+            }
+
+            if (paymentNoteInput) {
+                paymentNoteInput.disabled = !paymentEditing;
+            }
+
+            if (creditBalanceInput) {
+                creditBalanceInput.value = formatMoney(creditBalance);
+            }
+
+            if (paymentEditing && total) {
+                total.textContent = formatMoney(finalTotal);
+            }
+
+            if (totalHint) {
+                totalHint.hidden = true;
+                totalHint.textContent = "";
+            }
+        }
+
+        function renderPaymentSummary(order) {
+            if (paymentTerm) {
+                paymentTerm.textContent = "Condicion: " + (order.payment_term || "-");
+            }
+
+            if (paymentMethod) {
+                paymentMethod.textContent = "Forma: " + (order.payment_method || "-");
+            }
+
+            if (paymentUpfront) {
+                var hasUpfront = Number(order.upfront_amount || 0) > 0;
+                paymentUpfront.hidden = !hasUpfront;
+                paymentUpfront.textContent = hasUpfront ? "Monto inicial: " + decodeHtml(order.upfront_amount_display || "") : "";
+            }
+
+            if (paymentCredit) {
+                var hasCredit = Number(order.credit_balance || 0) > 0;
+                paymentCredit.hidden = !hasCredit;
+                paymentCredit.textContent = hasCredit ? "Saldo a credito: " + decodeHtml(order.credit_balance_display || "") : "";
+            }
+
+            if (paymentNote) {
+                paymentNote.hidden = !order.payment_note;
+                paymentNote.textContent = order.payment_note ? "Nota: " + decodeHtml(order.payment_note) : "";
+            }
+        }
+
+        function setPaymentEditing(enabled) {
+            if (editPanel) {
+                editPanel.hidden = !enabled;
+            }
+
+            if (paymentEditToggle) {
+                paymentEditToggle.checked = enabled;
+            }
+
+            updatePaymentFormState();
+
+            if (!enabled && activeOrderId && ordersById[String(activeOrderId)]) {
+                var order = ordersById[String(activeOrderId)];
+
+                if (total) {
+                    total.textContent = decodeHtml(order.total || "-");
+                }
+
+                if (totalHint) {
+                    totalHint.hidden = true;
+                    totalHint.textContent = "";
+                }
+            }
+        }
+
         function renderItems(order) {
             var orderItems = Array.isArray(order.items) ? order.items : [];
+            var editable = isEditable(order);
 
             if (!orderItems.length) {
                 items.innerHTML = '<p class="rkm-admin-order-modal__empty">No hay productos registrados en este pedido.</p>';
@@ -61,21 +230,59 @@
 
             items.innerHTML = orderItems.map(function (item) {
                 var sku = item.sku ? '<small>SKU: ' + escapeHtml(item.sku) + '</small>' : "";
+                var max = item.max_quantity !== null && item.max_quantity !== undefined ? Number(item.max_quantity) : null;
+                var stock = item.stock_label ? '<small>' + escapeHtml(item.stock_label) + '</small>' : "";
+                var quantityControl = editable
+                    ? [
+                        '<input type="number"',
+                            ' min="1"',
+                            max !== null ? ' max="' + escapeHtml(max) + '"' : "",
+                            ' step="1"',
+                            ' value="' + escapeHtml(item.quantity) + '"',
+                            ' data-rkm-order-item-quantity',
+                            ' data-item-id="' + escapeHtml(item.item_id) + '"',
+                            ' data-unit-price="' + escapeHtml(item.unit_price_raw) + '"',
+                        '>'
+                    ].join("")
+                    : escapeDisplay(item.quantity);
 
                 return [
                     '<div class="rkm-admin-order-modal__item">',
                         '<div>',
                             '<strong>' + escapeHtml(item.name) + '</strong>',
                             sku,
+                            stock,
                         '</div>',
                         '<div class="rkm-admin-order-modal__item-values">',
-                            '<span><em>Cantidad</em>' + escapeDisplay(item.quantity) + '</span>',
+                            '<span><em>Cantidad</em>' + quantityControl + '</span>',
                             '<span><em>Unitario</em>' + escapeDisplay(item.unit_price) + '</span>',
-                            '<strong><em>Subtotal</em>' + escapeDisplay(item.total) + '</strong>',
+                            '<strong><em>Subtotal</em><span data-rkm-order-item-subtotal>' + escapeDisplay(item.total) + '</span></strong>',
                         '</div>',
                     '</div>'
                 ].join("");
             }).join("");
+
+            items.querySelectorAll("[data-rkm-order-item-quantity]").forEach(function (input) {
+                input.addEventListener("input", function () {
+                    var quantity = Math.max(1, parseInt(input.value || "1", 10));
+                    var max = input.getAttribute("max");
+
+                    if (max && quantity > Number(max)) {
+                        quantity = Number(max);
+                        input.value = String(quantity);
+                    }
+
+                    var itemNode = input.closest(".rkm-admin-order-modal__item");
+                    var subtotal = itemNode ? itemNode.querySelector("[data-rkm-order-item-subtotal]") : null;
+                    var unit = Number(input.getAttribute("data-unit-price") || 0);
+
+                    if (subtotal) {
+                        subtotal.textContent = formatMoney(unit * quantity);
+                    }
+
+                    updatePaymentFormState();
+                });
+            });
         }
 
         function renderNotes(order) {
@@ -84,14 +291,14 @@
             if (order.payment_note) {
                 noteBlocks.push({
                     label: "Observacion de pago",
-                    content: order.payment_note
+                    content: decodeHtml(order.payment_note)
                 });
             }
 
             if (order.customer_note) {
                 noteBlocks.push({
                     label: "Nota del pedido",
-                    content: order.customer_note
+                    content: decodeHtml(order.customer_note)
                 });
             }
 
@@ -102,8 +309,8 @@
                     }
 
                     noteBlocks.push({
-                        label: note.date || "Nota interna",
-                        content: note.content
+                        label: decodeHtml(note.date || "Nota interna"),
+                        content: decodeHtml(note.content)
                     });
                 });
             }
@@ -116,8 +323,8 @@
             notes.innerHTML = noteBlocks.map(function (note) {
                 return [
                     '<div class="rkm-admin-order-modal__note">',
-                        '<span>' + escapeHtml(note.label) + '</span>',
-                        '<p>' + escapeHtml(note.content) + '</p>',
+                        '<span>' + escapeHtml(decodeHtml(note.label)) + '</span>',
+                        '<p>' + escapeHtml(decodeHtml(note.content)) + '</p>',
                     '</div>'
                 ].join("");
             }).join("");
@@ -193,6 +400,99 @@
             return row ? row.querySelector("[data-rkm-send-operational-order-warehouse]") : null;
         }
 
+        function getFilterStatuses(filterKey) {
+            var allStatuses = ["rkm-review", "pending", "en-revision", "rkm-confirmed", "rkm-warehouse", "rkm-ready", "rkm-dispatched", "processing"];
+
+            return {
+                all: allStatuses,
+                pending: ["rkm-review", "pending", "en-revision"],
+                confirmed: ["rkm-confirmed"],
+                warehouse: ["rkm-warehouse"],
+                ready: ["rkm-ready"],
+                dispatched: ["rkm-dispatched"]
+            }[filterKey] || allStatuses;
+        }
+
+        function getFilterCounts() {
+            var counts = {
+                all: 0,
+                pending: 0,
+                confirmed: 0,
+                warehouse: 0,
+                ready: 0,
+                dispatched: 0
+            };
+
+            orders.forEach(function (order) {
+                var status = String(order.status || "");
+
+                if (getFilterStatuses("all").indexOf(status) !== -1) {
+                    counts.all += 1;
+                }
+                if (getFilterStatuses("pending").indexOf(status) !== -1) {
+                    counts.pending += 1;
+                }
+                if (getFilterStatuses("confirmed").indexOf(status) !== -1) {
+                    counts.confirmed += 1;
+                }
+                if (getFilterStatuses("warehouse").indexOf(status) !== -1) {
+                    counts.warehouse += 1;
+                }
+                if (getFilterStatuses("ready").indexOf(status) !== -1) {
+                    counts.ready += 1;
+                }
+                if (getFilterStatuses("dispatched").indexOf(status) !== -1) {
+                    counts.dispatched += 1;
+                }
+            });
+
+            return counts;
+        }
+
+        function refreshFilterCounts() {
+            var counts = getFilterCounts();
+
+            Object.keys(counts).forEach(function (key) {
+                var badge = document.querySelector('[data-rkm-filter-count="' + key + '"]');
+                if (badge) {
+                    badge.textContent = String(counts[key]);
+                }
+            });
+
+            if (reviewCount) {
+                reviewCount.textContent = String(counts.pending);
+            }
+        }
+
+        function applyOrderFilter(filterKey) {
+            var statuses = getFilterStatuses(filterKey);
+            var rows = document.querySelectorAll("[data-rkm-operational-order-row]");
+            var visibleRows = 0;
+
+            activeFilter = filterKey || "all";
+
+            filterButtons.forEach(function (button) {
+                var isActive = button.getAttribute("data-rkm-order-filter") === activeFilter;
+                button.classList.toggle("is-active", isActive);
+                button.setAttribute("aria-pressed", isActive ? "true" : "false");
+            });
+
+            rows.forEach(function (row) {
+                var status = String(row.getAttribute("data-rkm-order-status") || "");
+                var visible = statuses.indexOf(status) !== -1;
+
+                row.hidden = !visible;
+
+                if (visible) {
+                    visibleRows += 1;
+                }
+            });
+
+            if (filterEmpty) {
+                filterEmpty.hidden = rows.length === 0 || visibleRows > 0;
+            }
+        }
+
         function bindWarehouseButton(button) {
             if (!button || button.getAttribute("data-rkm-bound") === "true") {
                 return;
@@ -214,7 +514,7 @@
 
             var button = document.createElement("button");
             button.type = "button";
-            button.className = "rkm-admin-orders__btn rkm-admin-orders__btn--primary rkm-admin-orders-warehouse-btn";
+            button.className = "rkm-admin-orders__btn rkm-admin-orders__btn--warehouse rkm-admin-orders-warehouse-btn";
             button.setAttribute("data-rkm-send-operational-order-warehouse", "true");
             button.setAttribute("data-order-id", order.id);
             button.textContent = "Enviar a almacen";
@@ -227,6 +527,10 @@
             var rowBadge = row ? row.querySelector("[data-rkm-order-status-badge]") : null;
             var className = "rkm-admin-orders-status rkm-admin-orders-status--" + (order.status || "");
 
+            if (row) {
+                row.setAttribute("data-rkm-order-status", order.status || "");
+            }
+
             if (rowBadge) {
                 rowBadge.className = className;
                 rowBadge.textContent = order.status_label || order.status || "Estado";
@@ -235,6 +539,23 @@
             if (String(activeOrderId) === String(order.id)) {
                 status.className = className;
                 status.textContent = order.status_label || order.status || "Estado";
+            }
+        }
+
+        function refreshRowSummary(order) {
+            var row = getRow(order.id);
+            var rowTotal = row ? row.querySelector("[data-rkm-order-row-total]") : null;
+            var rowPayment = row ? row.querySelector("[data-rkm-order-row-payment]") : null;
+
+            if (rowTotal) {
+                rowTotal.textContent = decodeHtml(order.total || "-");
+            }
+
+            if (rowPayment) {
+                rowPayment.innerHTML = [
+                    '<span>Condicion: ' + escapeHtml(order.payment_term || "-") + '</span>',
+                    '<small>Forma: ' + escapeHtml(order.payment_method || "-") + '</small>'
+                ].join("");
             }
         }
 
@@ -254,12 +575,33 @@
 
             if (modalConfirmButton) {
                 modalConfirmButton.hidden = !isConfirmable(order);
+                modalConfirmButton.disabled = !isConfirmable(order);
                 modalConfirmButton.setAttribute("data-order-id", order.id || "");
             }
 
             if (modalWarehouseButton) {
                 modalWarehouseButton.hidden = !isWarehouseSendable(order);
                 modalWarehouseButton.setAttribute("data-order-id", order.id || "");
+                modalWarehouseButton.disabled = !isWarehouseSendable(order);
+                modalWarehouseButton.title = isWarehouseSendable(order) ? "" : "Confirma el pedido primero.";
+            }
+
+            if (modalSaveButton) {
+                modalSaveButton.hidden = !isEditable(order);
+                modalSaveButton.disabled = !isEditable(order);
+                modalSaveButton.setAttribute("data-order-id", order.id || "");
+            }
+
+            if (paymentToggleWrap) {
+                paymentToggleWrap.hidden = !isEditable(order);
+            }
+
+            if (paymentReadonly) {
+                paymentReadonly.hidden = false;
+            }
+
+            if (!isEditable(order)) {
+                setPaymentEditing(false);
             }
         }
 
@@ -278,6 +620,7 @@
                 ? window.rkmOperationalOrders.confirmable_statuses
                 : [window.rkmOperationalOrders.review_status, "pending", "en-revision"];
             var wasReview = previous && confirmableStatuses.indexOf(previous.status) !== -1;
+            var isStillReview = order && confirmableStatuses.indexOf(order.status) !== -1;
 
             ordersById[String(order.id)] = order;
             orders = orders.map(function (current) {
@@ -285,15 +628,54 @@
             });
 
             refreshStatusBadge(order);
+            refreshRowSummary(order);
             refreshConfirmControls(order);
+            refreshFilterCounts();
+            applyOrderFilter(activeFilter);
 
             if (String(activeOrderId) === String(order.id)) {
+                renderPaymentSummary(order);
+                total.textContent = decodeHtml(order.total || "-");
+                renderItems(order);
+                if (isEditable(order)) {
+                    hydratePaymentForm(order);
+                } else {
+                    setPaymentEditing(false);
+                }
                 renderNotes(order);
+                refreshConfirmControls(order);
             }
 
-            if (wasReview) {
+            if (wasReview && !isStillReview) {
                 decrementReviewCount();
             }
+        }
+
+        function hydratePaymentForm(order) {
+            if (!paymentTermInput) {
+                return;
+            }
+
+            paymentTermInput.value = order.payment_term_key || "";
+
+            if (!paymentTermInput.value && paymentTermInput.options.length) {
+                paymentTermInput.selectedIndex = 0;
+            }
+
+            if (paymentMethodInput) {
+                paymentMethodInput.value = order.payment_method_id || "";
+            }
+
+            if (upfrontInput) {
+                upfrontInput.value = order.upfront_amount ? String(order.upfront_amount) : "";
+            }
+
+            if (paymentNoteInput) {
+                paymentNoteInput.value = order.payment_note || "";
+            }
+
+            setPaymentEditing(false);
+            updatePaymentFormState();
         }
 
         function confirmOrder(orderId, sourceButton) {
@@ -394,6 +776,73 @@
                 });
         }
 
+        function saveOrder(orderId, sourceButton) {
+            var order = ordersById[String(orderId)];
+
+            if (!isEditable(order)) {
+                showNotice("Este pedido no puede editarse desde su estado actual.", "error");
+                return;
+            }
+
+            var formData = new FormData();
+            var valid = true;
+
+            formData.append("action", "rkm_update_operational_order");
+            formData.append("order_id", orderId);
+            formData.append("nonce", window.rkmOperationalOrders.nonce || "");
+
+            items.querySelectorAll("[data-rkm-order-item-quantity]").forEach(function (input) {
+                var itemId = input.getAttribute("data-item-id");
+                var quantity = Math.max(1, parseInt(input.value || "1", 10));
+                var max = input.getAttribute("max");
+
+                if (max && quantity > Number(max)) {
+                    valid = false;
+                }
+
+                formData.append("items[" + itemId + "]", String(quantity));
+            });
+
+            if (!valid) {
+                showNotice("Hay cantidades que superan el stock disponible.", "error");
+                return;
+            }
+
+            formData.append("payment_update_enabled", paymentEditToggle && paymentEditToggle.checked ? "1" : "0");
+
+            if (paymentEditToggle && paymentEditToggle.checked) {
+                formData.append("payment_term", paymentTermInput ? paymentTermInput.value : "");
+                formData.append("payment_method_id", paymentMethodInput && !paymentMethodInput.disabled ? paymentMethodInput.value : "");
+                formData.append("upfront_amount", upfrontInput && !upfrontInput.disabled ? upfrontInput.value : "");
+                formData.append("payment_note", paymentNoteInput ? paymentNoteInput.value : "");
+            }
+
+            setButtonLoading(sourceButton, true, "Guardando...");
+
+            fetch(window.rkmOperationalOrders.ajax_url, {
+                method: "POST",
+                body: formData,
+                credentials: "same-origin"
+            })
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (payload) {
+                    if (!payload || !payload.success) {
+                        throw new Error(payload && payload.data && payload.data.message ? payload.data.message : "No se pudo guardar el pedido.");
+                    }
+
+                    applyUpdatedOrder(payload.data.order);
+                    showNotice(payload.data.message || "Pedido actualizado correctamente.", "success");
+                })
+                .catch(function (error) {
+                    showNotice(error.message || "No se pudo guardar el pedido.", "error");
+                })
+                .finally(function () {
+                    setButtonLoading(sourceButton, false);
+                });
+        }
+
         function openModal(order) {
             activeOrderId = order.id;
             title.textContent = "Pedido #" + (order.number || order.id || "");
@@ -404,11 +853,19 @@
             customerMeta.textContent = [order.customer_email, order.customer_phone].filter(function (value) {
                 return value && value !== "-";
             }).join(" - ") || "Sin datos de contacto";
-            paymentTerm.textContent = "Condicion: " + (order.payment_term || "-");
-            paymentMethod.textContent = "Forma: " + (order.payment_method || "-");
+            renderPaymentSummary(order);
             total.textContent = decodeHtml(order.total || "-");
+            if (totalHint) {
+                totalHint.hidden = true;
+                totalHint.textContent = "";
+            }
 
             renderItems(order);
+            if (isEditable(order)) {
+                hydratePaymentForm(order);
+            } else {
+                setPaymentEditing(false);
+            }
             renderNotes(order);
             refreshConfirmControls(order);
 
@@ -442,6 +899,15 @@
 
         document.querySelectorAll("[data-rkm-send-operational-order-warehouse]").forEach(bindWarehouseButton);
 
+        filterButtons.forEach(function (button) {
+            button.addEventListener("click", function () {
+                applyOrderFilter(button.getAttribute("data-rkm-order-filter") || "all");
+            });
+        });
+
+        refreshFilterCounts();
+        applyOrderFilter(activeFilter);
+
         if (modalConfirmButton) {
             modalConfirmButton.addEventListener("click", function () {
                 confirmOrder(modalConfirmButton.getAttribute("data-order-id"), modalConfirmButton);
@@ -451,6 +917,25 @@
         if (modalWarehouseButton) {
             modalWarehouseButton.addEventListener("click", function () {
                 sendToWarehouse(modalWarehouseButton.getAttribute("data-order-id"), modalWarehouseButton);
+            });
+        }
+
+        if (modalSaveButton) {
+            modalSaveButton.addEventListener("click", function () {
+                saveOrder(modalSaveButton.getAttribute("data-order-id"), modalSaveButton);
+            });
+        }
+
+        [paymentTermInput, paymentMethodInput, upfrontInput].forEach(function (control) {
+            if (control) {
+                control.addEventListener("input", updatePaymentFormState);
+                control.addEventListener("change", updatePaymentFormState);
+            }
+        });
+
+        if (paymentEditToggle) {
+            paymentEditToggle.addEventListener("change", function () {
+                setPaymentEditing(paymentEditToggle.checked);
             });
         }
 
