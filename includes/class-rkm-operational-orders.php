@@ -251,15 +251,17 @@ class RKM_Operational_Orders {
         $previous_credit_due_at = $order->get_meta('_rkm_credit_due_at', true);
         $previous_credit_days = $order->get_meta('_rkm_credit_days', true);
 
-        self::add_audit_event(
-            $order,
-            'Pedido entregado',
-            'Pedido marcado como entregado.',
-            $user,
-            current_time('timestamp'),
-            $old_status,
-            'completed'
-        );
+        if ((string) $order->get_meta('_rkm_delivered_at', true) === '') {
+            self::add_audit_event(
+                $order,
+                'Pedido entregado',
+                'Pedido marcado como entregado.',
+                $user,
+                current_time('timestamp'),
+                $old_status,
+                'completed'
+            );
+        }
 
         if (empty($credit_context['has_credit'])) {
             return;
@@ -317,6 +319,12 @@ class RKM_Operational_Orders {
         ];
 
         if (!in_array($new_status, $tracked_statuses, true)) {
+            return;
+        }
+
+        if ($new_status === (class_exists('RKM_Order_Statuses') ? RKM_Order_Statuses::DISPATCHED : 'rkm-dispatched')
+            && (string) $order->get_meta('_rkm_dispatched_at', true) !== ''
+        ) {
             return;
         }
 

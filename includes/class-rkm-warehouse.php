@@ -16,12 +16,15 @@ class RKM_Warehouse {
     const EVIDENCE_COUNT_META = '_rkm_warehouse_evidence_count';
     const EVIDENCE_MIN_FILES = 2;
     const EVIDENCE_MAX_FILE_SIZE = 5242880;
+    const CREDIT_DAYS = 20;
 
     public function init() {
         add_action('wp_ajax_rkm_add_warehouse_note', [$this, 'ajax_add_note']);
         add_action('wp_ajax_rkm_save_warehouse_picking_progress', [$this, 'ajax_save_picking_progress']);
         add_action('wp_ajax_rkm_report_warehouse_picking_incident', [$this, 'ajax_report_picking_incident']);
         add_action('wp_ajax_rkm_mark_order_ready', [$this, 'ajax_mark_ready']);
+        add_action('wp_ajax_rkm_mark_order_dispatched', [$this, 'ajax_mark_dispatched']);
+        add_action('wp_ajax_rkm_mark_order_delivered', [$this, 'ajax_mark_delivered']);
     }
 
     public static function get_section_key() {
@@ -56,8 +59,12 @@ class RKM_Warehouse {
         return ['rkm-ready'];
     }
 
+    public static function get_dispatched_statuses() {
+        return ['rkm-dispatched'];
+    }
+
     public static function get_visible_statuses() {
-        return array_merge(self::get_queue_statuses(), self::get_ready_statuses());
+        return array_merge(self::get_queue_statuses(), self::get_ready_statuses(), self::get_dispatched_statuses(), ['completed']);
     }
 
     public static function get_status_label($status) {
@@ -69,6 +76,14 @@ class RKM_Warehouse {
 
         if ($status === 'rkm-ready') {
             return 'Listo';
+        }
+
+        if ($status === 'rkm-dispatched') {
+            return 'Despachado';
+        }
+
+        if ($status === 'completed') {
+            return 'Entregado';
         }
 
         if (function_exists('wc_get_order_status_name')) {
@@ -154,8 +169,49 @@ class RKM_Warehouse {
             'evidence' => $evidence,
             'evidence_count' => count($evidence),
             'evidence_min_required' => self::EVIDENCE_MIN_FILES,
+            'operational_closure' => $this->get_operational_closure($order),
+            'credit_context' => class_exists('RKM_Operational_Orders') ? RKM_Operational_Orders::get_credit_context($order) : $this->get_basic_credit_context($order),
             'audit_timeline' => class_exists('RKM_Order_Audit_Log') ? RKM_Order_Audit_Log::get_events($order->get_id()) : [],
         ];
+    }
+
+    private function get_operational_closure($order) {
+        $dispatched_at = (string) $order->get_meta('_rkm_dispatched_at', true);
+        $delivered_at = (string) $order->get_meta('_rkm_delivered_at', true);
+
+        return [
+            'dispatched_at' => $dispatched_at,
+            'dispatched_label' => $this->format_datetime_label($dispatched_at),
+            'dispatched_by' => (int) $order->get_meta('_rkm_dispatched_by', true),
+            'delivered_at' => $delivered_at,
+            'delivered_label' => $this->format_datetime_label($delivered_at),
+            'delivered_by' => (int) $order->get_meta('_rkm_delivered_by', true),
+        ];
+    }
+
+    private function get_basic_credit_context($order) {
+        $payment_term_key = (string) $order->get_meta('_rkm_payment_term', true);
+        $credit_balance = (float) $order->get_meta('_rkm_credit_balance', true);
+        $due_at = (string) $order->get_meta('_rkm_credit_due_at', true);
+
+        return [
+            'has_credit' => in_array($payment_term_key, ['credit', 'mixed'], true) && $credit_balance > 0,
+            'days' => self::CREDIT_DAYS,
+            'due_at' => $due_at,
+            'due_label' => $this->format_date_label($due_at),
+        ];
+    }
+
+    private function format_datetime_label($value) {
+        $timestamp = $value !== '' ? strtotime((string) $value) : 0;
+
+        return $timestamp > 0 ? wp_date('d/m/Y H:i', $timestamp) : '';
+    }
+
+    private function format_date_label($value) {
+        $timestamp = $value !== '' ? strtotime((string) $value) : 0;
+
+        return $timestamp > 0 ? wp_date('d/m/Y', $timestamp) : '';
     }
 
     private function build_items_summary(array $items) {
@@ -677,6 +733,104 @@ class RKM_Warehouse {
         return $this->validate_evidence_files($files, self::EVIDENCE_MIN_FILES);
     }
 
+    private function validate_ready_for_dispatch($order) {
+        if (!$order || !method_exists($order, 'get_items')) {
+            return new WP_Error('invalid_order', 'Pedido no encontrado.');
+        }
+
+        if ($this->has_open_picking_incidents($this->get_order_picking_incidents($order))) {
+            return new WP_Error('open_incidents', 'No se puede despachar un pedido con incidencias abiertas.');
+        }
+
+        $checklist = $order->get_meta(self::PICKING_CHECKLIST_META);
+        $order_items = $order->get_items();
+
+        if (!is_array($checklist) || empty($checklist) || count($checklist) !== count($order_items)) {
+            return new WP_Error('incomplete_picking', 'No se puede despachar sin checklist completo.');
+        }
+
+        $items_by_id = [];
+        foreach ($order_items as $item_id => $item) {
+            $items_by_id[(int) $item_id] = (float) $item->get_quantity();
+        }
+
+        $seen = [];
+        foreach ($checklist as $entry) {
+            if (!is_array($entry) || empty($entry['item_id'])) {
+                return new WP_Error('invalid_picking', 'El checklist guardado no es valido.');
+            }
+
+            $item_id = (int) $entry['item_id'];
+            if (!array_key_exists($item_id, $items_by_id) || isset($seen[$item_id])) {
+                return new WP_Error('invalid_picking', 'El checklist guardado no coincide con el pedido.');
+            }
+
+            $seen[$item_id] = true;
+            $prepared_quantity = isset($entry['prepared_quantity']) ? (float) $entry['prepared_quantity'] : 0;
+
+            if (empty($entry['prepared']) || $prepared_quantity <= 0 || abs($prepared_quantity - $items_by_id[$item_id]) > 0.0001) {
+                return new WP_Error('incomplete_picking', 'No se puede despachar sin checklist completo.');
+            }
+        }
+
+        if ($order->get_meta(self::PICKING_COMPLETED_META) !== 'yes') {
+            return new WP_Error('incomplete_picking', 'No se puede despachar sin picking completado.');
+        }
+
+        if (count($this->get_valid_evidence_attachment_ids($order)) < self::EVIDENCE_MIN_FILES) {
+            return new WP_Error('missing_evidence', 'No se puede despachar sin evidencia fotografica suficiente.');
+        }
+
+        return true;
+    }
+
+    private function order_has_credit_balance($order) {
+        $payment_term = (string) $order->get_meta('_rkm_payment_term', true);
+        $credit_balance = (float) $order->get_meta('_rkm_credit_balance', true);
+
+        return in_array($payment_term, ['credit', 'mixed'], true) && $credit_balance > 0;
+    }
+
+    private function start_credit_term_if_needed($order, $delivered_at, $user_id) {
+        if (!$this->order_has_credit_balance($order)) {
+            return null;
+        }
+
+        $previous = [
+            'started_at' => (string) $order->get_meta('_rkm_credit_started_at', true),
+            'due_at' => (string) $order->get_meta('_rkm_credit_due_at', true),
+            'days' => (string) $order->get_meta('_rkm_credit_days', true),
+        ];
+
+        if ($previous['started_at'] !== '' && $previous['due_at'] !== '') {
+            return null;
+        }
+
+        $delivered_timestamp = strtotime((string) $delivered_at);
+        if ($delivered_timestamp <= 0) {
+            $delivered_timestamp = current_time('timestamp');
+        }
+
+        $due_timestamp = $delivered_timestamp + (DAY_IN_SECONDS * self::CREDIT_DAYS);
+        $started_at = wp_date('Y-m-d H:i:s', $delivered_timestamp);
+        $due_at = wp_date('Y-m-d H:i:s', $due_timestamp);
+
+        $order->update_meta_data('_rkm_credit_started_at', $started_at);
+        $order->update_meta_data('_rkm_credit_due_at', $due_at);
+        $order->update_meta_data('_rkm_credit_days', self::CREDIT_DAYS);
+
+        return [
+            'old' => $previous,
+            'new' => [
+                'started_at' => $started_at,
+                'due_at' => $due_at,
+                'days' => self::CREDIT_DAYS,
+                'started_by' => (int) $user_id,
+            ],
+            'due_label' => wp_date('d/m/Y', $due_timestamp),
+        ];
+    }
+
     public function ajax_add_note() {
         if (!check_ajax_referer(self::NONCE_ACTION, 'nonce', false)) {
             wp_send_json_error(['message' => 'Solicitud invalida.'], 403);
@@ -986,6 +1140,133 @@ class RKM_Warehouse {
 
         wp_send_json_success([
             'message' => 'Pedido marcado como preparado.',
+            'order' => $this->format_order_row($order),
+        ]);
+    }
+
+    public function ajax_mark_dispatched() {
+        if (!check_ajax_referer(self::NONCE_ACTION, 'nonce', false)) {
+            wp_send_json_error(['message' => 'Solicitud invalida.'], 403);
+        }
+
+        if (!is_user_logged_in() || !self::can_manage()) {
+            wp_send_json_error(['message' => 'No tenes permiso para operar almacen.'], 403);
+        }
+
+        if (!function_exists('wc_get_order') || !class_exists('RKM_Order_Audit_Log')) {
+            wp_send_json_error(['message' => 'WooCommerce o auditoria no estan disponibles.'], 500);
+        }
+
+        $order_id = isset($_POST['order_id']) ? absint(wp_unslash($_POST['order_id'])) : 0;
+
+        if ($order_id <= 0) {
+            wp_send_json_error(['message' => 'Pedido invalido.'], 400);
+        }
+
+        $order = wc_get_order($order_id);
+
+        if (!$order) {
+            wp_send_json_error(['message' => 'Pedido no encontrado.'], 404);
+        }
+
+        if ($order->get_status() !== 'rkm-ready') {
+            wp_send_json_error(['message' => 'Solo se pueden despachar pedidos listos.'], 409);
+        }
+
+        $dispatch_validation = $this->validate_ready_for_dispatch($order);
+        if (is_wp_error($dispatch_validation)) {
+            wp_send_json_error(['message' => $dispatch_validation->get_error_message()], 409);
+        }
+
+        $user = wp_get_current_user();
+        $user_id = $user instanceof WP_User ? (int) $user->ID : 0;
+        $actor = $user instanceof WP_User && $user->display_name !== '' ? $user->display_name : 'Sistema';
+        $dispatched_at = current_time('mysql');
+
+        $order->update_meta_data('_rkm_dispatched_at', $dispatched_at);
+        $order->update_meta_data('_rkm_dispatched_by', $user_id);
+        $order->save();
+
+        RKM_Order_Audit_Log::add_event(
+            $order_id,
+            'Pedido despachado',
+            'Pedido despachado',
+            sprintf('Pedido despachado por %s el %s.', $actor, $this->format_datetime_label($dispatched_at)),
+            'rkm-ready',
+            'rkm-dispatched'
+        );
+
+        $order->update_status('rkm-dispatched', '');
+
+        wp_send_json_success([
+            'message' => 'Pedido marcado como despachado.',
+            'order' => $this->format_order_row($order),
+        ]);
+    }
+
+    public function ajax_mark_delivered() {
+        if (!check_ajax_referer(self::NONCE_ACTION, 'nonce', false)) {
+            wp_send_json_error(['message' => 'Solicitud invalida.'], 403);
+        }
+
+        if (!is_user_logged_in() || !self::can_manage()) {
+            wp_send_json_error(['message' => 'No tenes permiso para operar almacen.'], 403);
+        }
+
+        if (!function_exists('wc_get_order') || !class_exists('RKM_Order_Audit_Log')) {
+            wp_send_json_error(['message' => 'WooCommerce o auditoria no estan disponibles.'], 500);
+        }
+
+        $order_id = isset($_POST['order_id']) ? absint(wp_unslash($_POST['order_id'])) : 0;
+
+        if ($order_id <= 0) {
+            wp_send_json_error(['message' => 'Pedido invalido.'], 400);
+        }
+
+        $order = wc_get_order($order_id);
+
+        if (!$order) {
+            wp_send_json_error(['message' => 'Pedido no encontrado.'], 404);
+        }
+
+        if ($order->get_status() !== 'rkm-dispatched') {
+            wp_send_json_error(['message' => 'Solo se pueden entregar pedidos despachados.'], 409);
+        }
+
+        $user = wp_get_current_user();
+        $user_id = $user instanceof WP_User ? (int) $user->ID : 0;
+        $actor = $user instanceof WP_User && $user->display_name !== '' ? $user->display_name : 'Sistema';
+        $delivered_at = current_time('mysql');
+        $credit_result = $this->start_credit_term_if_needed($order, $delivered_at, $user_id);
+
+        $order->update_meta_data('_rkm_delivered_at', $delivered_at);
+        $order->update_meta_data('_rkm_delivered_by', $user_id);
+        $order->save();
+
+        RKM_Order_Audit_Log::add_event(
+            $order_id,
+            'Pedido entregado',
+            'Pedido entregado',
+            sprintf('Pedido entregado por %s el %s.', $actor, $this->format_datetime_label($delivered_at)),
+            'rkm-dispatched',
+            'completed'
+        );
+
+        if (is_array($credit_result)) {
+            RKM_Order_Audit_Log::add_event(
+                $order_id,
+                'Inicio de credito',
+                'Inicio de credito',
+                sprintf('Se inicio plazo de credito de %d dias. Vencimiento: %s.', self::CREDIT_DAYS, $credit_result['due_label']),
+                $credit_result['old'],
+                $credit_result['new']
+            );
+        }
+
+        $order->update_status('completed', '');
+
+        wp_send_json_success([
+            'message' => 'Pedido marcado como entregado.',
             'order' => $this->format_order_row($order),
         ]);
     }

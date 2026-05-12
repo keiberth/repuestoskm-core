@@ -66,6 +66,14 @@ $warehouse_count = count(array_filter($orders, static function ($order) {
                         <span>Listos</span>
                         <strong data-rkm-warehouse-filter-count="ready">0</strong>
                     </button>
+                    <button type="button" class="rkm-warehouse-filter" data-rkm-warehouse-filter="dispatched">
+                        <span>Despachados</span>
+                        <strong data-rkm-warehouse-filter-count="dispatched">0</strong>
+                    </button>
+                    <button type="button" class="rkm-warehouse-filter" data-rkm-warehouse-filter="completed">
+                        <span>Entregados</span>
+                        <strong data-rkm-warehouse-filter-count="completed">0</strong>
+                    </button>
                 </div>
 
                 <div class="rkm-warehouse-empty" data-rkm-warehouse-empty hidden>
@@ -174,6 +182,13 @@ $warehouse_count = count(array_filter($orders, static function ($order) {
 
                 <section class="rkm-warehouse-modal__section">
                     <div class="rkm-warehouse-modal__section-head">
+                        <h3>Cierre operativo</h3>
+                    </div>
+                    <div class="rkm-warehouse-closure" id="rkmWarehouseClosure"></div>
+                </section>
+
+                <section class="rkm-warehouse-modal__section">
+                    <div class="rkm-warehouse-modal__section-head">
                         <h3>Historial operativo</h3>
                     </div>
                     <div class="rkm-warehouse-modal__notes" id="rkmWarehouseModalNotes"></div>
@@ -201,6 +216,12 @@ $warehouse_count = count(array_filter($orders, static function ($order) {
                         <button type="button" class="rkm-warehouse__btn rkm-warehouse__btn--primary" id="rkmWarehouseModalReadyBtn">
                             Marcar como preparado
                         </button>
+                        <button type="button" class="rkm-warehouse__btn rkm-warehouse__btn--primary" id="rkmWarehouseModalDispatchBtn">
+                            Marcar como despachado
+                        </button>
+                        <button type="button" class="rkm-warehouse__btn rkm-warehouse__btn--primary" id="rkmWarehouseModalDeliverBtn">
+                            Confirmar entrega
+                        </button>
                     </section>
                 <?php endif; ?>
             </div>
@@ -215,6 +236,8 @@ $warehouse_count = count(array_filter($orders, static function ($order) {
         can_manage: <?php echo $can_manage_warehouse ? 'true' : 'false'; ?>,
         warehouse_status: 'rkm-warehouse',
         ready_status: 'rkm-ready',
+        dispatched_status: 'rkm-dispatched',
+        completed_status: 'completed',
         orders: <?php echo wp_json_encode($orders); ?>
     };
 </script>

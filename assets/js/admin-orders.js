@@ -2,8 +2,9 @@
     document.addEventListener("DOMContentLoaded", function () {
         var modal = document.getElementById("rkmOperationalOrderModal");
         var triggers = document.querySelectorAll("[data-rkm-operational-order-detail]");
+        var moduleRoot = document.querySelector(".rkm-admin-orders");
 
-        if (!modal || !triggers.length || !window.rkmOperationalOrders) {
+        if (!moduleRoot || !modal || !triggers.length || !window.rkmOperationalOrders) {
             return;
         }
 

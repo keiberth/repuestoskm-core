@@ -3,6 +3,14 @@
         var config = window.rkmWarehouseOrders || {};
         var modal = document.getElementById("rkmWarehouseOrderModal");
         var triggers = document.querySelectorAll("[data-rkm-warehouse-detail]");
+        var allowedWarehouseActions = [
+            "rkm_add_warehouse_note",
+            "rkm_save_warehouse_picking_progress",
+            "rkm_report_warehouse_picking_incident",
+            "rkm_mark_order_ready",
+            "rkm_mark_order_dispatched",
+            "rkm_mark_order_delivered"
+        ];
 
         if (!modal || !triggers.length) {
             return;
@@ -18,6 +26,8 @@
         var evidenceFiles = [];
         var evidencePreviewUrls = [];
         var isMarkingReady = false;
+        var isMarkingDispatched = false;
+        var isMarkingDelivered = false;
         var isSavingProgress = false;
         var savedPickingSignature = "";
 
@@ -33,12 +43,15 @@
         var currentNote = document.getElementById("rkmWarehouseModalCurrentNote");
         var items = document.getElementById("rkmWarehouseModalItems");
         var evidence = document.getElementById("rkmWarehouseEvidence");
+        var closure = document.getElementById("rkmWarehouseClosure");
         var notes = document.getElementById("rkmWarehouseModalNotes");
         var noteInput = document.getElementById("rkmWarehouseModalNoteInput");
         var noteButton = document.getElementById("rkmWarehouseModalNoteBtn");
         var saveProgressButton = document.getElementById("rkmWarehouseModalSaveProgressBtn");
         var saveProgressStatus = document.getElementById("rkmWarehousePickingSaveStatus");
         var readyButton = document.getElementById("rkmWarehouseModalReadyBtn");
+        var dispatchButton = document.getElementById("rkmWarehouseModalDispatchBtn");
+        var deliverButton = document.getElementById("rkmWarehouseModalDeliverBtn");
         var closeControls = modal.querySelectorAll("[data-rkm-warehouse-close]");
         var filterButtons = document.querySelectorAll("[data-rkm-warehouse-filter]");
         var filterEmpty = document.querySelector("[data-rkm-warehouse-empty]");
@@ -72,6 +85,14 @@
                 return "Listo";
             }
 
+            if (statusValue === "rkm-dispatched") {
+                return "Despachado";
+            }
+
+            if (statusValue === "completed") {
+                return "Entregado";
+            }
+
             return statusValue || "Pedido";
         }
 
@@ -80,13 +101,23 @@
                 return ["rkm-ready"];
             }
 
+            if (filter === "dispatched") {
+                return ["rkm-dispatched"];
+            }
+
+            if (filter === "completed") {
+                return ["completed"];
+            }
+
             return ["rkm-warehouse"];
         }
 
         function updateCounts() {
             var counts = {
                 warehouse: 0,
-                ready: 0
+                ready: 0,
+                dispatched: 0,
+                completed: 0
             };
 
             orders.forEach(function (order) {
@@ -100,6 +131,14 @@
 
                 if (order.status === "rkm-ready") {
                     counts.ready += 1;
+                }
+
+                if (order.status === "rkm-dispatched") {
+                    counts.dispatched += 1;
+                }
+
+                if (order.status === "completed") {
+                    counts.completed += 1;
                 }
             });
 
@@ -414,6 +453,19 @@
                 readyButton.title = canMarkReady ? "" : (hasOpenIncidents ? "Hay incidencias pendientes de resolver." : "Completa el checklist y carga la evidencia fotografica.");
             }
 
+            if (dispatchButton) {
+                var canDispatch = Boolean(config.can_manage && activeOrder && activeOrder.status === "rkm-ready" && !hasOpenIncidents && validation.complete && evidenceValidation.complete && !isMarkingDispatched);
+                dispatchButton.hidden = !(config.can_manage && activeOrder && activeOrder.status === "rkm-ready");
+                dispatchButton.disabled = !canDispatch;
+                dispatchButton.title = canDispatch ? "" : "El pedido debe tener picking completo, evidencia e incidencias resueltas.";
+            }
+
+            if (deliverButton) {
+                var canDeliver = Boolean(config.can_manage && activeOrder && activeOrder.status === "rkm-dispatched" && !isMarkingDelivered);
+                deliverButton.hidden = !(config.can_manage && activeOrder && activeOrder.status === "rkm-dispatched");
+                deliverButton.disabled = !canDeliver;
+            }
+
             if (saveProgressButton) {
                 saveProgressButton.hidden = !editable;
                 saveProgressButton.disabled = !editable || isSavingProgress;
@@ -677,6 +729,50 @@
             updateEvidenceUi("");
         }
 
+        function renderClosure(order) {
+            if (!closure) {
+                return;
+            }
+
+            var statusValue = order && order.status ? order.status : "";
+            var closureData = order && order.operational_closure ? order.operational_closure : {};
+            var creditContext = order && order.credit_context ? order.credit_context : {};
+            var rows = [];
+
+            if (closureData.dispatched_label) {
+                rows.push('<span>Despacho: <strong>' + escapeHtml(closureData.dispatched_label) + '</strong></span>');
+            }
+
+            if (closureData.delivered_label) {
+                rows.push('<span>Entrega: <strong>' + escapeHtml(closureData.delivered_label) + '</strong></span>');
+            }
+
+            if (creditContext && creditContext.has_credit && (creditContext.due_label || creditContext.status_label)) {
+                rows.push('<span>Credito: <strong>' + escapeHtml(creditContext.due_label || "Pendiente") + '</strong></span>');
+                if (creditContext.status_label) {
+                    rows.push('<span>' + escapeHtml(creditContext.status_label) + '</span>');
+                }
+            }
+
+            var message = "El cierre operativo se habilita cuando corresponde al estado actual.";
+            if (statusValue === "rkm-ready") {
+                message = "Pedido preparado y listo para salida logistica.";
+            } else if (statusValue === "rkm-dispatched") {
+                message = "Pedido despachado. Confirma la entrega para cerrar el ciclo operativo.";
+            } else if (statusValue === "completed") {
+                message = "Pedido entregado y cerrado operativamente.";
+            } else if (statusValue === "rkm-warehouse") {
+                message = "Completa el picking para habilitar el cierre operativo.";
+            }
+
+            closure.innerHTML = [
+                '<div class="rkm-warehouse-closure__status">',
+                    '<strong>' + escapeHtml(message) + '</strong>',
+                    rows.length ? '<div>' + rows.join("") + '</div>' : '',
+                '</div>'
+            ].join("");
+        }
+
         function renderTimeline(order) {
             if (!notes) {
                 return;
@@ -774,6 +870,7 @@
 
             renderItems(order);
             renderEvidence(order);
+            renderClosure(order);
             renderTimeline(order);
             updateReadyButton(order);
 
@@ -828,6 +925,10 @@
         }
 
         function sendAjax(action, data) {
+            if (allowedWarehouseActions.indexOf(action) === -1) {
+                return Promise.reject(new Error("Accion no permitida en el modulo Almacen."));
+            }
+
             var formData = new FormData();
 
             formData.append("action", action);
@@ -1057,6 +1158,94 @@
             });
         }
 
+        function markDispatched() {
+            if (isMarkingDispatched) {
+                return;
+            }
+
+            if (!activeOrder || activeOrder.status !== "rkm-ready") {
+                showNotice("Solo se pueden despachar pedidos listos.", "error");
+                return;
+            }
+
+            if (hasOpenPickingIncidents(activeOrder)) {
+                showNotice("Este pedido tiene incidencias pendientes de resolver.", "error");
+                updatePickingUi();
+                return;
+            }
+
+            isMarkingDispatched = true;
+            if (dispatchButton) {
+                dispatchButton.disabled = true;
+            }
+
+            sendAjax("rkm_mark_order_dispatched", {
+                order_id: activeOrder.id
+            }).then(function (payload) {
+                if (!payload || !payload.success) {
+                    throw new Error(payload && payload.data && payload.data.message ? payload.data.message : "No se pudo despachar el pedido.");
+                }
+
+                var updatedOrder = payload.data.order || null;
+                if (updatedOrder) {
+                    mergeOrder(updatedOrder);
+                    activeOrder = updatedOrder;
+                    setRowStatus(updatedOrder);
+                    renderModal(updatedOrder);
+                    updateCounts();
+                    applyFilter(activeFilter);
+                }
+
+                showNotice(payload.data.message || "Pedido marcado como despachado.", "success");
+            }).catch(function (error) {
+                showNotice(error.message || "No se pudo despachar el pedido.", "error");
+            }).finally(function () {
+                isMarkingDispatched = false;
+                updatePickingUi();
+            });
+        }
+
+        function markDelivered() {
+            if (isMarkingDelivered) {
+                return;
+            }
+
+            if (!activeOrder || activeOrder.status !== "rkm-dispatched") {
+                showNotice("Solo se pueden entregar pedidos despachados.", "error");
+                return;
+            }
+
+            isMarkingDelivered = true;
+            if (deliverButton) {
+                deliverButton.disabled = true;
+            }
+
+            sendAjax("rkm_mark_order_delivered", {
+                order_id: activeOrder.id
+            }).then(function (payload) {
+                if (!payload || !payload.success) {
+                    throw new Error(payload && payload.data && payload.data.message ? payload.data.message : "No se pudo confirmar la entrega.");
+                }
+
+                var updatedOrder = payload.data.order || null;
+                if (updatedOrder) {
+                    mergeOrder(updatedOrder);
+                    activeOrder = updatedOrder;
+                    setRowStatus(updatedOrder);
+                    renderModal(updatedOrder);
+                    updateCounts();
+                    applyFilter(activeFilter);
+                }
+
+                showNotice(payload.data.message || "Pedido marcado como entregado.", "success");
+            }).catch(function (error) {
+                showNotice(error.message || "No se pudo confirmar la entrega.", "error");
+            }).finally(function () {
+                isMarkingDelivered = false;
+                updatePickingUi();
+            });
+        }
+
         triggers.forEach(function (button) {
             button.addEventListener("click", function () {
                 openModal(button.getAttribute("data-order-id"));
@@ -1077,6 +1266,14 @@
 
         if (readyButton) {
             readyButton.addEventListener("click", markReady);
+        }
+
+        if (dispatchButton) {
+            dispatchButton.addEventListener("click", markDispatched);
+        }
+
+        if (deliverButton) {
+            deliverButton.addEventListener("click", markDelivered);
         }
 
         filterButtons.forEach(function (button) {

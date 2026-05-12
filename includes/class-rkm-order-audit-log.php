@@ -280,6 +280,18 @@ class RKM_Order_Audit_Log {
             return 'Pedido confirmado';
         }
 
+        if (strpos($text, 'pedido despachado') !== false) {
+            return 'Pedido despachado';
+        }
+
+        if (strpos($text, 'pedido entregado') !== false) {
+            return 'Pedido entregado';
+        }
+
+        if (strpos($text, 'inicio de credito') !== false || strpos($text, 'plazo de credito') !== false) {
+            return 'Inicio de credito';
+        }
+
         if (strpos($text, 'pedido creado') !== false || strpos($text, 'pedido generado') !== false) {
             return 'Pedido creado';
         }
