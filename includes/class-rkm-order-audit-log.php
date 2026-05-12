@@ -64,10 +64,10 @@ class RKM_Order_Audit_Log {
         }
 
         $user = wp_get_current_user();
-        $user_id = $user instanceof WP_User ? (int) $user->ID : null;
-        $user_name = $user instanceof WP_User && $user->display_name !== ''
+        $user_id = $user instanceof WP_User && !empty($user->ID) ? (int) $user->ID : null;
+        $user_name = $user instanceof WP_User && !empty($user->ID) && $user->display_name !== ''
             ? $user->display_name
-            : ($user instanceof WP_User && $user->user_login !== '' ? $user->user_login : 'Sistema');
+            : ($user instanceof WP_User && !empty($user->ID) && $user->user_login !== '' ? $user->user_login : 'Sistema');
         $user_role = self::get_user_role_label($user);
         $created_at = current_time('mysql');
         $ip_address = isset($_SERVER['REMOTE_ADDR']) ? sanitize_text_field(wp_unslash($_SERVER['REMOTE_ADDR'])) : '';
@@ -199,6 +199,8 @@ class RKM_Order_Audit_Log {
             'user_id' => isset($row['user_id']) ? (int) $row['user_id'] : 0,
             'user_name' => isset($row['user_name']) ? self::clean_text($row['user_name']) : 'Sistema',
             'user_role' => isset($row['user_role']) ? self::clean_text($row['user_role']) : 'Sistema',
+            'user' => isset($row['user_name']) ? self::clean_text($row['user_name']) : 'Sistema',
+            'role' => isset($row['user_role']) ? self::clean_text($row['user_role']) : 'Sistema',
             'action' => isset($row['action']) ? self::clean_text($row['action']) : 'Movimiento operativo',
             'title' => isset($row['title']) ? self::clean_text($row['title']) : 'Movimiento operativo',
             'details' => isset($row['details']) ? self::clean_text($row['details']) : '',
@@ -247,6 +249,8 @@ class RKM_Order_Audit_Log {
                 'user_id' => isset($row['user_id']) ? (int) $row['user_id'] : 0,
                 'user_name' => self::clean_text($row['comment_author'] ?? 'WooCommerce'),
                 'user_role' => 'Sistema',
+                'user' => self::clean_text($row['comment_author'] ?? 'WooCommerce'),
+                'role' => 'Sistema',
                 'action' => $title,
                 'title' => $title,
                 'details' => $content,
@@ -300,6 +304,14 @@ class RKM_Order_Audit_Log {
             return 'Enviado a almacen';
         }
 
+        if (strpos($text, 'incidencia de picking resuelta') !== false) {
+            return 'Incidencia de picking resuelta';
+        }
+
+        if (strpos($text, 'incidencia de picking') !== false) {
+            return 'Incidencia de picking registrada';
+        }
+
         if (strpos($text, 'estado cambiado') !== false) {
             return 'Estado cambiado';
         }
@@ -341,7 +353,7 @@ class RKM_Order_Audit_Log {
     }
 
     private static function get_user_role_label($user) {
-        if (!$user instanceof WP_User) {
+        if (!$user instanceof WP_User || empty($user->ID)) {
             return 'Sistema';
         }
 
@@ -359,6 +371,10 @@ class RKM_Order_Audit_Log {
             'vendor' => 'Vendedor',
             'vendedor' => 'Vendedor',
             'customer' => 'Cliente',
+            'warehouse' => 'Almacen',
+            'almacen' => 'Almacen',
+            'inventory_manager' => 'Almacen',
+            'stock_manager' => 'Almacen',
         ];
 
         if (isset($map[$role])) {

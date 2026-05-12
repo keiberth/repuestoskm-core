@@ -30,6 +30,7 @@
         var total = document.getElementById("rkmOperationalOrderTotal");
         var totalHint = document.getElementById("rkmOperationalOrderTotalHint");
         var items = document.getElementById("rkmOperationalOrderItems");
+        var warehouseIncidents = document.getElementById("rkmOperationalOrderWarehouseIncidents");
         var notes = document.getElementById("rkmOperationalOrderNotes");
         var editPanel = document.getElementById("rkmOperationalOrderEditPanel");
         var paymentToggleWrap = document.getElementById("rkmOperationalOrderPaymentToggleWrap");
@@ -329,6 +330,73 @@
                     }
 
                     updatePaymentFormState();
+                });
+            });
+        }
+
+        function renderWarehouseIncidents(order) {
+            if (!warehouseIncidents) {
+                return;
+            }
+
+            var incidents = Array.isArray(order.warehouse_picking_incidents) ? order.warehouse_picking_incidents : [];
+
+            if (!incidents.length) {
+                warehouseIncidents.innerHTML = '<p class="rkm-admin-order-modal__empty">No hay incidencias de almacen registradas.</p>';
+                return;
+            }
+
+            warehouseIncidents.innerHTML = incidents.map(function (incident) {
+                var isOpen = incident.status === "open";
+                var canResolve = Boolean(window.rkmOperationalOrders.can_resolve_incidents && isOpen);
+
+                return [
+                    '<article class="rkm-admin-order-modal__warehouse-incident ' + (isOpen ? 'is-open' : 'is-resolved') + '" data-rkm-warehouse-incident data-incident-index="' + escapeHtml(incident.index) + '">',
+                        '<div class="rkm-admin-order-modal__warehouse-incident-head">',
+                            '<div>',
+                                '<strong>' + escapeHtml(incident.name || "Producto") + '</strong>',
+                                '<small>SKU: ' + escapeHtml(incident.sku || "-") + '</small>',
+                            '</div>',
+                            '<span>' + escapeHtml(incident.status_label || (isOpen ? "Pendiente" : "Resuelta")) + '</span>',
+                        '</div>',
+                        '<div class="rkm-admin-order-modal__warehouse-incident-grid">',
+                            '<span><em>Tipo</em>' + escapeHtml(incident.type_label || incident.type || "-") + '</span>',
+                            '<span><em>Solicitada</em>' + escapeHtml(incident.requested_quantity || 0) + '</span>',
+                            '<span><em>Disponible</em>' + escapeHtml(incident.available_quantity || 0) + '</span>',
+                            '<span><em>Reporto</em>' + escapeHtml(incident.created_by_label || "-") + '</span>',
+                            '<span><em>Fecha</em>' + escapeHtml(incident.created_at_label || "-") + '</span>',
+                        '</div>',
+                        '<p>' + escapeHtml(incident.note || "") + '</p>',
+                        !isOpen ? [
+                            '<div class="rkm-admin-order-modal__warehouse-resolution">',
+                                '<strong>Resolucion: ' + escapeHtml(incident.resolution_type_label || "-") + '</strong>',
+                                '<span>' + escapeHtml([incident.resolved_at_label, incident.resolved_by_label].filter(Boolean).join(" - ") || "-") + '</span>',
+                                '<p>' + escapeHtml(incident.resolution_note || "") + '</p>',
+                            '</div>'
+                        ].join("") : '',
+                        canResolve ? [
+                            '<div class="rkm-admin-order-modal__warehouse-resolution-form">',
+                                '<label><span>Tipo de resolucion</span><select data-rkm-resolution-type>',
+                                    '<option value="wait_stock">Esperar reposicion</option>',
+                                    '<option value="approve_partial">Aprobar envio parcial</option>',
+                                    '<option value="no_action">Sin accion operativa</option>',
+                                    '<option value="remove_item" disabled>Remover item del pedido (futuro)</option>',
+                                    '<option value="replace_item" disabled>Reemplazar producto (futuro)</option>',
+                                '</select></label>',
+                                '<label><span>Nota de resolucion</span><textarea rows="2" data-rkm-resolution-note></textarea></label>',
+                                '<button type="button" class="rkm-admin-orders__btn rkm-admin-orders__btn--primary" data-rkm-resolve-warehouse-incident>Resolver incidencia</button>',
+                            '</div>'
+                        ].join("") : '',
+                    '</article>'
+                ].join("");
+            }).join("");
+
+            warehouseIncidents.querySelectorAll("[data-rkm-resolve-warehouse-incident]").forEach(function (button) {
+                button.addEventListener("click", function () {
+                    var node = button.closest("[data-rkm-warehouse-incident]");
+                    if (node) {
+                        resolveWarehouseIncident(node, button);
+                    }
                 });
             });
         }
@@ -683,6 +751,7 @@
                 renderPaymentSummary(order);
                 total.textContent = decodeHtml(order.total || "-");
                 renderItems(order);
+                renderWarehouseIncidents(order);
                 if (isEditable(order)) {
                     hydratePaymentForm(order);
                 } else {
@@ -889,6 +958,56 @@
                 });
         }
 
+        function resolveWarehouseIncident(node, sourceButton) {
+            var order = ordersById[String(activeOrderId)];
+            var resolutionType = node.querySelector("[data-rkm-resolution-type]");
+            var resolutionNote = node.querySelector("[data-rkm-resolution-note]");
+            var note = resolutionNote ? resolutionNote.value.trim() : "";
+            var formData = new FormData();
+
+            if (!order) {
+                showNotice("Pedido no encontrado en el modal.", "error");
+                return;
+            }
+
+            if (!note) {
+                showNotice("La nota de resolucion es obligatoria.", "error");
+                return;
+            }
+
+            formData.append("action", "rkm_resolve_warehouse_picking_incident");
+            formData.append("order_id", order.id);
+            formData.append("incident_index", node.getAttribute("data-incident-index") || "");
+            formData.append("resolution_type", resolutionType ? resolutionType.value : "");
+            formData.append("resolution_note", note);
+            formData.append("nonce", window.rkmOperationalOrders.nonce || "");
+
+            setButtonLoading(sourceButton, true, "Resolviendo...");
+
+            fetch(window.rkmOperationalOrders.ajax_url, {
+                method: "POST",
+                body: formData,
+                credentials: "same-origin"
+            })
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (payload) {
+                    if (!payload || !payload.success) {
+                        throw new Error(payload && payload.data && payload.data.message ? payload.data.message : "No se pudo resolver la incidencia.");
+                    }
+
+                    applyUpdatedOrder(payload.data.order);
+                    showNotice(payload.data.message || "Incidencia resuelta correctamente.", "success");
+                })
+                .catch(function (error) {
+                    showNotice(error.message || "No se pudo resolver la incidencia.", "error");
+                })
+                .finally(function () {
+                    setButtonLoading(sourceButton, false);
+                });
+        }
+
         function openModal(order) {
             activeOrderId = order.id;
             title.textContent = "Pedido #" + (order.number || order.id || "");
@@ -908,6 +1027,7 @@
             }
 
             renderItems(order);
+            renderWarehouseIncidents(order);
             if (isEditable(order)) {
                 hydratePaymentForm(order);
             } else {

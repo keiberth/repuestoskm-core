@@ -12,11 +12,13 @@ class RKM_Operational_Orders {
     const LEGACY_PENDING = 'pending';
     const LEGACY_REVIEW = 'en-revision';
     const LEGACY_PROCESSING = 'processing';
+    const WAREHOUSE_PICKING_INCIDENTS_META = '_rkm_warehouse_picking_incidents';
 
     public function init() {
         add_action('wp_ajax_rkm_confirm_operational_order', [$this, 'ajax_confirm_order']);
         add_action('wp_ajax_rkm_send_operational_order_to_warehouse', [$this, 'ajax_send_to_warehouse']);
         add_action('wp_ajax_rkm_update_operational_order', [$this, 'ajax_update_order']);
+        add_action('wp_ajax_rkm_resolve_warehouse_picking_incident', [$this, 'ajax_resolve_warehouse_picking_incident']);
         add_action('woocommerce_order_status_changed', [$this, 'maybe_start_credit_term'], 20, 4);
         add_action('woocommerce_order_status_changed', [$this, 'maybe_log_operational_status_transition'], 30, 4);
     }
@@ -377,6 +379,14 @@ class RKM_Operational_Orders {
         return self::can_confirm($user);
     }
 
+    public static function can_resolve_warehouse_incidents($user = null) {
+        if (!class_exists('RKM_Permissions')) {
+            return false;
+        }
+
+        return RKM_Permissions::is_rkm_admin($user) || RKM_Permissions::is_rkm_vendor($user);
+    }
+
     public function ajax_confirm_order() {
         if (!check_ajax_referer(self::NONCE_ACTION, 'nonce', false)) {
             wp_send_json_error(['message' => 'Solicitud invalida. Actualiza la pagina e intenta nuevamente.'], 403);
@@ -688,6 +698,92 @@ class RKM_Operational_Orders {
         ]);
     }
 
+    public function ajax_resolve_warehouse_picking_incident() {
+        if (!check_ajax_referer(self::NONCE_ACTION, 'nonce', false)) {
+            wp_send_json_error(['message' => 'Solicitud invalida. Actualiza la pagina e intenta nuevamente.'], 403);
+        }
+
+        if (!is_user_logged_in() || !self::can_resolve_warehouse_incidents()) {
+            wp_send_json_error(['message' => 'No tenes permiso para resolver incidencias de almacen.'], 403);
+        }
+
+        if (!function_exists('wc_get_order')) {
+            wp_send_json_error(['message' => 'WooCommerce no esta disponible.'], 500);
+        }
+
+        $order_id = isset($_POST['order_id']) ? absint(wp_unslash($_POST['order_id'])) : 0;
+        $incident_index = isset($_POST['incident_index']) ? (int) wp_unslash($_POST['incident_index']) : -1;
+        $resolution_type = isset($_POST['resolution_type']) ? sanitize_key(wp_unslash($_POST['resolution_type'])) : '';
+        $resolution_note = isset($_POST['resolution_note']) ? sanitize_textarea_field(wp_unslash($_POST['resolution_note'])) : '';
+
+        if ($order_id <= 0) {
+            wp_send_json_error(['message' => 'Pedido invalido.'], 400);
+        }
+
+        $allowed_resolution_types = ['wait_stock', 'approve_partial', 'no_action'];
+        if (!in_array($resolution_type, $allowed_resolution_types, true)) {
+            wp_send_json_error(['message' => 'Tipo de resolucion invalido para esta fase.'], 400);
+        }
+
+        if ($resolution_note === '') {
+            wp_send_json_error(['message' => 'La nota de resolucion es obligatoria.'], 400);
+        }
+
+        $order = wc_get_order($order_id);
+
+        if (!$order) {
+            wp_send_json_error(['message' => 'Pedido no encontrado.'], 404);
+        }
+
+        $incidents = $this->get_warehouse_picking_incidents($order);
+
+        if ($incident_index < 0 || !isset($incidents[$incident_index]) || !is_array($incidents[$incident_index])) {
+            wp_send_json_error(['message' => 'Incidencia no encontrada.'], 404);
+        }
+
+        if (($incidents[$incident_index]['status'] ?? '') !== 'open') {
+            wp_send_json_error(['message' => 'Solo se pueden resolver incidencias abiertas.'], 409);
+        }
+
+        $old_incidents = $incidents;
+        $user = wp_get_current_user();
+        $user_id = $user instanceof WP_User ? (int) $user->ID : 0;
+        $actor = $user instanceof WP_User && $user->display_name !== '' ? $user->display_name : 'Sistema';
+
+        $incidents[$incident_index]['status'] = 'resolved';
+        $incidents[$incident_index]['resolved_at'] = current_time('mysql');
+        $incidents[$incident_index]['resolved_by'] = $user_id;
+        $incidents[$incident_index]['resolution_type'] = $resolution_type;
+        $incidents[$incident_index]['resolution_note'] = $resolution_note;
+
+        $order->update_meta_data(self::WAREHOUSE_PICKING_INCIDENTS_META, $incidents);
+        $order->save();
+
+        $resolved_incident = $incidents[$incident_index];
+        self::add_audit_event(
+            $order,
+            'Incidencia de picking resuelta',
+            sprintf(
+                'Producto: %s. SKU: %s. Tipo de incidencia: %s. Tipo de resolucion: %s. Nota: %s. Usuario: %s.',
+                $resolved_incident['name'] ?? '-',
+                !empty($resolved_incident['sku']) ? $resolved_incident['sku'] : '-',
+                $this->get_warehouse_incident_type_label($resolved_incident['type'] ?? ''),
+                $this->get_warehouse_resolution_type_label($resolution_type),
+                $resolution_note,
+                $actor
+            ),
+            $user,
+            current_time('timestamp'),
+            $old_incidents,
+            $incidents
+        );
+
+        wp_send_json_success([
+            'message' => 'Incidencia resuelta correctamente.',
+            'order' => $this->format_order_row($order),
+        ]);
+    }
+
     private function reduce_stock_for_confirmation($order) {
         if ($order->get_meta('_rkm_stock_reduced', true) === 'yes') {
             self::add_audit_event(
@@ -855,8 +951,81 @@ class RKM_Operational_Orders {
             'audit_timeline' => $operational_history,
             'internal_notes' => $operational_history,
             'items' => $this->format_order_items($order),
+            'warehouse_picking_incidents' => $this->format_warehouse_picking_incidents($order),
             'is_editable' => in_array($status, self::get_editable_statuses(), true),
         ];
+    }
+
+    private function get_warehouse_picking_incidents($order) {
+        $incidents = $order->get_meta(self::WAREHOUSE_PICKING_INCIDENTS_META);
+
+        return is_array($incidents) ? array_values($incidents) : [];
+    }
+
+    private function format_warehouse_picking_incidents($order) {
+        $incidents = $this->get_warehouse_picking_incidents($order);
+        $formatted = [];
+
+        foreach ($incidents as $index => $incident) {
+            if (!is_array($incident)) {
+                continue;
+            }
+
+            $created_by = !empty($incident['created_by']) ? get_user_by('id', (int) $incident['created_by']) : null;
+            $resolved_by = !empty($incident['resolved_by']) ? get_user_by('id', (int) $incident['resolved_by']) : null;
+
+            $formatted[] = [
+                'index' => (int) $index,
+                'item_id' => isset($incident['item_id']) ? (int) $incident['item_id'] : 0,
+                'product_id' => isset($incident['product_id']) ? (int) $incident['product_id'] : 0,
+                'sku' => (string) ($incident['sku'] ?? ''),
+                'name' => (string) ($incident['name'] ?? ''),
+                'type' => (string) ($incident['type'] ?? 'other'),
+                'type_label' => $this->get_warehouse_incident_type_label($incident['type'] ?? ''),
+                'requested_quantity' => isset($incident['requested_quantity']) ? (float) $incident['requested_quantity'] : 0,
+                'available_quantity' => isset($incident['available_quantity']) ? (float) $incident['available_quantity'] : 0,
+                'note' => (string) ($incident['note'] ?? ''),
+                'status' => (string) ($incident['status'] ?? 'open'),
+                'status_label' => (($incident['status'] ?? '') === 'resolved') ? 'Resuelta' : 'Pendiente',
+                'created_at' => (string) ($incident['created_at'] ?? ''),
+                'created_at_label' => !empty($incident['created_at']) ? wp_date('d/m/Y H:i', strtotime((string) $incident['created_at'])) : '',
+                'created_by' => isset($incident['created_by']) ? (int) $incident['created_by'] : 0,
+                'created_by_label' => $created_by instanceof WP_User ? ($created_by->display_name ?: $created_by->user_login) : '',
+                'resolved_at' => (string) ($incident['resolved_at'] ?? ''),
+                'resolved_at_label' => !empty($incident['resolved_at']) ? wp_date('d/m/Y H:i', strtotime((string) $incident['resolved_at'])) : '',
+                'resolved_by' => isset($incident['resolved_by']) ? (int) $incident['resolved_by'] : 0,
+                'resolved_by_label' => $resolved_by instanceof WP_User ? ($resolved_by->display_name ?: $resolved_by->user_login) : '',
+                'resolution_type' => (string) ($incident['resolution_type'] ?? ''),
+                'resolution_type_label' => $this->get_warehouse_resolution_type_label($incident['resolution_type'] ?? ''),
+                'resolution_note' => (string) ($incident['resolution_note'] ?? ''),
+            ];
+        }
+
+        return $formatted;
+    }
+
+    private function get_warehouse_incident_type_label($type) {
+        $labels = [
+            'missing' => 'Producto faltante',
+            'insufficient_stock' => 'Cantidad insuficiente',
+            'damaged' => 'Producto dañado',
+            'wrong_item' => 'Producto equivocado',
+            'other' => 'Observacion general',
+        ];
+
+        return $labels[$type] ?? 'Observacion general';
+    }
+
+    private function get_warehouse_resolution_type_label($type) {
+        $labels = [
+            'wait_stock' => 'Esperar reposicion',
+            'approve_partial' => 'Aprobar envio parcial',
+            'remove_item' => 'Remover item del pedido',
+            'replace_item' => 'Reemplazar producto',
+            'no_action' => 'Sin accion operativa',
+        ];
+
+        return $labels[$type] ?? 'Sin accion operativa';
     }
 
     private function get_operational_status_label($status) {
@@ -1114,6 +1283,14 @@ class RKM_Operational_Orders {
 
         if (strpos($text, 'pedido enviado a almacen') !== false || strpos($text, 'enviado a almacen') !== false) {
             return 'Enviado a almacén';
+        }
+
+        if (strpos($text, 'incidencia de picking resuelta') !== false) {
+            return 'Incidencia de picking resuelta';
+        }
+
+        if (strpos($text, 'incidencia de picking') !== false) {
+            return 'Incidencia de picking registrada';
         }
 
         if (strpos($text, 'estado cambiado a listo para despacho') !== false || strpos($text, 'listo para despacho') !== false) {

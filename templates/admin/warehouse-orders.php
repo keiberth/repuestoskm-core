@@ -160,9 +160,16 @@ $warehouse_count = count(array_filter($orders, static function ($order) {
 
                 <section class="rkm-warehouse-modal__section">
                     <div class="rkm-warehouse-modal__section-head">
-                        <h3>Productos</h3>
+                        <h3>Checklist de picking</h3>
                     </div>
                     <div class="rkm-warehouse-modal__items" id="rkmWarehouseModalItems"></div>
+                </section>
+
+                <section class="rkm-warehouse-modal__section">
+                    <div class="rkm-warehouse-modal__section-head">
+                        <h3>Evidencia fotografica</h3>
+                    </div>
+                    <div class="rkm-warehouse-evidence" id="rkmWarehouseEvidence"></div>
                 </section>
 
                 <section class="rkm-warehouse-modal__section">
@@ -184,6 +191,10 @@ $warehouse_count = count(array_filter($orders, static function ($order) {
 
                 <?php if ($can_manage_warehouse) : ?>
                     <section class="rkm-warehouse-modal__actions">
+                        <span class="rkm-warehouse-progress-status" id="rkmWarehousePickingSaveStatus"></span>
+                        <button type="button" class="rkm-warehouse__btn rkm-warehouse__btn--secondary" id="rkmWarehouseModalSaveProgressBtn">
+                            Guardar avance
+                        </button>
                         <button type="button" class="rkm-warehouse__btn rkm-warehouse__btn--secondary" id="rkmWarehouseModalNoteBtn">
                             Agregar observacion
                         </button>

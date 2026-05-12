@@ -936,6 +936,136 @@ body.rkm-admin-order-modal-open {
     background: #f8fafc;
 }
 
+.rkm-admin-order-modal__warehouse-incidents {
+    display: grid;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 16px;
+    background: #f8fafc;
+}
+
+.rkm-admin-order-modal__warehouse-incident {
+    display: grid;
+    gap: 10px;
+    padding: 14px 16px;
+    border: 1px solid rgba(220, 38, 38, 0.22);
+    border-radius: 14px;
+    background: #fef2f2;
+}
+
+.rkm-admin-order-modal__warehouse-incident.is-resolved {
+    border-color: rgba(34, 197, 94, 0.2);
+    background: #f0fdf4;
+}
+
+.rkm-admin-order-modal__warehouse-incident-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.rkm-admin-order-modal__warehouse-incident-head strong {
+    display: block;
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.rkm-admin-order-modal__warehouse-incident-head small {
+    display: block;
+    margin-top: 4px;
+    color: #64748b;
+    font-size: 12px;
+}
+
+.rkm-admin-order-modal__warehouse-incident-head > span {
+    display: inline-flex;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: #fee2e2;
+    color: #991b1b;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.rkm-admin-order-modal__warehouse-incident.is-resolved .rkm-admin-order-modal__warehouse-incident-head > span {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.rkm-admin-order-modal__warehouse-incident-grid,
+.rkm-admin-order-modal__warehouse-resolution-form {
+    display: grid;
+    gap: 8px;
+}
+
+.rkm-admin-order-modal__warehouse-incident-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.rkm-admin-order-modal__warehouse-incident-grid span,
+.rkm-admin-order-modal__warehouse-resolution span {
+    color: #334155;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.rkm-admin-order-modal__warehouse-incident-grid em {
+    display: block;
+    margin-bottom: 3px;
+    color: #64748b;
+    font-size: 10px;
+    font-style: normal;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.rkm-admin-order-modal__warehouse-incident p {
+    margin: 0;
+    color: #475569;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.rkm-admin-order-modal__warehouse-resolution,
+.rkm-admin-order-modal__warehouse-resolution-form {
+    padding: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 12px;
+    background: #ffffff;
+}
+
+.rkm-admin-order-modal__warehouse-resolution-form {
+    grid-template-columns: minmax(160px, 220px) minmax(220px, 1fr) auto;
+    align-items: end;
+}
+
+.rkm-admin-order-modal__warehouse-resolution-form label {
+    display: grid;
+    gap: 6px;
+}
+
+.rkm-admin-order-modal__warehouse-resolution-form label > span {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.rkm-admin-order-modal__warehouse-resolution-form select,
+.rkm-admin-order-modal__warehouse-resolution-form textarea {
+    width: 100%;
+    min-height: 40px;
+    padding: 9px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #0f172a;
+    font: inherit;
+    font-size: 13px;
+}
+
 .rkm-admin-orders .rkm-admin-order-modal__item {
     grid-template-columns: minmax(0, 1fr) minmax(330px, 0.72fr);
     align-items: center;
@@ -1274,6 +1404,15 @@ body.rkm-admin-order-modal-open {
         max-width: 100%;
         margin-left: 0;
         text-align: left;
+    }
+
+    .rkm-admin-order-modal__warehouse-incident-grid,
+    .rkm-admin-order-modal__warehouse-resolution-form {
+        grid-template-columns: 1fr;
+    }
+
+    .rkm-admin-order-modal__warehouse-incident-head {
+        flex-direction: column;
     }
 
     .rkm-admin-orders .rkm-admin-order-modal__actions {

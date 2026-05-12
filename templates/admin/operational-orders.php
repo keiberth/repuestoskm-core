@@ -281,6 +281,13 @@ $pending_review_count = count(array_filter($orders, static function ($order) use
 
                 <section class="rkm-admin-order-modal__section">
                     <div class="rkm-admin-order-modal__section-head">
+                        <h3>Incidencias de almacén</h3>
+                    </div>
+                    <div class="rkm-admin-order-modal__warehouse-incidents" id="rkmOperationalOrderWarehouseIncidents"></div>
+                </section>
+
+                <section class="rkm-admin-order-modal__section">
+                    <div class="rkm-admin-order-modal__section-head">
                         <h3>Historial operativo</h3>
                     </div>
                     <div class="rkm-admin-order-modal__notes" id="rkmOperationalOrderNotes"></div>
@@ -312,6 +319,7 @@ $pending_review_count = count(array_filter($orders, static function ($order) use
         nonce: <?php echo wp_json_encode(wp_create_nonce(RKM_Operational_Orders::get_nonce_action())); ?>,
         can_confirm: <?php echo $can_confirm_orders ? 'true' : 'false'; ?>,
         can_edit: <?php echo $can_edit_orders ? 'true' : 'false'; ?>,
+        can_resolve_incidents: <?php echo (class_exists('RKM_Operational_Orders') && RKM_Operational_Orders::can_resolve_warehouse_incidents()) ? 'true' : 'false'; ?>,
         review_status: 'rkm-review',
         confirmable_statuses: <?php echo wp_json_encode($confirmable_statuses); ?>,
         editable_statuses: <?php echo wp_json_encode($editable_statuses); ?>,
