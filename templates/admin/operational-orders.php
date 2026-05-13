@@ -9,6 +9,7 @@ $orders = isset($data['operational_orders']) && is_array($data['operational_orde
 $current = $data['current_section'] ?? 'pedidos-operativos';
 $can_confirm_orders = !empty($data['can_confirm_orders']);
 $can_edit_orders = !empty($data['can_edit_orders']);
+$can_close_logistics = !empty($data['can_close_logistics']);
 $confirmable_statuses = class_exists('RKM_Operational_Orders') ? RKM_Operational_Orders::get_confirmable_statuses() : ['rkm-review', 'pending', 'en-revision'];
 $editable_statuses = class_exists('RKM_Operational_Orders') ? RKM_Operational_Orders::get_editable_statuses() : ['rkm-review', 'pending', 'en-revision'];
 $payment_terms = isset($data['payment_terms']) && is_array($data['payment_terms']) ? $data['payment_terms'] : [];
@@ -95,6 +96,10 @@ $pending_review_count = count(array_filter($orders, static function ($order) use
                         <span>Despachados</span>
                         <strong data-rkm-filter-count="dispatched">0</strong>
                     </button>
+                    <button type="button" class="rkm-admin-orders-filter rkm-admin-orders__filter" data-rkm-order-filter="completed">
+                        <span>Entregados</span>
+                        <strong data-rkm-filter-count="completed">0</strong>
+                    </button>
                 </div>
 
                 <div class="rkm-admin-orders-filter-empty" data-rkm-order-filter-empty hidden>
@@ -171,6 +176,28 @@ $pending_review_count = count(array_filter($orders, static function ($order) use
                                                         data-order-id="<?php echo esc_attr((string) $order['id']); ?>"
                                                     >
                                                         Enviar a almacen
+                                                    </button>
+                                                <?php endif; ?>
+
+                                                <?php if ($can_close_logistics && ($order['status'] ?? '') === 'rkm-ready') : ?>
+                                                    <button
+                                                        type="button"
+                                                        class="rkm-admin-orders__btn rkm-admin-orders__btn--dispatch rkm-admin-orders-dispatch-btn"
+                                                        data-rkm-mark-operational-dispatched
+                                                        data-order-id="<?php echo esc_attr((string) $order['id']); ?>"
+                                                    >
+                                                        Marcar despachado
+                                                    </button>
+                                                <?php endif; ?>
+
+                                                <?php if ($can_close_logistics && ($order['status'] ?? '') === 'rkm-dispatched') : ?>
+                                                    <button
+                                                        type="button"
+                                                        class="rkm-admin-orders__btn rkm-admin-orders__btn--deliver rkm-admin-orders-deliver-btn"
+                                                        data-rkm-mark-operational-delivered
+                                                        data-order-id="<?php echo esc_attr((string) $order['id']); ?>"
+                                                    >
+                                                        Confirmar entrega
                                                     </button>
                                                 <?php endif; ?>
                                             </div>
@@ -281,6 +308,20 @@ $pending_review_count = count(array_filter($orders, static function ($order) use
 
                 <section class="rkm-admin-order-modal__section">
                     <div class="rkm-admin-order-modal__section-head">
+                        <h3>Estado logistico</h3>
+                    </div>
+                    <div class="rkm-admin-order-modal__logistics" id="rkmOperationalOrderLogistics"></div>
+                </section>
+
+                <section class="rkm-admin-order-modal__section">
+                    <div class="rkm-admin-order-modal__section-head">
+                        <h3>Evidencia de preparacion</h3>
+                    </div>
+                    <div class="rkm-admin-order-modal__warehouse-evidence" id="rkmOperationalOrderWarehouseEvidence"></div>
+                </section>
+
+                <section class="rkm-admin-order-modal__section">
+                    <div class="rkm-admin-order-modal__section-head">
                         <h3>Incidencias de almacén</h3>
                     </div>
                     <div class="rkm-admin-order-modal__warehouse-incidents" id="rkmOperationalOrderWarehouseIncidents"></div>
@@ -293,19 +334,29 @@ $pending_review_count = count(array_filter($orders, static function ($order) use
                     <div class="rkm-admin-order-modal__notes" id="rkmOperationalOrderNotes"></div>
                 </section>
 
-                <?php if ($can_confirm_orders) : ?>
+                <?php if ($can_confirm_orders || $can_close_logistics) : ?>
                     <section class="rkm-admin-order-modal__actions" id="rkmOperationalOrderActions">
                         <?php if ($can_edit_orders) : ?>
                             <button type="button" class="rkm-admin-orders__btn rkm-admin-orders__btn--secondary rkm-admin-orders-save-btn" id="rkmOperationalOrderSaveBtn">
                                 Guardar cambios
                             </button>
                         <?php endif; ?>
-                        <button type="button" class="rkm-admin-orders__btn rkm-admin-orders__btn--primary rkm-admin-orders-confirm-btn" id="rkmOperationalOrderConfirmBtn">
-                            Confirmar pedido
-                        </button>
-                        <button type="button" class="rkm-admin-orders__btn rkm-admin-orders__btn--warehouse rkm-admin-orders-warehouse-btn" id="rkmOperationalOrderWarehouseBtn">
-                            Enviar a almacen
-                        </button>
+                        <?php if ($can_confirm_orders) : ?>
+                            <button type="button" class="rkm-admin-orders__btn rkm-admin-orders__btn--primary rkm-admin-orders-confirm-btn" id="rkmOperationalOrderConfirmBtn">
+                                Confirmar pedido
+                            </button>
+                            <button type="button" class="rkm-admin-orders__btn rkm-admin-orders__btn--warehouse rkm-admin-orders-warehouse-btn" id="rkmOperationalOrderWarehouseBtn">
+                                Enviar a almacen
+                            </button>
+                        <?php endif; ?>
+                        <?php if ($can_close_logistics) : ?>
+                            <button type="button" class="rkm-admin-orders__btn rkm-admin-orders__btn--dispatch rkm-admin-orders-dispatch-btn" id="rkmOperationalOrderDispatchBtn">
+                                Marcar despachado
+                            </button>
+                            <button type="button" class="rkm-admin-orders__btn rkm-admin-orders__btn--deliver rkm-admin-orders-deliver-btn" id="rkmOperationalOrderDeliverBtn">
+                                Confirmar entrega
+                            </button>
+                        <?php endif; ?>
                     </section>
                 <?php endif; ?>
             </div>
@@ -319,12 +370,16 @@ $pending_review_count = count(array_filter($orders, static function ($order) use
         nonce: <?php echo wp_json_encode(wp_create_nonce(RKM_Operational_Orders::get_nonce_action())); ?>,
         can_confirm: <?php echo $can_confirm_orders ? 'true' : 'false'; ?>,
         can_edit: <?php echo $can_edit_orders ? 'true' : 'false'; ?>,
+        can_close_logistics: <?php echo $can_close_logistics ? 'true' : 'false'; ?>,
         can_resolve_incidents: <?php echo (class_exists('RKM_Operational_Orders') && RKM_Operational_Orders::can_resolve_warehouse_incidents()) ? 'true' : 'false'; ?>,
         review_status: 'rkm-review',
         confirmable_statuses: <?php echo wp_json_encode($confirmable_statuses); ?>,
         editable_statuses: <?php echo wp_json_encode($editable_statuses); ?>,
         confirmed_status: 'rkm-confirmed',
         warehouse_status: 'rkm-warehouse',
+        ready_status: 'rkm-ready',
+        dispatched_status: 'rkm-dispatched',
+        completed_status: 'completed',
         currency_symbol: <?php echo wp_json_encode(function_exists('get_woocommerce_currency_symbol') ? get_woocommerce_currency_symbol() : '$'); ?>,
         currency_decimals: <?php echo wp_json_encode(function_exists('wc_get_price_decimals') ? wc_get_price_decimals() : 2); ?>,
         cash_discount_percent: <?php echo wp_json_encode(isset($payment_terms_settings['cash_discount_percent']) ? (float) $payment_terms_settings['cash_discount_percent'] : 0); ?>,

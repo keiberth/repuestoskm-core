@@ -733,7 +733,7 @@ class RKM_Warehouse {
         return $this->validate_evidence_files($files, self::EVIDENCE_MIN_FILES);
     }
 
-    private function validate_ready_for_dispatch($order) {
+    public function validate_ready_for_dispatch($order) {
         if (!$order || !method_exists($order, 'get_items')) {
             return new WP_Error('invalid_order', 'Pedido no encontrado.');
         }
@@ -829,6 +829,91 @@ class RKM_Warehouse {
             ],
             'due_label' => wp_date('d/m/Y', $due_timestamp),
         ];
+    }
+
+    public function dispatch_order($order, $origin = 'Almacen') {
+        if (!$order || !method_exists($order, 'get_status')) {
+            return new WP_Error('invalid_order', 'Pedido no encontrado.');
+        }
+
+        if ($order->get_status() !== 'rkm-ready') {
+            return new WP_Error('invalid_status', 'Solo se pueden despachar pedidos listos.');
+        }
+
+        $dispatch_validation = $this->validate_ready_for_dispatch($order);
+        if (is_wp_error($dispatch_validation)) {
+            return $dispatch_validation;
+        }
+
+        $user = wp_get_current_user();
+        $user_id = $user instanceof WP_User ? (int) $user->ID : 0;
+        $actor = $user instanceof WP_User && $user->display_name !== '' ? $user->display_name : 'Sistema';
+        $dispatched_at = current_time('mysql');
+        $origin = sanitize_text_field((string) $origin);
+        $origin = $origin !== '' ? $origin : 'Almacen';
+
+        $order->update_meta_data('_rkm_dispatched_at', $dispatched_at);
+        $order->update_meta_data('_rkm_dispatched_by', $user_id);
+        $order->save();
+
+        RKM_Order_Audit_Log::add_event(
+            $order->get_id(),
+            'Pedido despachado',
+            'Pedido despachado',
+            sprintf('Pedido despachado por %s desde %s el %s.', $actor, $origin, $this->format_datetime_label($dispatched_at)),
+            'rkm-ready',
+            'rkm-dispatched'
+        );
+
+        $order->update_status('rkm-dispatched', '');
+
+        return $order;
+    }
+
+    public function deliver_order($order, $origin = 'Almacen') {
+        if (!$order || !method_exists($order, 'get_status')) {
+            return new WP_Error('invalid_order', 'Pedido no encontrado.');
+        }
+
+        if ($order->get_status() !== 'rkm-dispatched') {
+            return new WP_Error('invalid_status', 'Solo se pueden entregar pedidos despachados.');
+        }
+
+        $user = wp_get_current_user();
+        $user_id = $user instanceof WP_User ? (int) $user->ID : 0;
+        $actor = $user instanceof WP_User && $user->display_name !== '' ? $user->display_name : 'Sistema';
+        $delivered_at = current_time('mysql');
+        $origin = sanitize_text_field((string) $origin);
+        $origin = $origin !== '' ? $origin : 'Almacen';
+        $credit_result = $this->start_credit_term_if_needed($order, $delivered_at, $user_id);
+
+        $order->update_meta_data('_rkm_delivered_at', $delivered_at);
+        $order->update_meta_data('_rkm_delivered_by', $user_id);
+        $order->save();
+
+        RKM_Order_Audit_Log::add_event(
+            $order->get_id(),
+            'Pedido entregado',
+            'Pedido entregado',
+            sprintf('Pedido entregado por %s desde %s el %s.', $actor, $origin, $this->format_datetime_label($delivered_at)),
+            'rkm-dispatched',
+            'completed'
+        );
+
+        if (is_array($credit_result)) {
+            RKM_Order_Audit_Log::add_event(
+                $order->get_id(),
+                'Inicio de credito',
+                'Inicio de credito',
+                sprintf('Se inicio plazo de credito de %d dias. Vencimiento: %s.', self::CREDIT_DAYS, $credit_result['due_label']),
+                $credit_result['old'],
+                $credit_result['new']
+            );
+        }
+
+        $order->update_status('completed', '');
+
+        return $order;
     }
 
     public function ajax_add_note() {
@@ -941,7 +1026,13 @@ class RKM_Warehouse {
                 $order_id,
                 'Evidencia de preparación cargada',
                 'Evidencia de preparación cargada',
-                sprintf('Se cargaron %d fotos como evidencia de preparación.', count($evidence_result['uploaded_attachment_ids'])),
+                sprintf(
+                    'Evidencia de preparacion cargada por %s. Fotos cargadas: %d. Attachments: %s. Fecha/hora: %s.',
+                    $actor,
+                    count($evidence_result['uploaded_attachment_ids']),
+                    implode(', ', array_map('strval', $evidence_result['uploaded_attachment_ids'])),
+                    current_time('mysql')
+                ),
                 null,
                 $evidence_result['all_attachment_ids']
             );
@@ -1114,7 +1205,13 @@ class RKM_Warehouse {
                 $order_id,
                 'Evidencia de preparación cargada',
                 'Evidencia de preparación cargada',
-                sprintf('Se cargaron %d fotos como evidencia de preparación.', count($uploaded_attachment_ids)),
+                sprintf(
+                    'Evidencia de preparacion cargada por %s. Fotos cargadas: %d. Attachments: %s. Fecha/hora: %s.',
+                    $actor,
+                    count($uploaded_attachment_ids),
+                    implode(', ', array_map('strval', $uploaded_attachment_ids)),
+                    current_time('mysql')
+                ),
                 null,
                 $attachment_ids
             );
@@ -1173,34 +1270,15 @@ class RKM_Warehouse {
             wp_send_json_error(['message' => 'Solo se pueden despachar pedidos listos.'], 409);
         }
 
-        $dispatch_validation = $this->validate_ready_for_dispatch($order);
-        if (is_wp_error($dispatch_validation)) {
-            wp_send_json_error(['message' => $dispatch_validation->get_error_message()], 409);
+        $result = $this->dispatch_order($order, 'Almacen');
+
+        if (is_wp_error($result)) {
+            wp_send_json_error(['message' => $result->get_error_message()], 409);
         }
-
-        $user = wp_get_current_user();
-        $user_id = $user instanceof WP_User ? (int) $user->ID : 0;
-        $actor = $user instanceof WP_User && $user->display_name !== '' ? $user->display_name : 'Sistema';
-        $dispatched_at = current_time('mysql');
-
-        $order->update_meta_data('_rkm_dispatched_at', $dispatched_at);
-        $order->update_meta_data('_rkm_dispatched_by', $user_id);
-        $order->save();
-
-        RKM_Order_Audit_Log::add_event(
-            $order_id,
-            'Pedido despachado',
-            'Pedido despachado',
-            sprintf('Pedido despachado por %s el %s.', $actor, $this->format_datetime_label($dispatched_at)),
-            'rkm-ready',
-            'rkm-dispatched'
-        );
-
-        $order->update_status('rkm-dispatched', '');
 
         wp_send_json_success([
             'message' => 'Pedido marcado como despachado.',
-            'order' => $this->format_order_row($order),
+            'order' => $this->format_order_row($result),
         ]);
     }
 
@@ -1233,41 +1311,15 @@ class RKM_Warehouse {
             wp_send_json_error(['message' => 'Solo se pueden entregar pedidos despachados.'], 409);
         }
 
-        $user = wp_get_current_user();
-        $user_id = $user instanceof WP_User ? (int) $user->ID : 0;
-        $actor = $user instanceof WP_User && $user->display_name !== '' ? $user->display_name : 'Sistema';
-        $delivered_at = current_time('mysql');
-        $credit_result = $this->start_credit_term_if_needed($order, $delivered_at, $user_id);
+        $result = $this->deliver_order($order, 'Almacen');
 
-        $order->update_meta_data('_rkm_delivered_at', $delivered_at);
-        $order->update_meta_data('_rkm_delivered_by', $user_id);
-        $order->save();
-
-        RKM_Order_Audit_Log::add_event(
-            $order_id,
-            'Pedido entregado',
-            'Pedido entregado',
-            sprintf('Pedido entregado por %s el %s.', $actor, $this->format_datetime_label($delivered_at)),
-            'rkm-dispatched',
-            'completed'
-        );
-
-        if (is_array($credit_result)) {
-            RKM_Order_Audit_Log::add_event(
-                $order_id,
-                'Inicio de credito',
-                'Inicio de credito',
-                sprintf('Se inicio plazo de credito de %d dias. Vencimiento: %s.', self::CREDIT_DAYS, $credit_result['due_label']),
-                $credit_result['old'],
-                $credit_result['new']
-            );
+        if (is_wp_error($result)) {
+            wp_send_json_error(['message' => $result->get_error_message()], 409);
         }
-
-        $order->update_status('completed', '');
 
         wp_send_json_success([
             'message' => 'Pedido marcado como entregado.',
-            'order' => $this->format_order_row($order),
+            'order' => $this->format_order_row($result),
         ]);
     }
 }

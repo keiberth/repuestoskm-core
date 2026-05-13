@@ -324,6 +324,12 @@
     color: #5b21b6;
 }
 
+.rkm-admin-orders-status--completed {
+    border-color: #bbf7d0;
+    background: #dcfce7;
+    color: #166534;
+}
+
 .rkm-admin-orders-actions {
     display: flex;
     flex-wrap: wrap;
@@ -407,6 +413,30 @@
 }
 
 .rkm-admin-orders-page .rkm-admin-orders__btn--warehouse:hover {
+    border-color: rgba(21, 128, 61, 0.58);
+    background: #15803d;
+    color: #ffffff;
+}
+
+.rkm-admin-orders-page .rkm-admin-orders__btn--dispatch {
+    border-color: rgba(14, 165, 233, 0.42);
+    background: #0284c7;
+    color: #ffffff;
+}
+
+.rkm-admin-orders-page .rkm-admin-orders__btn--dispatch:hover {
+    border-color: rgba(3, 105, 161, 0.58);
+    background: #0369a1;
+    color: #ffffff;
+}
+
+.rkm-admin-orders-page .rkm-admin-orders__btn--deliver {
+    border-color: rgba(22, 163, 74, 0.38);
+    background: #16a34a;
+    color: #ffffff;
+}
+
+.rkm-admin-orders-page .rkm-admin-orders__btn--deliver:hover {
     border-color: rgba(21, 128, 61, 0.58);
     background: #15803d;
     color: #ffffff;
@@ -597,6 +627,39 @@
     border-bottom: 1px solid rgba(226, 232, 240, 0.86);
 }
 
+.rkm-admin-order-modal__item-product {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+}
+
+.rkm-admin-order-modal__item-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 58px;
+    height: 58px;
+    overflow: hidden;
+    border: 1px solid rgba(203, 213, 225, 0.88);
+    border-radius: 12px;
+    background: #f8fafc;
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.rkm-admin-order-modal__item-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.rkm-admin-order-modal__item-image.is-placeholder {
+    background: #eff6ff;
+}
+
 .rkm-admin-order-modal__item:last-child {
     border-bottom: 0;
 }
@@ -655,6 +718,124 @@
     border: 1px solid rgba(226, 232, 240, 0.96);
     border-radius: 14px;
     background: #f8fafc;
+}
+
+.rkm-admin-order-modal__logistics {
+    padding: 16px;
+}
+
+.rkm-admin-order-modal__logistics-card {
+    display: grid;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid rgba(203, 213, 225, 0.88);
+    border-radius: 14px;
+    background: #ffffff;
+}
+
+.rkm-admin-order-modal__logistics-card div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.rkm-admin-order-modal__logistics-card span:not(.rkm-admin-orders-status) {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.rkm-admin-order-modal__logistics-card span strong {
+    margin-left: 4px;
+    color: #0f172a;
+}
+
+.rkm-admin-order-modal__logistics-card p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.rkm-admin-order-modal__warehouse-evidence {
+    padding: 16px;
+}
+
+.rkm-admin-order-modal__warehouse-evidence-summary {
+    margin-bottom: 10px;
+    color: #0f172a;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.rkm-admin-order-modal__warehouse-evidence-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(126px, 1fr));
+    gap: 10px;
+}
+
+.rkm-admin-order-modal__warehouse-evidence-item {
+    display: block;
+    overflow: hidden;
+    border: 1px solid rgba(203, 213, 225, 0.88);
+    border-radius: 12px;
+    background: #ffffff;
+    color: #475569;
+}
+
+.rkm-admin-order-modal__warehouse-evidence-item:hover {
+    border-color: rgba(37, 99, 235, 0.38);
+}
+
+.rkm-admin-order-modal__warehouse-evidence-item a {
+    color: #1d4ed8;
+    text-decoration: none;
+}
+
+.rkm-admin-order-modal__warehouse-evidence-item a:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+}
+
+.rkm-admin-order-modal__warehouse-evidence-item img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    background: #f8fafc;
+}
+
+.rkm-admin-order-modal__warehouse-evidence-item div {
+    display: grid;
+    gap: 4px;
+    padding: 8px 10px 10px;
+}
+
+.rkm-admin-order-modal__warehouse-evidence-item strong {
+    display: block;
+    overflow: hidden;
+    color: #0f172a;
+    font-size: 12px;
+    font-weight: 900;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.rkm-admin-order-modal__warehouse-evidence-item span,
+.rkm-admin-order-modal__warehouse-evidence-item div a {
+    display: block;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.rkm-admin-order-modal__warehouse-evidence-item div a {
+    color: #1d4ed8;
 }
 
 body.rkm-admin-order-modal-open {
@@ -1348,6 +1529,10 @@ body.rkm-admin-order-modal-open {
     .rkm-admin-order-modal__grid,
     .rkm-admin-order-modal__item {
         grid-template-columns: 1fr;
+    }
+
+    .rkm-admin-order-modal__item-product {
+        grid-template-columns: 50px minmax(0, 1fr);
     }
 
     .rkm-admin-order-modal__item-values {

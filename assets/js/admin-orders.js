@@ -31,6 +31,8 @@
         var total = document.getElementById("rkmOperationalOrderTotal");
         var totalHint = document.getElementById("rkmOperationalOrderTotalHint");
         var items = document.getElementById("rkmOperationalOrderItems");
+        var logistics = document.getElementById("rkmOperationalOrderLogistics");
+        var warehouseEvidence = document.getElementById("rkmOperationalOrderWarehouseEvidence");
         var warehouseIncidents = document.getElementById("rkmOperationalOrderWarehouseIncidents");
         var notes = document.getElementById("rkmOperationalOrderNotes");
         var editPanel = document.getElementById("rkmOperationalOrderEditPanel");
@@ -44,6 +46,8 @@
         var modalSaveButton = document.getElementById("rkmOperationalOrderSaveBtn");
         var modalConfirmButton = document.getElementById("rkmOperationalOrderConfirmBtn");
         var modalWarehouseButton = document.getElementById("rkmOperationalOrderWarehouseBtn");
+        var modalDispatchButton = document.getElementById("rkmOperationalOrderDispatchBtn");
+        var modalDeliverButton = document.getElementById("rkmOperationalOrderDeliverBtn");
         var reviewCount = document.querySelector("[data-rkm-review-count]");
         var filterButtons = document.querySelectorAll("[data-rkm-order-filter]");
         var filterEmpty = document.querySelector("[data-rkm-order-filter-empty]");
@@ -282,6 +286,11 @@
                 var sku = item.sku ? '<small>SKU: ' + escapeHtml(item.sku) + '</small>' : "";
                 var max = item.max_quantity !== null && item.max_quantity !== undefined ? Number(item.max_quantity) : null;
                 var stock = item.stock_label ? '<small>' + escapeHtml(item.stock_label) + '</small>' : "";
+                var imageUrl = item.thumbnail_url || item.image_url || "";
+                var imageAlt = item.image_alt || item.name || "Producto";
+                var imageHtml = imageUrl
+                    ? '<img src="' + escapeHtml(imageUrl) + '" alt="' + escapeHtml(imageAlt) + '">'
+                    : '<span>RKM</span>';
                 var quantityControl = editable
                     ? [
                         '<input type="number"',
@@ -298,10 +307,15 @@
 
                 return [
                     '<div class="rkm-admin-order-modal__item">',
-                        '<div>',
-                            '<strong>' + escapeHtml(item.name) + '</strong>',
-                            sku,
-                            stock,
+                        '<div class="rkm-admin-order-modal__item-product">',
+                            '<div class="rkm-admin-order-modal__item-image ' + (imageUrl ? 'has-image' : 'is-placeholder') + '">',
+                                imageHtml,
+                            '</div>',
+                            '<div>',
+                                '<strong>' + escapeHtml(item.name) + '</strong>',
+                                sku,
+                                stock,
+                            '</div>',
                         '</div>',
                         '<div class="rkm-admin-order-modal__item-values">',
                             '<span><em>Cantidad</em>' + quantityControl + '</span>',
@@ -333,6 +347,78 @@
                     updatePaymentFormState();
                 });
             });
+        }
+
+        function renderLogistics(order) {
+            if (!logistics) {
+                return;
+            }
+
+            var context = order && order.logistics_context ? order.logistics_context : {};
+            var statusValue = context.status || (order && order.status) || "";
+            var statusLabel = context.status_label || order.logistics_status_label || order.status_label || "Estado logistico";
+            var rows = [];
+
+            if (context.dispatched_label || order.dispatched_label) {
+                rows.push('<span>Despacho: <strong>' + escapeHtml(context.dispatched_label || order.dispatched_label) + '</strong></span>');
+            }
+
+            if (context.delivered_label || order.delivered_label) {
+                rows.push('<span>Entrega: <strong>' + escapeHtml(context.delivered_label || order.delivered_label) + '</strong></span>');
+            }
+
+            if (order.credit_context && order.credit_context.has_credit && order.credit_context.due_label) {
+                rows.push('<span>Credito vence: <strong>' + escapeHtml(order.credit_context.due_label) + '</strong></span>');
+            }
+
+            logistics.innerHTML = [
+                '<div class="rkm-admin-order-modal__logistics-card">',
+                    '<span class="rkm-admin-orders-status rkm-admin-orders-status--' + escapeHtml(statusValue) + '">' + escapeHtml(statusLabel) + '</span>',
+                    rows.length ? '<div>' + rows.join("") + '</div>' : '<p>Sin fechas logisticas registradas todavia.</p>',
+                '</div>'
+            ].join("");
+        }
+
+        function renderWarehouseEvidence(order) {
+            if (!warehouseEvidence) {
+                return;
+            }
+
+            var evidence = Array.isArray(order && order.warehouse_evidence) ? order.warehouse_evidence : [];
+
+            if (!evidence.length) {
+                warehouseEvidence.innerHTML = '<p class="rkm-admin-order-modal__empty">Sin evidencia de preparación cargada.</p>';
+                return;
+            }
+
+            warehouseEvidence.innerHTML = [
+                '<div class="rkm-admin-order-modal__warehouse-evidence-summary">',
+                    '<strong>' + evidence.length + ' foto' + (evidence.length === 1 ? '' : 's') + ' de evidencia</strong>',
+                '</div>',
+                '<div class="rkm-admin-order-modal__warehouse-evidence-grid">',
+                    evidence.map(function (photo) {
+                        var url = photo.url || photo.thumbnail || photo.thumbnail_url || "";
+                        var thumb = photo.thumbnail || photo.thumbnail_url || photo.url || "";
+                        var label = photo.filename || ("Evidencia #" + (photo.id || ""));
+                        var uploadedAt = photo.uploaded_at_label || photo.uploaded_at || "";
+                        var uploadedBy = photo.uploaded_by_label || (photo.uploaded_by ? ("Usuario #" + photo.uploaded_by) : "Sistema");
+
+                        return [
+                            '<article class="rkm-admin-order-modal__warehouse-evidence-item">',
+                                '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">',
+                                    '<img src="' + escapeHtml(thumb) + '" alt="' + escapeHtml(label) + '">',
+                                '</a>',
+                                '<div>',
+                                    '<strong>' + escapeHtml(label) + '</strong>',
+                                    '<span>' + escapeHtml(uploadedAt || "Sin fecha registrada") + '</span>',
+                                    '<span>' + escapeHtml(uploadedBy) + '</span>',
+                                    '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">Ver imagen</a>',
+                                '</div>',
+                            '</article>'
+                        ].join("");
+                    }).join(""),
+                '</div>'
+            ].join("");
         }
 
         function renderWarehouseIncidents(order) {
@@ -464,6 +550,22 @@
             );
         }
 
+        function isDispatchable(order) {
+            return Boolean(
+                window.rkmOperationalOrders.can_close_logistics
+                && order
+                && order.status === (window.rkmOperationalOrders.ready_status || "rkm-ready")
+            );
+        }
+
+        function isDeliverable(order) {
+            return Boolean(
+                window.rkmOperationalOrders.can_close_logistics
+                && order
+                && order.status === (window.rkmOperationalOrders.dispatched_status || "rkm-dispatched")
+            );
+        }
+
         function setButtonLoading(button, isLoading, loadingLabel) {
             if (!button) {
                 return;
@@ -514,8 +616,18 @@
             return row ? row.querySelector("[data-rkm-send-operational-order-warehouse]") : null;
         }
 
+        function getRowDispatchButton(orderId) {
+            var row = getRow(orderId);
+            return row ? row.querySelector("[data-rkm-mark-operational-dispatched]") : null;
+        }
+
+        function getRowDeliverButton(orderId) {
+            var row = getRow(orderId);
+            return row ? row.querySelector("[data-rkm-mark-operational-delivered]") : null;
+        }
+
         function getFilterStatuses(filterKey) {
-            var allStatuses = ["rkm-review", "pending", "en-revision", "rkm-confirmed", "rkm-warehouse", "rkm-ready", "rkm-dispatched", "processing"];
+            var allStatuses = ["rkm-review", "pending", "en-revision", "rkm-confirmed", "rkm-warehouse", "rkm-ready", "rkm-dispatched", "completed", "processing"];
 
             return {
                 all: allStatuses,
@@ -523,7 +635,8 @@
                 confirmed: ["rkm-confirmed"],
                 warehouse: ["rkm-warehouse"],
                 ready: ["rkm-ready"],
-                dispatched: ["rkm-dispatched"]
+                dispatched: ["rkm-dispatched"],
+                completed: ["completed"]
             }[filterKey] || allStatuses;
         }
 
@@ -534,7 +647,8 @@
                 confirmed: 0,
                 warehouse: 0,
                 ready: 0,
-                dispatched: 0
+                dispatched: 0,
+                completed: 0
             };
 
             orders.forEach(function (order) {
@@ -557,6 +671,9 @@
                 }
                 if (getFilterStatuses("dispatched").indexOf(status) !== -1) {
                     counts.dispatched += 1;
+                }
+                if (getFilterStatuses("completed").indexOf(status) !== -1) {
+                    counts.completed += 1;
                 }
             });
 
@@ -618,6 +735,28 @@
             });
         }
 
+        function bindDispatchButton(button) {
+            if (!button || button.getAttribute("data-rkm-bound") === "true") {
+                return;
+            }
+
+            button.setAttribute("data-rkm-bound", "true");
+            button.addEventListener("click", function () {
+                markDispatched(button.getAttribute("data-order-id"), button);
+            });
+        }
+
+        function bindDeliverButton(button) {
+            if (!button || button.getAttribute("data-rkm-bound") === "true") {
+                return;
+            }
+
+            button.setAttribute("data-rkm-bound", "true");
+            button.addEventListener("click", function () {
+                markDelivered(button.getAttribute("data-order-id"), button);
+            });
+        }
+
         function ensureRowWarehouseButton(order) {
             var row = getRow(order.id);
             var actions = row ? row.querySelector(".rkm-admin-orders-actions") : null;
@@ -634,6 +773,42 @@
             button.textContent = "Enviar a almacen";
             actions.appendChild(button);
             bindWarehouseButton(button);
+        }
+
+        function ensureRowDispatchButton(order) {
+            var row = getRow(order.id);
+            var actions = row ? row.querySelector(".rkm-admin-orders-actions") : null;
+
+            if (!actions || getRowDispatchButton(order.id) || !isDispatchable(order)) {
+                return;
+            }
+
+            var button = document.createElement("button");
+            button.type = "button";
+            button.className = "rkm-admin-orders__btn rkm-admin-orders__btn--dispatch rkm-admin-orders-dispatch-btn";
+            button.setAttribute("data-rkm-mark-operational-dispatched", "true");
+            button.setAttribute("data-order-id", order.id);
+            button.textContent = "Marcar despachado";
+            actions.appendChild(button);
+            bindDispatchButton(button);
+        }
+
+        function ensureRowDeliverButton(order) {
+            var row = getRow(order.id);
+            var actions = row ? row.querySelector(".rkm-admin-orders-actions") : null;
+
+            if (!actions || getRowDeliverButton(order.id) || !isDeliverable(order)) {
+                return;
+            }
+
+            var button = document.createElement("button");
+            button.type = "button";
+            button.className = "rkm-admin-orders__btn rkm-admin-orders__btn--deliver rkm-admin-orders-deliver-btn";
+            button.setAttribute("data-rkm-mark-operational-delivered", "true");
+            button.setAttribute("data-order-id", order.id);
+            button.textContent = "Confirmar entrega";
+            actions.appendChild(button);
+            bindDeliverButton(button);
         }
 
         function refreshStatusBadge(order) {
@@ -676,6 +851,8 @@
         function refreshConfirmControls(order) {
             var rowButton = getRowConfirmButton(order.id);
             var rowWarehouseButton = getRowWarehouseButton(order.id);
+            var rowDispatchButton = getRowDispatchButton(order.id);
+            var rowDeliverButton = getRowDeliverButton(order.id);
 
             if (rowButton && !isConfirmable(order)) {
                 rowButton.remove();
@@ -685,7 +862,17 @@
                 rowWarehouseButton.remove();
             }
 
+            if (rowDispatchButton && !isDispatchable(order)) {
+                rowDispatchButton.remove();
+            }
+
+            if (rowDeliverButton && !isDeliverable(order)) {
+                rowDeliverButton.remove();
+            }
+
             ensureRowWarehouseButton(order);
+            ensureRowDispatchButton(order);
+            ensureRowDeliverButton(order);
 
             if (modalConfirmButton) {
                 modalConfirmButton.hidden = !isConfirmable(order);
@@ -698,6 +885,20 @@
                 modalWarehouseButton.setAttribute("data-order-id", order.id || "");
                 modalWarehouseButton.disabled = !isWarehouseSendable(order);
                 modalWarehouseButton.title = isWarehouseSendable(order) ? "" : "Confirma el pedido primero.";
+            }
+
+            if (modalDispatchButton) {
+                modalDispatchButton.hidden = !isDispatchable(order);
+                modalDispatchButton.setAttribute("data-order-id", order.id || "");
+                modalDispatchButton.disabled = !isDispatchable(order);
+                modalDispatchButton.title = isDispatchable(order) ? "" : "El pedido debe estar preparado y validado por almacen.";
+            }
+
+            if (modalDeliverButton) {
+                modalDeliverButton.hidden = !isDeliverable(order);
+                modalDeliverButton.setAttribute("data-order-id", order.id || "");
+                modalDeliverButton.disabled = !isDeliverable(order);
+                modalDeliverButton.title = isDeliverable(order) ? "" : "El pedido debe estar despachado.";
             }
 
             if (modalSaveButton) {
@@ -752,6 +953,8 @@
                 renderPaymentSummary(order);
                 total.textContent = decodeHtml(order.total || "-");
                 renderItems(order);
+                renderLogistics(order);
+                renderWarehouseEvidence(order);
                 renderWarehouseIncidents(order);
                 if (isEditable(order)) {
                     hydratePaymentForm(order);
@@ -884,6 +1087,104 @@
                 })
                 .catch(function (error) {
                     showNotice(error.message || "No se pudo enviar el pedido a almacen.", "error");
+                })
+                .finally(function () {
+                    buttons.forEach(function (button) {
+                        setButtonLoading(button, false);
+                    });
+                });
+        }
+
+        function markDispatched(orderId, sourceButton) {
+            var order = ordersById[String(orderId)];
+
+            if (!isDispatchable(order)) {
+                showNotice("Solo se pueden despachar pedidos preparados.", "error");
+                return;
+            }
+
+            var modalButtonVisible = modalDispatchButton && String(modalDispatchButton.getAttribute("data-order-id")) === String(orderId);
+            var rowButton = getRowDispatchButton(orderId);
+            var buttons = [sourceButton, rowButton, modalButtonVisible ? modalDispatchButton : null].filter(function (button, index, list) {
+                return button && list.indexOf(button) === index;
+            });
+            var formData = new FormData();
+
+            formData.append("action", "rkm_mark_operational_order_dispatched");
+            formData.append("order_id", orderId);
+            formData.append("nonce", window.rkmOperationalOrders.nonce || "");
+
+            buttons.forEach(function (button) {
+                setButtonLoading(button, true, "Despachando...");
+            });
+
+            fetch(window.rkmOperationalOrders.ajax_url, {
+                method: "POST",
+                body: formData,
+                credentials: "same-origin"
+            })
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (payload) {
+                    if (!payload || !payload.success) {
+                        throw new Error(payload && payload.data && payload.data.message ? payload.data.message : "No se pudo despachar el pedido.");
+                    }
+
+                    applyUpdatedOrder(payload.data.order);
+                    showNotice(payload.data.message || "Pedido marcado como despachado.", "success");
+                })
+                .catch(function (error) {
+                    showNotice(error.message || "No se pudo despachar el pedido.", "error");
+                })
+                .finally(function () {
+                    buttons.forEach(function (button) {
+                        setButtonLoading(button, false);
+                    });
+                });
+        }
+
+        function markDelivered(orderId, sourceButton) {
+            var order = ordersById[String(orderId)];
+
+            if (!isDeliverable(order)) {
+                showNotice("Solo se pueden entregar pedidos despachados.", "error");
+                return;
+            }
+
+            var modalButtonVisible = modalDeliverButton && String(modalDeliverButton.getAttribute("data-order-id")) === String(orderId);
+            var rowButton = getRowDeliverButton(orderId);
+            var buttons = [sourceButton, rowButton, modalButtonVisible ? modalDeliverButton : null].filter(function (button, index, list) {
+                return button && list.indexOf(button) === index;
+            });
+            var formData = new FormData();
+
+            formData.append("action", "rkm_mark_operational_order_delivered");
+            formData.append("order_id", orderId);
+            formData.append("nonce", window.rkmOperationalOrders.nonce || "");
+
+            buttons.forEach(function (button) {
+                setButtonLoading(button, true, "Entregando...");
+            });
+
+            fetch(window.rkmOperationalOrders.ajax_url, {
+                method: "POST",
+                body: formData,
+                credentials: "same-origin"
+            })
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (payload) {
+                    if (!payload || !payload.success) {
+                        throw new Error(payload && payload.data && payload.data.message ? payload.data.message : "No se pudo confirmar la entrega.");
+                    }
+
+                    applyUpdatedOrder(payload.data.order);
+                    showNotice(payload.data.message || "Pedido marcado como entregado.", "success");
+                })
+                .catch(function (error) {
+                    showNotice(error.message || "No se pudo confirmar la entrega.", "error");
                 })
                 .finally(function () {
                     buttons.forEach(function (button) {
@@ -1028,6 +1329,8 @@
             }
 
             renderItems(order);
+            renderLogistics(order);
+            renderWarehouseEvidence(order);
             renderWarehouseIncidents(order);
             if (isEditable(order)) {
                 hydratePaymentForm(order);
@@ -1066,6 +1369,8 @@
         });
 
         document.querySelectorAll("[data-rkm-send-operational-order-warehouse]").forEach(bindWarehouseButton);
+        document.querySelectorAll("[data-rkm-mark-operational-dispatched]").forEach(bindDispatchButton);
+        document.querySelectorAll("[data-rkm-mark-operational-delivered]").forEach(bindDeliverButton);
 
         filterButtons.forEach(function (button) {
             button.addEventListener("click", function () {
@@ -1085,6 +1390,18 @@
         if (modalWarehouseButton) {
             modalWarehouseButton.addEventListener("click", function () {
                 sendToWarehouse(modalWarehouseButton.getAttribute("data-order-id"), modalWarehouseButton);
+            });
+        }
+
+        if (modalDispatchButton) {
+            modalDispatchButton.addEventListener("click", function () {
+                markDispatched(modalDispatchButton.getAttribute("data-order-id"), modalDispatchButton);
+            });
+        }
+
+        if (modalDeliverButton) {
+            modalDeliverButton.addEventListener("click", function () {
+                markDelivered(modalDeliverButton.getAttribute("data-order-id"), modalDeliverButton);
             });
         }
 
