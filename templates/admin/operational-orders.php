@@ -10,6 +10,7 @@ $current = $data['current_section'] ?? 'pedidos-operativos';
 $can_confirm_orders = !empty($data['can_confirm_orders']);
 $can_edit_orders = !empty($data['can_edit_orders']);
 $can_close_logistics = !empty($data['can_close_logistics']);
+$can_register_current_account_payments = !empty($data['can_register_current_account_payments']);
 $confirmable_statuses = class_exists('RKM_Operational_Orders') ? RKM_Operational_Orders::get_confirmable_statuses() : ['rkm-review', 'pending', 'en-revision'];
 $editable_statuses = class_exists('RKM_Operational_Orders') ? RKM_Operational_Orders::get_editable_statuses() : ['rkm-review', 'pending', 'en-revision'];
 $payment_terms = isset($data['payment_terms']) && is_array($data['payment_terms']) ? $data['payment_terms'] : [];
@@ -315,6 +316,13 @@ $pending_review_count = count(array_filter($orders, static function ($order) use
 
                 <section class="rkm-admin-order-modal__section">
                     <div class="rkm-admin-order-modal__section-head">
+                        <h3>Cuenta corriente</h3>
+                    </div>
+                    <div class="rkm-admin-order-modal__current-account" id="rkmOperationalOrderCurrentAccount"></div>
+                </section>
+
+                <section class="rkm-admin-order-modal__section">
+                    <div class="rkm-admin-order-modal__section-head">
                         <h3>Evidencia de preparacion</h3>
                     </div>
                     <div class="rkm-admin-order-modal__warehouse-evidence" id="rkmOperationalOrderWarehouseEvidence"></div>
@@ -371,6 +379,7 @@ $pending_review_count = count(array_filter($orders, static function ($order) use
         can_confirm: <?php echo $can_confirm_orders ? 'true' : 'false'; ?>,
         can_edit: <?php echo $can_edit_orders ? 'true' : 'false'; ?>,
         can_close_logistics: <?php echo $can_close_logistics ? 'true' : 'false'; ?>,
+        can_register_current_account_payments: <?php echo $can_register_current_account_payments ? 'true' : 'false'; ?>,
         can_resolve_incidents: <?php echo (class_exists('RKM_Operational_Orders') && RKM_Operational_Orders::can_resolve_warehouse_incidents()) ? 'true' : 'false'; ?>,
         review_status: 'rkm-review',
         confirmable_statuses: <?php echo wp_json_encode($confirmable_statuses); ?>,

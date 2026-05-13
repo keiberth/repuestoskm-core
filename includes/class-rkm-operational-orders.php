@@ -23,6 +23,7 @@ class RKM_Operational_Orders {
         add_action('wp_ajax_rkm_resolve_warehouse_picking_incident', [$this, 'ajax_resolve_warehouse_picking_incident']);
         add_action('wp_ajax_rkm_mark_operational_order_dispatched', [$this, 'ajax_mark_order_dispatched']);
         add_action('wp_ajax_rkm_mark_operational_order_delivered', [$this, 'ajax_mark_order_delivered']);
+        add_action('wp_ajax_rkm_register_current_account_payment', [$this, 'ajax_register_current_account_payment']);
         add_action('woocommerce_order_status_changed', [$this, 'maybe_start_credit_term'], 20, 4);
         add_action('woocommerce_order_status_changed', [$this, 'maybe_log_operational_status_transition'], 30, 4);
     }
@@ -272,6 +273,10 @@ class RKM_Operational_Orders {
         }
 
         if ($order->get_meta('_rkm_credit_started_at', true) !== '' && $order->get_meta('_rkm_credit_due_at', true) !== '') {
+            if (class_exists('RKM_Current_Account')) {
+                RKM_Current_Account::maybe_generate_order_debt($order, (string) $order->get_meta('_rkm_delivered_at', true), $user);
+            }
+
             return;
         }
 
@@ -309,6 +314,10 @@ class RKM_Operational_Orders {
                 'days' => $days,
             ]
         );
+
+        if (class_exists('RKM_Current_Account')) {
+            RKM_Current_Account::maybe_generate_order_debt($order, $started_at, $user);
+        }
     }
 
     public function maybe_log_operational_status_transition($order_id, $old_status, $new_status, $order) {
@@ -402,6 +411,10 @@ class RKM_Operational_Orders {
 
     public static function can_close_logistics($user = null) {
         return class_exists('RKM_Permissions') && RKM_Permissions::is_rkm_admin($user);
+    }
+
+    public static function can_register_current_account_payment($user = null) {
+        return self::can_access($user);
     }
 
     public function ajax_confirm_order() {
@@ -586,6 +599,99 @@ class RKM_Operational_Orders {
         wp_send_json_success([
             'message' => 'Pedido marcado como entregado.',
             'order' => $this->format_order_row($result),
+        ]);
+    }
+
+    public function ajax_register_current_account_payment() {
+        if (!check_ajax_referer(self::NONCE_ACTION, 'nonce', false)) {
+            wp_send_json_error(['message' => 'Solicitud invalida. Actualiza la pagina e intenta nuevamente.'], 403);
+        }
+
+        if (!is_user_logged_in() || !self::can_register_current_account_payment()) {
+            wp_send_json_error(['message' => 'No tenes permiso para registrar pagos de cuenta corriente.'], 403);
+        }
+
+        if (!function_exists('wc_get_order') || !class_exists('RKM_Current_Account') || !class_exists('RKM_Current_Account_Transactions')) {
+            wp_send_json_error(['message' => 'Cuenta corriente no esta disponible.'], 500);
+        }
+
+        $order_id = isset($_POST['order_id']) ? absint(wp_unslash($_POST['order_id'])) : 0;
+        $amount = isset($_POST['amount']) ? $this->parse_money_amount(wp_unslash($_POST['amount'])) : 0;
+        $method_id = isset($_POST['method_id']) ? sanitize_key(wp_unslash($_POST['method_id'])) : '';
+        $reference = isset($_POST['reference']) ? sanitize_text_field(wp_unslash($_POST['reference'])) : '';
+        $note = isset($_POST['note']) ? sanitize_textarea_field(wp_unslash($_POST['note'])) : '';
+
+        if ($order_id <= 0) {
+            wp_send_json_error(['message' => 'Pedido invalido.'], 400);
+        }
+
+        $order = wc_get_order($order_id);
+        if (!$order) {
+            wp_send_json_error(['message' => 'Pedido no encontrado.'], 404);
+        }
+
+        $account_context = RKM_Current_Account::get_order_current_account_context($order);
+        if (empty($account_context['enabled'])) {
+            wp_send_json_error(['message' => 'El pedido no tiene cuenta corriente activa.'], 409);
+        }
+
+        $balance = isset($account_context['balance']) ? (float) $account_context['balance'] : 0;
+        if ($amount <= 0) {
+            wp_send_json_error(['message' => 'El monto debe ser mayor a cero.'], 400);
+        }
+
+        if ($amount > $balance) {
+            wp_send_json_error(['message' => 'El monto no puede superar el saldo pendiente.'], 400);
+        }
+
+        $method_label = '';
+        if ($method_id !== '') {
+            $method = class_exists('RKM_Payment_Methods') ? RKM_Payment_Methods::get_active_method($method_id) : null;
+            if (!$method) {
+                wp_send_json_error(['message' => 'Selecciona una forma de pago valida.'], 400);
+            }
+
+            $method_label = $method['name'];
+        }
+
+        $receipt_attachment_id = $this->handle_current_account_receipt_upload($order_id);
+        if (is_wp_error($receipt_attachment_id)) {
+            wp_send_json_error(['message' => $receipt_attachment_id->get_error_message()], 400);
+        }
+
+        $transaction_id = RKM_Current_Account_Transactions::add_transaction([
+            'order_id' => $order_id,
+            'customer_id' => (int) $order->get_customer_id(),
+            'type' => RKM_Current_Account_Transactions::TYPE_PAYMENT,
+            'amount' => $amount,
+            'status' => RKM_Current_Account_Transactions::STATUS_APPROVED,
+            'method_id' => is_numeric($method_id) ? absint($method_id) : null,
+            'method_label' => $method_label,
+            'reference' => $reference,
+            'note' => $note,
+            'receipt_attachment_id' => (int) $receipt_attachment_id,
+            'created_by' => get_current_user_id(),
+            'approved_by' => get_current_user_id(),
+            'approved_at' => current_time('mysql'),
+        ]);
+
+        if (is_wp_error($transaction_id)) {
+            if ((int) $receipt_attachment_id > 0) {
+                wp_delete_attachment((int) $receipt_attachment_id, true);
+            }
+            wp_send_json_error(['message' => $transaction_id->get_error_message()], 400);
+        }
+
+        $sync_result = RKM_Current_Account_Transactions::sync_order_balance($order_id);
+        if (is_wp_error($sync_result)) {
+            wp_send_json_error(['message' => $sync_result->get_error_message()], 500);
+        }
+
+        $updated_order = wc_get_order($order_id);
+
+        wp_send_json_success([
+            'message' => 'Pago registrado y saldo actualizado.',
+            'order' => $this->format_order_row($updated_order),
         ]);
     }
 
@@ -937,6 +1043,7 @@ class RKM_Operational_Orders {
             'can_confirm_orders' => self::can_confirm($user),
             'can_edit_orders' => self::can_edit($user),
             'can_close_logistics' => self::can_close_logistics($user),
+            'can_register_current_account_payments' => self::can_register_current_account_payment($user),
             'payment_terms' => class_exists('RKM_Payment_Terms') ? RKM_Payment_Terms::get_active_terms() : [],
             'payment_methods' => class_exists('RKM_Payment_Methods') ? RKM_Payment_Methods::get_active_methods() : [],
             'payment_terms_settings' => class_exists('RKM_Payment_Terms') ? RKM_Payment_Terms::get_settings() : [],
@@ -1002,8 +1109,14 @@ class RKM_Operational_Orders {
         $assigned_vendor = $this->get_assigned_vendor_data($order);
         $operational_history = $this->get_operational_history($order);
         $credit_context = self::get_credit_context($order);
+        $current_account_context = class_exists('RKM_Current_Account')
+            ? RKM_Current_Account::get_order_current_account_context($order)
+            : ['enabled' => false];
         $logistics_context = $this->get_logistics_context($order);
         $warehouse_evidence = $this->get_warehouse_evidence($order);
+        $current_account_transactions = class_exists('RKM_Current_Account_Transactions')
+            ? RKM_Current_Account_Transactions::get_transactions_by_order($order->get_id())
+            : [];
 
         return [
             'id' => (int) $order->get_id(),
@@ -1043,6 +1156,14 @@ class RKM_Operational_Orders {
             'credit_remaining_days' => isset($credit_context['remaining_days']) ? (int) $credit_context['remaining_days'] : 0,
             'credit_status_label' => $credit_context['status_label'] ?? '',
             'credit_notice' => $credit_context['notice'] ?? '',
+            'current_account_context' => $current_account_context,
+            'current_account_enabled' => !empty($current_account_context['enabled']),
+            'current_account_status' => $current_account_context['status'] ?? '',
+            'current_account_status_label' => $current_account_context['status_label'] ?? '',
+            'current_account_balance' => isset($current_account_context['balance']) ? (float) $current_account_context['balance'] : 0,
+            'current_account_balance_display' => $current_account_context['balance_display'] ?? '',
+            'current_account_due_label' => $current_account_context['due_label'] ?? '',
+            'current_account_transactions' => $current_account_transactions,
             'logistics_context' => $logistics_context,
             'logistics_status_label' => $logistics_context['status_label'],
             'dispatched_at' => $logistics_context['dispatched_at'],
@@ -1393,6 +1514,72 @@ class RKM_Operational_Orders {
         return html_entity_decode(wp_strip_all_tags((string) $value), ENT_QUOTES, 'UTF-8');
     }
 
+    private function parse_money_amount($value) {
+        if (function_exists('rkm_parse_localized_decimal')) {
+            return $this->round_money(rkm_parse_localized_decimal($value));
+        }
+
+        if (function_exists('wc_format_decimal')) {
+            return $this->round_money((float) wc_format_decimal($value));
+        }
+
+        $value = str_replace(',', '.', (string) $value);
+        $value = preg_replace('/[^0-9\.]/', '', $value);
+
+        return $this->round_money((float) $value);
+    }
+
+    private function handle_current_account_receipt_upload($order_id) {
+        if (empty($_FILES['receipt']) || !is_array($_FILES['receipt'])) {
+            return 0;
+        }
+
+        $file = $_FILES['receipt'];
+
+        if ((int) ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+            return 0;
+        }
+
+        if (!empty($file['error'])) {
+            return new WP_Error('rkm_receipt_upload_error', 'No se pudo leer el comprobante adjunto.');
+        }
+
+        if (empty($file['tmp_name']) || empty($file['name']) || (int) ($file['size'] ?? 0) <= 0) {
+            return new WP_Error('rkm_receipt_empty', 'El comprobante adjunto esta vacio.');
+        }
+
+        if ((int) $file['size'] > 5242880) {
+            return new WP_Error('rkm_receipt_too_large', 'El comprobante no puede superar 5 MB.');
+        }
+
+        $allowed_mimes = [
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'webp' => 'image/webp',
+            'pdf' => 'application/pdf',
+        ];
+        $filetype = wp_check_filetype_and_ext($file['tmp_name'], $file['name'], $allowed_mimes);
+
+        if (empty($filetype['type']) || !in_array($filetype['type'], $allowed_mimes, true)) {
+            return new WP_Error('rkm_receipt_invalid_type', 'El comprobante debe ser JPG, PNG, WEBP o PDF.');
+        }
+
+        if (!function_exists('media_handle_upload')) {
+            require_once ABSPATH . 'wp-admin/includes/image.php';
+            require_once ABSPATH . 'wp-admin/includes/file.php';
+            require_once ABSPATH . 'wp-admin/includes/media.php';
+        }
+
+        $attachment_id = media_handle_upload('receipt', $order_id);
+
+        if (is_wp_error($attachment_id)) {
+            return new WP_Error('rkm_receipt_save_failed', 'No se pudo guardar el comprobante.');
+        }
+
+        return (int) $attachment_id;
+    }
+
     private function get_internal_notes($order) {
         return $this->get_operational_history($order);
     }
@@ -1523,6 +1710,10 @@ class RKM_Operational_Orders {
 
         if (strpos($text, 'plazo de credito') !== false || strpos($text, 'credito iniciado') !== false) {
             return 'Credito iniciado';
+        }
+
+        if (strpos($text, 'cuenta corriente') !== false) {
+            return 'Cuenta corriente generada';
         }
 
         if (strpos($text, 'cantidades actualizadas') !== false || strpos($text, 'cantidad') !== false) {

@@ -15,6 +15,9 @@ class RKM_Current_Account {
     const STATUS_PENDING = 'pending';
     const STATUS_APPROVED = 'approved';
     const STATUS_REJECTED = 'rejected';
+    const ACCOUNT_STATUS_PENDING = 'pending';
+    const ACCOUNT_STATUS_OVERDUE = 'overdue';
+    const ACCOUNT_STATUS_PAID = 'paid';
     const RECEIPT_MAX_BYTES = 5242880;
     const RECEIPT_FIELD = 'receipt';
 
@@ -61,6 +64,7 @@ class RKM_Current_Account {
             self::STATUS_PENDING  => 'Pendiente',
             self::STATUS_APPROVED => 'Aprobado',
             self::STATUS_REJECTED => 'Rechazado',
+            'voided'              => 'Anulado',
         ];
     }
 
@@ -162,12 +166,14 @@ class RKM_Current_Account {
 
         $actor = wp_get_current_user();
         $pending_orders = $this->get_actor_pending_orders($actor);
+        $account_summary = $this->get_orders_account_summary($pending_orders);
         $view_data = array_merge($data, [
             'page_title' => 'Cuenta corriente',
-            'page_subtitle' => 'Consulta saldos pendientes e informa pagos realizados.',
+            'page_subtitle' => 'Tenes 20 dias de credito desde la entrega del pedido.',
             'current_section' => self::CUSTOMER_SECTION_KEY,
             'pending_orders' => $pending_orders,
-            'pending_total' => $this->sum_order_balances($pending_orders),
+            'pending_total' => $account_summary['pending_total'],
+            'current_account_summary' => $account_summary,
             'payment_reports' => $this->get_actor_payment_reports($actor),
             'payment_methods' => $this->get_report_payment_methods(),
             'current_account_notice' => $this->consume_flash_notice(),
@@ -300,26 +306,39 @@ class RKM_Current_Account {
             $this->redirect_to(self::get_customer_section_url());
         }
 
-        $customer_id = (int) $order->get_customer_id();
-        $reported_by_role = $this->get_reported_by_role($actor);
+        if (!class_exists('RKM_Current_Account_Transactions')) {
+            wp_delete_attachment((int) $receipt_attachment_id, true);
+            $this->set_flash_notice('error', 'El registro formal de cobranza no esta disponible.');
+            $this->redirect_to(self::get_customer_section_url());
+        }
 
-        $report_id = $this->create_payment_report([
+        $customer_id = (int) $order->get_customer_id();
+        $transaction_note = $note;
+        if ($payment_date !== '') {
+            $transaction_note = trim(sprintf(
+                "Fecha de pago informada: %s\n%s",
+                $payment_date,
+                $transaction_note
+            ));
+        }
+
+        $transaction_id = RKM_Current_Account_Transactions::add_transaction([
             'customer_id'          => $customer_id,
             'order_id'             => $order_id,
-            'reported_by'          => (int) $actor->ID,
-            'reported_by_role'     => $reported_by_role,
+            'type'                 => RKM_Current_Account_Transactions::TYPE_PAYMENT,
             'amount'               => $this->round_money($amount),
-            'payment_date'         => $payment_date,
-            'payment_method_id'    => $method['id'],
-            'payment_method_label' => $method['name'],
+            'status'               => RKM_Current_Account_Transactions::STATUS_PENDING,
+            'method_id'            => is_numeric($method['id']) ? absint($method['id']) : null,
+            'method_label'         => $method['name'],
             'reference'            => $reference,
-            'note'                 => $note,
+            'note'                 => $transaction_note,
             'receipt_attachment_id' => (int) $receipt_attachment_id,
+            'created_by'           => (int) $actor->ID,
         ]);
 
-        if ($report_id <= 0) {
+        if (is_wp_error($transaction_id)) {
             wp_delete_attachment((int) $receipt_attachment_id, true);
-            $this->set_flash_notice('error', 'No se pudo registrar el pago informado. Intenta nuevamente.');
+            $this->set_flash_notice('error', $transaction_id->get_error_message());
             $this->redirect_to(self::get_customer_section_url());
         }
 
@@ -354,14 +373,19 @@ class RKM_Current_Account {
     }
 
     public function approve_payment_report($report_id) {
-        $report = $this->get_payment_report($report_id);
+        if (!class_exists('RKM_Current_Account_Transactions')) {
+            $this->set_flash_notice('error', 'El registro formal de cobranza no esta disponible.');
+            $this->redirect_to(self::get_admin_section_url());
+        }
+
+        $report = RKM_Current_Account_Transactions::get_transaction($report_id);
 
         if (!$report) {
             $this->set_flash_notice('error', 'No se encontro el pago informado.');
             $this->redirect_to(self::get_admin_section_url());
         }
 
-        if ($report['status'] !== self::STATUS_PENDING) {
+        if ($report['status'] !== RKM_Current_Account_Transactions::STATUS_PENDING) {
             $this->set_flash_notice('error', 'Este pago ya fue revisado y no puede aprobarse nuevamente.');
             $this->redirect_to(self::get_admin_section_url());
         }
@@ -386,59 +410,40 @@ class RKM_Current_Account {
             $this->redirect_to(self::get_admin_section_url());
         }
 
-        if (!$this->transition_pending_report($report_id, self::STATUS_APPROVED)) {
-            $this->set_flash_notice('error', 'Este pago ya fue revisado y no puede aprobarse nuevamente.');
+        $result = RKM_Current_Account_Transactions::approve_transaction($report_id);
+
+        if (is_wp_error($result)) {
+            $this->set_flash_notice('error', $result->get_error_message());
             $this->redirect_to(self::get_admin_section_url());
         }
-
-        $new_balance = $this->round_money(max(0, $current_balance - $amount));
-        $order->update_meta_data('_rkm_credit_balance', $new_balance);
-        $order->add_order_note(sprintf(
-            "Pago informado aprobado.\nMonto: %s.\nFecha de pago: %s.\nForma de pago: %s.\nReferencia: %s.\nInformado por: %s.\nSaldo anterior: %s.\nSaldo actualizado: %s.",
-            wp_strip_all_tags($this->format_money($amount)),
-            $this->format_payment_date($report['payment_date']),
-            $report['payment_method_label'],
-            $report['reference'] !== '' ? $report['reference'] : 'Sin referencia',
-            $report['reported_by_name'],
-            wp_strip_all_tags($this->format_money($current_balance)),
-            wp_strip_all_tags($this->format_money($new_balance))
-        ));
-        $order->save();
 
         $this->set_flash_notice('success', 'Pago aprobado y saldo pendiente actualizado.');
         $this->redirect_to(self::get_admin_section_url());
     }
 
     public function reject_payment_report($report_id) {
-        $report = $this->get_payment_report($report_id);
+        if (!class_exists('RKM_Current_Account_Transactions')) {
+            $this->set_flash_notice('error', 'El registro formal de cobranza no esta disponible.');
+            $this->redirect_to(self::get_admin_section_url());
+        }
+
+        $report = RKM_Current_Account_Transactions::get_transaction($report_id);
 
         if (!$report) {
             $this->set_flash_notice('error', 'No se encontro el pago informado.');
             $this->redirect_to(self::get_admin_section_url());
         }
 
-        if ($report['status'] !== self::STATUS_PENDING) {
+        if ($report['status'] !== RKM_Current_Account_Transactions::STATUS_PENDING) {
             $this->set_flash_notice('error', 'Este pago ya fue revisado.');
             $this->redirect_to(self::get_admin_section_url());
         }
 
-        $order = function_exists('wc_get_order') ? wc_get_order($report['order_id']) : null;
+        $result = RKM_Current_Account_Transactions::reject_transaction($report_id);
 
-        if (!$this->transition_pending_report($report_id, self::STATUS_REJECTED)) {
-            $this->set_flash_notice('error', 'Este pago ya fue revisado.');
+        if (is_wp_error($result)) {
+            $this->set_flash_notice('error', $result->get_error_message());
             $this->redirect_to(self::get_admin_section_url());
-        }
-
-        if ($order) {
-            $order->add_order_note(sprintf(
-                "Pago informado rechazado.\nMonto: %s.\nFecha de pago: %s.\nForma de pago: %s.\nReferencia: %s.\nInformado por: %s.",
-                wp_strip_all_tags($this->format_money($report['amount'])),
-                $this->format_payment_date($report['payment_date']),
-                $report['payment_method_label'],
-                $report['reference'] !== '' ? $report['reference'] : 'Sin referencia',
-                $report['reported_by_name']
-            ));
-            $order->save();
         }
 
         $this->set_flash_notice('success', 'Pago rechazado. El saldo del pedido no fue modificado.');
@@ -776,6 +781,10 @@ class RKM_Current_Account {
             return [];
         }
 
+        if (!class_exists('RKM_Current_Account_Transactions')) {
+            return [];
+        }
+
         if ($this->is_customer($actor)) {
             return $this->get_customer_payment_reports((int) $actor->ID);
         }
@@ -794,21 +803,19 @@ class RKM_Current_Account {
     }
 
     private function get_payment_reports_for_customers($customer_ids) {
-        global $wpdb;
-
         $customer_ids = array_values(array_filter(array_map('absint', (array) $customer_ids)));
 
         if (empty($customer_ids)) {
             return [];
         }
 
-        $placeholders = implode(',', array_fill(0, count($customer_ids), '%d'));
-        $sql = $wpdb->prepare(
-            "SELECT * FROM " . self::get_table_name() . " WHERE customer_id IN ({$placeholders}) ORDER BY created_at DESC, id DESC LIMIT 100",
-            $customer_ids
-        );
+        if (!class_exists('RKM_Current_Account_Transactions')) {
+            return [];
+        }
 
-        return $this->hydrate_payment_reports($wpdb->get_results($sql, ARRAY_A));
+        return $this->format_transactions_as_payment_reports(
+            RKM_Current_Account_Transactions::get_transactions_by_customers($customer_ids)
+        );
     }
 
     public function get_customer_pending_orders($customer_id) {
@@ -830,47 +837,268 @@ class RKM_Current_Account {
         $orders = wc_get_orders($query_args);
 
         return array_values(array_filter($orders, function ($order) {
-            return $this->get_order_credit_balance($order) > 0;
+            $context = self::get_order_current_account_context($order);
+
+            return !empty($context['enabled']) && (float) $context['balance'] > 0;
         }));
     }
 
     public function get_customer_payment_reports($customer_id) {
-        global $wpdb;
+        if (!class_exists('RKM_Current_Account_Transactions')) {
+            return [];
+        }
 
-        $rows = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT * FROM " . self::get_table_name() . " WHERE customer_id = %d ORDER BY created_at DESC, id DESC LIMIT 100",
-                absint($customer_id)
-            ),
-            ARRAY_A
+        return $this->format_transactions_as_payment_reports(
+            RKM_Current_Account_Transactions::get_transactions_by_customer($customer_id)
         );
-
-        return $this->hydrate_payment_reports($rows);
     }
 
     public function get_admin_payment_reports() {
-        global $wpdb;
+        if (!class_exists('RKM_Current_Account_Transactions')) {
+            return [];
+        }
 
-        $rows = $wpdb->get_results(
-            "SELECT * FROM " . self::get_table_name() . " ORDER BY created_at DESC, id DESC LIMIT 100",
-            ARRAY_A
+        return $this->format_transactions_as_payment_reports(
+            RKM_Current_Account_Transactions::get_all_transactions(200)
         );
+    }
 
-        return $this->hydrate_payment_reports($rows);
+    private function format_transactions_as_payment_reports($transactions) {
+        $reports = [];
+
+        foreach ((array) $transactions as $transaction) {
+            $report = $this->format_transaction_as_payment_report($transaction);
+
+            if ($report) {
+                $reports[] = $report;
+            }
+        }
+
+        return $reports;
+    }
+
+    private function format_transaction_as_payment_report($transaction) {
+        if (!is_array($transaction) || empty($transaction['id'])) {
+            return null;
+        }
+
+        $customer_id = (int) ($transaction['customer_id'] ?? 0);
+        $order_id = (int) ($transaction['order_id'] ?? 0);
+        $reported_by = (int) ($transaction['created_by'] ?? 0);
+        $customer = $customer_id > 0 ? get_user_by('id', $customer_id) : null;
+        $reported_by_user = $reported_by > 0 ? get_user_by('id', $reported_by) : null;
+        $order = function_exists('wc_get_order') && $order_id > 0 ? wc_get_order($order_id) : null;
+        $created_at = (string) ($transaction['created_at'] ?? '');
+
+        return [
+            'id' => (int) $transaction['id'],
+            'customer_id' => $customer_id,
+            'customer_name' => $customer instanceof WP_User ? ($customer->display_name ?: $customer->user_login) : 'Cliente eliminado',
+            'order_id' => $order_id,
+            'order_number' => $order ? $order->get_order_number() : (string) $order_id,
+            'order_balance' => $order ? $this->get_order_credit_balance($order) : 0,
+            'amount' => (float) ($transaction['amount'] ?? 0),
+            'payment_date' => $created_at !== '' ? substr($created_at, 0, 10) : '',
+            'payment_method_id' => (string) ($transaction['method_id'] ?? ''),
+            'payment_method_label' => (string) ($transaction['method_label'] ?? ''),
+            'reference' => (string) ($transaction['reference'] ?? ''),
+            'note' => (string) ($transaction['note'] ?? ''),
+            'status' => (string) ($transaction['status'] ?? self::STATUS_PENDING),
+            'created_at' => $created_at,
+            'updated_at' => (string) ($transaction['updated_at'] ?? ''),
+            'reported_by' => $reported_by,
+            'reported_by_name' => $reported_by_user instanceof WP_User ? ($reported_by_user->display_name ?: $reported_by_user->user_login) : '-',
+            'reported_by_role' => $reported_by_user instanceof WP_User ? $this->get_reported_by_role($reported_by_user) : 'customer',
+            'receipt_attachment_id' => (int) ($transaction['receipt_attachment_id'] ?? 0),
+            'receipt_url' => (string) ($transaction['receipt_url'] ?? ''),
+            'reviewed_by' => (int) ($transaction['approved_by'] ?? 0),
+            'reviewed_at' => (string) ($transaction['approved_at'] ?? ''),
+        ];
+    }
+
+    public static function maybe_generate_order_debt($order, $delivered_at = '', $user = null) {
+        if (is_numeric($order)) {
+            $order = function_exists('wc_get_order') ? wc_get_order(absint($order)) : null;
+        }
+
+        if (!$order || !method_exists($order, 'get_meta')) {
+            return null;
+        }
+
+        if (method_exists($order, 'get_status') && $order->get_status() !== 'completed') {
+            return null;
+        }
+
+        $payment_term = (string) $order->get_meta('_rkm_payment_term', true);
+        $credit_balance = self::round_money_static((float) $order->get_meta('_rkm_credit_balance', true));
+
+        if (!in_array($payment_term, ['credit', 'mixed'], true) || $credit_balance <= 0) {
+            return null;
+        }
+
+        if ((string) $order->get_meta('_rkm_current_account_enabled', true) === 'yes') {
+            return null;
+        }
+
+        $delivered_at = (string) $delivered_at;
+        if ($delivered_at === '') {
+            $delivered_at = (string) $order->get_meta('_rkm_delivered_at', true);
+        }
+        if ($delivered_at === '' && method_exists($order, 'get_date_completed')) {
+            $completed_date = $order->get_date_completed();
+            if ($completed_date) {
+                $delivered_at = $completed_date->date('Y-m-d H:i:s');
+            }
+        }
+        if ($delivered_at === '') {
+            $delivered_at = current_time('mysql');
+        }
+
+        $delivered_timestamp = strtotime($delivered_at);
+        if ($delivered_timestamp <= 0) {
+            $delivered_timestamp = current_time('timestamp');
+            $delivered_at = current_time('mysql');
+        }
+
+        $due_at = (string) $order->get_meta('_rkm_credit_due_at', true);
+        if ($due_at === '') {
+            $due_at = wp_date('Y-m-d H:i:s', $delivered_timestamp + (DAY_IN_SECONDS * 20));
+        }
+
+        $amount = self::round_money_static((float) $order->get_meta('_rkm_final_total', true));
+        if ($amount <= 0 && method_exists($order, 'get_total')) {
+            $amount = self::round_money_static((float) $order->get_total());
+        }
+
+        $paid_amount = self::round_money_static((float) $order->get_meta('_rkm_upfront_amount', true));
+        if ($payment_term === 'credit') {
+            $paid_amount = 0;
+        }
+        if ($payment_term === 'mixed' && $paid_amount <= 0 && $amount > $credit_balance) {
+            $paid_amount = self::round_money_static($amount - $credit_balance);
+        }
+
+        $created_at = current_time('mysql');
+        $previous = self::get_order_current_account_context($order);
+
+        $order->update_meta_data('_rkm_current_account_enabled', 'yes');
+        $order->update_meta_data('_rkm_current_account_status', self::ACCOUNT_STATUS_PENDING);
+        $order->update_meta_data('_rkm_current_account_amount', $amount);
+        $order->update_meta_data('_rkm_current_account_paid_amount', $paid_amount);
+        $order->update_meta_data('_rkm_current_account_balance', $credit_balance);
+        $order->update_meta_data('_rkm_current_account_due_at', $due_at);
+        $order->update_meta_data('_rkm_current_account_created_at', $created_at);
+        $order->save();
+
+        $context = self::get_order_current_account_context($order);
+        $payment_label = (string) $order->get_meta('_rkm_payment_term_label', true);
+        if ($payment_label === '') {
+            $payment_label = $payment_term;
+        }
+
+        if (class_exists('RKM_Order_Audit_Log')) {
+            RKM_Order_Audit_Log::add_event(
+                $order->get_id(),
+                'Cuenta corriente generada',
+                'Cuenta corriente generada',
+                sprintf(
+                    'Cuenta corriente generada con saldo %s. Vencimiento: %s. Condicion de pago: %s.',
+                    wp_strip_all_tags(self::format_money_static($credit_balance)),
+                    $context['due_label'] !== '' ? $context['due_label'] : '-',
+                    $payment_label
+                ),
+                $previous,
+                $context
+            );
+        }
+
+        return $context;
+    }
+
+    public static function get_order_current_account_context($order) {
+        if (is_numeric($order)) {
+            $order = function_exists('wc_get_order') ? wc_get_order(absint($order)) : null;
+        }
+
+        if (!$order || !method_exists($order, 'get_meta')) {
+            return [
+                'enabled' => false,
+                'status' => '',
+                'status_label' => '',
+                'balance' => 0,
+            ];
+        }
+
+        $enabled = (string) $order->get_meta('_rkm_current_account_enabled', true) === 'yes';
+        $amount = self::round_money_static((float) $order->get_meta('_rkm_current_account_amount', true));
+        $paid_amount = self::round_money_static((float) $order->get_meta('_rkm_current_account_paid_amount', true));
+        $balance = self::round_money_static((float) $order->get_meta('_rkm_current_account_balance', true));
+        $due_at = (string) $order->get_meta('_rkm_current_account_due_at', true);
+        $created_at = (string) $order->get_meta('_rkm_current_account_created_at', true);
+        $delivered_at = (string) $order->get_meta('_rkm_delivered_at', true);
+        if ($delivered_at === '' && method_exists($order, 'get_date_completed')) {
+            $completed_date = $order->get_date_completed();
+            if ($completed_date) {
+                $delivered_at = $completed_date->date('Y-m-d H:i:s');
+            }
+        }
+        $status = sanitize_key((string) $order->get_meta('_rkm_current_account_status', true));
+        $status = $status !== '' ? $status : self::ACCOUNT_STATUS_PENDING;
+        $due_timestamp = $due_at !== '' ? strtotime($due_at) : 0;
+        $now = current_time('timestamp');
+
+        if ($balance <= 0) {
+            $status = self::ACCOUNT_STATUS_PAID;
+        } elseif ($due_timestamp > 0 && $due_timestamp < $now && $status !== self::ACCOUNT_STATUS_PAID) {
+            $status = self::ACCOUNT_STATUS_OVERDUE;
+        }
+
+        $remaining_days = 0;
+        if ($due_timestamp > 0) {
+            $remaining_days = (int) floor(($due_timestamp - $now) / DAY_IN_SECONDS);
+        }
+
+        return [
+            'enabled' => $enabled,
+            'status' => $status,
+            'status_label' => self::get_account_status_label($status),
+            'amount' => $amount,
+            'amount_display' => self::format_money_static($amount),
+            'paid_amount' => $paid_amount,
+            'paid_amount_display' => self::format_money_static($paid_amount),
+            'balance' => $balance,
+            'balance_display' => self::format_money_static($balance),
+            'due_at' => $due_at,
+            'due_label' => self::format_date_static($due_at, 'd/m/Y'),
+            'created_at' => $created_at,
+            'created_label' => self::format_date_static($created_at, 'd/m/Y H:i'),
+            'delivered_at' => $delivered_at,
+            'delivered_label' => self::format_date_static($delivered_at, 'd/m/Y'),
+            'remaining_days' => $remaining_days,
+            'remaining_label' => self::get_remaining_days_label($remaining_days, $due_timestamp),
+        ];
+    }
+
+    public static function get_account_status_label($status) {
+        $labels = [
+            self::ACCOUNT_STATUS_PENDING => 'Pendiente',
+            self::ACCOUNT_STATUS_OVERDUE => 'Vencido',
+            self::ACCOUNT_STATUS_PAID => 'Pagado',
+        ];
+
+        return $labels[$status] ?? ucfirst((string) $status);
     }
 
     public function get_pending_payment_reports() {
-        global $wpdb;
+        if (!class_exists('RKM_Current_Account_Transactions')) {
+            return [];
+        }
 
-        $rows = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT * FROM " . self::get_table_name() . " WHERE status = %s ORDER BY created_at ASC, id ASC",
-                self::STATUS_PENDING
-            ),
-            ARRAY_A
-        );
+        $reports = array_filter($this->get_admin_payment_reports(), static function ($report) {
+            return ($report['status'] ?? '') === RKM_Current_Account_Transactions::STATUS_PENDING;
+        });
 
-        return $this->hydrate_payment_reports($rows);
+        return array_values($reports);
     }
 
     private function get_payment_report($report_id) {
@@ -950,6 +1178,10 @@ class RKM_Current_Account {
             return 0;
         }
 
+        if ((string) $order->get_meta('_rkm_current_account_enabled', true) === 'yes') {
+            return $this->round_money((float) $order->get_meta('_rkm_current_account_balance', true));
+        }
+
         return $this->round_money((float) $order->get_meta('_rkm_credit_balance', true));
     }
 
@@ -963,7 +1195,48 @@ class RKM_Current_Account {
         return $this->round_money($total);
     }
 
+    public function get_orders_account_summary($orders) {
+        $pending_total = 0;
+        $overdue_count = 0;
+        $next_due_timestamp = 0;
+        $next_due_label = '';
+
+        foreach ((array) $orders as $order) {
+            $context = self::get_order_current_account_context($order);
+
+            if (empty($context['enabled']) || (float) $context['balance'] <= 0) {
+                continue;
+            }
+
+            $pending_total += (float) $context['balance'];
+
+            if ($context['status'] === self::ACCOUNT_STATUS_OVERDUE) {
+                $overdue_count++;
+            }
+
+            $due_timestamp = !empty($context['due_at']) ? strtotime($context['due_at']) : 0;
+            if ($due_timestamp > 0 && ($next_due_timestamp === 0 || $due_timestamp < $next_due_timestamp)) {
+                $next_due_timestamp = $due_timestamp;
+                $next_due_label = $context['due_label'];
+            }
+        }
+
+        return [
+            'pending_total' => $this->round_money($pending_total),
+            'next_due_label' => $next_due_label,
+            'overdue_count' => $overdue_count,
+        ];
+    }
+
     public function format_money($amount) {
+        if (function_exists('wc_price')) {
+            return wc_price($amount);
+        }
+
+        return '$' . number_format((float) $amount, 2, ',', '.');
+    }
+
+    public static function format_money_static($amount) {
         if (function_exists('wc_price')) {
             return wc_price($amount);
         }
@@ -983,6 +1256,20 @@ class RKM_Current_Account {
         }
 
         return wp_date('d/m/Y H:i', $timestamp);
+    }
+
+    public static function format_date_static($mysql_date, $format = 'd/m/Y H:i') {
+        if ((string) $mysql_date === '') {
+            return '';
+        }
+
+        $timestamp = strtotime((string) $mysql_date);
+
+        if (!$timestamp) {
+            return '';
+        }
+
+        return wp_date($format, $timestamp);
     }
 
     public function format_payment_date($date) {
@@ -1011,6 +1298,10 @@ class RKM_Current_Account {
         }
 
         return $customer->display_name ?: $customer->user_login;
+    }
+
+    public function get_order_detail_url($order) {
+        return home_url('/mi-cuenta/panel/?section=pedidos');
     }
 
     public function get_receipt_accept_attribute() {
@@ -1205,6 +1496,28 @@ class RKM_Current_Account {
         $decimals = function_exists('wc_get_price_decimals') ? wc_get_price_decimals() : 2;
 
         return round((float) $amount, $decimals);
+    }
+
+    private static function round_money_static($amount) {
+        $decimals = function_exists('wc_get_price_decimals') ? wc_get_price_decimals() : 2;
+
+        return round((float) $amount, $decimals);
+    }
+
+    private static function get_remaining_days_label($remaining_days, $due_timestamp) {
+        if ($due_timestamp <= 0) {
+            return '';
+        }
+
+        if ($remaining_days > 0) {
+            return sprintf('%d dias restantes', $remaining_days);
+        }
+
+        if ($remaining_days === 0) {
+            return 'Vence hoy';
+        }
+
+        return sprintf('Credito vencido hace %d dias', abs($remaining_days));
     }
 
     private function verify_nonce($action, $field) {

@@ -114,10 +114,12 @@ add_action('plugins_loaded', 'rkm_core_init');
 
 function rkm_core_activate() {
     require_once RKM_CORE_PATH . 'includes/class-rkm-routes.php';
+    require_once RKM_CORE_PATH . 'includes/class-rkm-current-account-transactions.php';
     require_once RKM_CORE_PATH . 'includes/class-rkm-current-account.php';
     require_once RKM_CORE_PATH . 'includes/class-rkm-order-audit-log.php';
     $routes = new RKM_Routes();
     $routes->register_endpoints();
+    RKM_Current_Account_Transactions::install_schema();
     RKM_Current_Account::install_schema();
     RKM_Order_Audit_Log::install_schema();
     flush_rewrite_rules();

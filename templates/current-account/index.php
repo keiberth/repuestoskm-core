@@ -13,6 +13,7 @@ $section_url = $data['section_url'] ?? home_url('/mi-cuenta/panel/?section=cuent
 $status_labels = isset($data['status_labels']) && is_array($data['status_labels']) ? $data['status_labels'] : [];
 $current_account = class_exists('RKM_Current_Account') ? new RKM_Current_Account() : null;
 $pending_total = $data['pending_total'] ?? 0;
+$account_summary = isset($data['current_account_summary']) && is_array($data['current_account_summary']) ? $data['current_account_summary'] : [];
 $is_vendor_context = !empty($data['is_vendor_context']);
 $today = function_exists('wp_date') ? wp_date('Y-m-d', current_time('timestamp')) : date('Y-m-d');
 ?>
@@ -44,7 +45,11 @@ $today = function_exists('wp_date') ? wp_date('Y-m-d', current_time('timestamp')
                 <div>
                     <span class="rkm-current-account-summary__eyebrow">Saldo pendiente total</span>
                     <strong><?php echo $current_account ? wp_kses_post($current_account->format_money($pending_total)) : esc_html((string) $pending_total); ?></strong>
-                    <p><?php echo esc_html(count($pending_orders) . ' pedido(s) con saldo pendiente.'); ?></p>
+                    <p><?php echo esc_html(count($pending_orders) . ' pedido(s) con saldo pendiente. Tenes 20 dias de credito desde la entrega del pedido.'); ?></p>
+                </div>
+                <div class="rkm-current-account-summary__meta">
+                    <span>Proximo vencimiento: <strong><?php echo esc_html(!empty($account_summary['next_due_label']) ? $account_summary['next_due_label'] : '-'); ?></strong></span>
+                    <span>Pedidos vencidos: <strong><?php echo esc_html((string) ($account_summary['overdue_count'] ?? 0)); ?></strong></span>
                 </div>
             </section>
 
@@ -144,7 +149,7 @@ $today = function_exists('wp_date') ? wp_date('Y-m-d', current_time('timestamp')
                 <section class="rkm-card rkm-current-account-panel">
                     <div class="rkm-current-account-panel__header">
                         <h2>Pedidos con saldo</h2>
-                        <p>Base calculada desde el saldo pendiente guardado en cada pedido.</p>
+                        <p>La deuda se genera solo cuando el pedido fue entregado.</p>
                     </div>
 
                     <?php if (empty($pending_orders)) : ?>
@@ -156,15 +161,31 @@ $today = function_exists('wp_date') ? wp_date('Y-m-d', current_time('timestamp')
                         <div class="rkm-current-account-order-list">
                             <?php foreach ($pending_orders as $order) : ?>
                                 <?php
-                                $balance = $current_account ? $current_account->get_order_credit_balance($order) : 0;
-                                $date = $order->get_date_created() ? $order->get_date_created()->date_i18n('d/m/Y') : '-';
+                                $context = class_exists('RKM_Current_Account') ? RKM_Current_Account::get_order_current_account_context($order) : [];
+                                $balance = isset($context['balance']) ? (float) $context['balance'] : 0;
+                                $delivered_label = $context['delivered_label'] ?? '-';
+                                $due_label = $context['due_label'] ?? '-';
+                                $status = $context['status'] ?? 'pending';
+                                $status_label = $context['status_label'] ?? 'Pendiente';
+                                $remaining_label = $context['remaining_label'] ?? '';
+                                $detail_url = $current_account ? $current_account->get_order_detail_url($order) : home_url('/mi-cuenta/panel/?section=pedidos');
                                 ?>
                                 <article class="rkm-current-account-order">
                                     <div>
                                         <span>Pedido #<?php echo esc_html($order->get_order_number()); ?></span>
-                                        <small><?php echo esc_html($date); ?></small>
+                                        <small>Entrega: <?php echo esc_html($delivered_label !== '' ? $delivered_label : '-'); ?></small>
+                                        <small>Vencimiento: <?php echo esc_html($due_label !== '' ? $due_label : '-'); ?></small>
+                                        <?php if ($remaining_label !== '') : ?>
+                                            <small><?php echo esc_html($remaining_label); ?></small>
+                                        <?php endif; ?>
                                     </div>
-                                    <strong><?php echo $current_account ? wp_kses_post($current_account->format_money($balance)) : esc_html((string) $balance); ?></strong>
+                                    <div class="rkm-current-account-order__side">
+                                        <span class="rkm-current-account-badge rkm-current-account-badge--<?php echo esc_attr($status); ?>">
+                                            <?php echo esc_html($status_label); ?>
+                                        </span>
+                                        <strong><?php echo $current_account ? wp_kses_post($current_account->format_money($balance)) : esc_html((string) $balance); ?></strong>
+                                        <a href="<?php echo esc_url($detail_url); ?>">Ver pedido</a>
+                                    </div>
                                 </article>
                             <?php endforeach; ?>
                         </div>

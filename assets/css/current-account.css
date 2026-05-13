@@ -14,6 +14,9 @@
     background: linear-gradient(135deg, #0f766e 0%, #164e63 100%);
     border-radius: 8px;
     color: #ffffff;
+    display: flex;
+    gap: 18px;
+    justify-content: space-between;
     padding: 24px;
 }
 
@@ -35,6 +38,30 @@
 
 .rkm-current-account-summary p {
     color: rgba(255, 255, 255, .82);
+    margin: 0;
+}
+
+.rkm-current-account-summary__meta {
+    align-content: center;
+    display: grid;
+    gap: 8px;
+    min-width: 220px;
+}
+
+.rkm-current-account-summary__meta span {
+    background: rgba(255, 255, 255, .12);
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, .84);
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 12px;
+}
+
+.rkm-current-account-summary__meta strong {
+    display: inline;
+    font-size: inherit;
+    line-height: inherit;
     margin: 0;
 }
 
@@ -159,6 +186,24 @@
     margin-top: 4px;
 }
 
+.rkm-current-account-order__side {
+    align-items: flex-end;
+    display: grid;
+    gap: 8px;
+    justify-items: end;
+}
+
+.rkm-current-account-order__side a {
+    color: #0f766e;
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.rkm-current-account-order__side a:hover {
+    text-decoration: underline;
+}
+
 .rkm-current-account-empty {
     background: #f9fafb;
     border: 1px dashed #d1d5db;
@@ -224,6 +269,16 @@
 .rkm-current-account-badge--rejected {
     background: #fee2e2;
     color: #991b1b;
+}
+
+.rkm-current-account-badge--overdue {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.rkm-current-account-badge--paid {
+    background: #dcfce7;
+    color: #166534;
 }
 
 .rkm-current-account-notice {
@@ -304,6 +359,14 @@
     .rkm-current-account-grid,
     .rkm-current-account-form__row {
         grid-template-columns: 1fr;
+    }
+
+    .rkm-current-account-summary {
+        display: grid;
+    }
+
+    .rkm-current-account-summary__meta {
+        min-width: 0;
     }
 
     .rkm-current-account-page__header {

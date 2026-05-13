@@ -762,6 +762,168 @@
     font-size: 13px;
 }
 
+.rkm-admin-order-modal__current-account {
+    padding: 16px;
+}
+
+.rkm-admin-order-modal__current-account-card {
+    display: grid;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid rgba(203, 213, 225, 0.88);
+    border-radius: 14px;
+    background: #ffffff;
+}
+
+.rkm-admin-order-modal__current-account-card p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+}
+
+.rkm-admin-order-modal__current-account-card div {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.rkm-admin-order-modal__current-account-card > div > span {
+    display: grid;
+    gap: 4px;
+    min-height: 54px;
+    padding: 10px;
+    border-radius: 12px;
+    background: #f8fafc;
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 850;
+}
+
+.rkm-admin-order-modal__current-account-card em {
+    color: #64748b;
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 850;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.rkm-admin-order-modal__current-account .rkm-current-account-badge {
+    align-self: start;
+    border-radius: 999px;
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1;
+    padding: 7px 10px;
+    width: max-content;
+}
+
+.rkm-admin-order-modal__current-account .rkm-current-account-badge--pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.rkm-admin-order-modal__current-account .rkm-current-account-badge--overdue {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.rkm-admin-order-modal__current-account .rkm-current-account-badge--paid {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.rkm-admin-order-modal__current-account-payment {
+    border: 1px solid rgba(203, 213, 225, 0.88);
+    border-radius: 12px;
+    background: #f8fafc;
+    padding: 12px;
+}
+
+.rkm-admin-order-modal__current-account-payment summary {
+    color: #0f172a;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.rkm-admin-order-modal__current-account-payment form {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 12px;
+}
+
+.rkm-admin-order-modal__current-account-payment label {
+    display: grid;
+    gap: 6px;
+}
+
+.rkm-admin-order-modal__current-account-payment label span {
+    color: #475569;
+    font-size: 12px;
+    font-weight: 850;
+}
+
+.rkm-admin-order-modal__current-account-payment input,
+.rkm-admin-order-modal__current-account-payment select,
+.rkm-admin-order-modal__current-account-payment textarea {
+    border: 1px solid rgba(203, 213, 225, 0.94);
+    border-radius: 10px;
+    color: #0f172a;
+    font: inherit;
+    min-height: 40px;
+    padding: 9px 10px;
+    width: 100%;
+}
+
+.rkm-admin-order-modal__current-account-payment label:nth-child(4),
+.rkm-admin-order-modal__current-account-payment label:nth-child(5),
+.rkm-admin-order-modal__current-account-payment button {
+    grid-column: 1 / -1;
+}
+
+.rkm-admin-order-modal__current-account-history {
+    border-top: 1px solid rgba(226, 232, 240, 0.96);
+    display: grid;
+    gap: 8px;
+    padding-top: 12px;
+}
+
+.rkm-admin-order-modal__current-account-history strong {
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.rkm-admin-order-modal__current-account-history article {
+    align-items: flex-start;
+    background: #f8fafc;
+    border-radius: 10px;
+    display: grid;
+    gap: 4px;
+    padding: 10px;
+}
+
+.rkm-admin-order-modal__current-account-history article span {
+    color: #0f172a;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.rkm-admin-order-modal__current-account-history article small,
+.rkm-admin-order-modal__current-account-history article a {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.rkm-admin-order-modal__current-account-history article a {
+    color: #1d4ed8;
+    text-decoration: none;
+}
+
 .rkm-admin-order-modal__warehouse-evidence {
     padding: 16px;
 }

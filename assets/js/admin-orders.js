@@ -32,6 +32,7 @@
         var totalHint = document.getElementById("rkmOperationalOrderTotalHint");
         var items = document.getElementById("rkmOperationalOrderItems");
         var logistics = document.getElementById("rkmOperationalOrderLogistics");
+        var currentAccount = document.getElementById("rkmOperationalOrderCurrentAccount");
         var warehouseEvidence = document.getElementById("rkmOperationalOrderWarehouseEvidence");
         var warehouseIncidents = document.getElementById("rkmOperationalOrderWarehouseIncidents");
         var notes = document.getElementById("rkmOperationalOrderNotes");
@@ -377,6 +378,106 @@
                     rows.length ? '<div>' + rows.join("") + '</div>' : '<p>Sin fechas logisticas registradas todavia.</p>',
                 '</div>'
             ].join("");
+        }
+
+        function renderCurrentAccount(order) {
+            if (!currentAccount) {
+                return;
+            }
+
+            var context = order && order.current_account_context ? order.current_account_context : {};
+            var transactions = Array.isArray(order && order.current_account_transactions)
+                ? order.current_account_transactions
+                : [];
+
+            if (!context.enabled) {
+                currentAccount.innerHTML = '<p class="rkm-admin-order-modal__empty">Sin saldo de cuenta corriente generado.</p>';
+                return;
+            }
+
+            var status = context.status || "pending";
+            var rows = [
+                '<span><em>Saldo pendiente</em>' + escapeDisplay(context.balance_display || (order && order.current_account_balance_display) || "-") + '</span>',
+                '<span><em>Vencimiento</em>' + escapeHtml(context.due_label || (order && order.current_account_due_label) || "-") + '</span>',
+                '<span><em>Entrega</em>' + escapeHtml(context.delivered_label || (order && order.delivered_label) || "-") + '</span>',
+                '<span><em>Estado</em><strong class="rkm-current-account-badge rkm-current-account-badge--' + escapeHtml(status) + '">' + escapeHtml(context.status_label || (order && order.current_account_status_label) || status) + '</strong></span>'
+            ];
+
+            if (context.remaining_label) {
+                rows.push('<span><em>Plazo</em>' + escapeHtml(context.remaining_label) + '</span>');
+            }
+
+            if (context.paid_amount_display) {
+                rows.push('<span><em>Monto inicial</em>' + escapeDisplay(context.paid_amount_display) + '</span>');
+            }
+
+            var canRegisterPayment = Boolean(
+                window.rkmOperationalOrders.can_register_current_account_payments
+                && Number(context.balance || order.current_account_balance || 0) > 0
+            );
+            var methods = Array.isArray(window.rkmOperationalOrders.payment_methods)
+                ? window.rkmOperationalOrders.payment_methods
+                : [];
+            var methodOptions = [
+                '<option value="">Sin metodo asociado</option>'
+            ].concat(methods.map(function (method) {
+                return '<option value="' + escapeHtml(method.id || "") + '">' + escapeHtml(method.name || method.id || "") + '</option>';
+            })).join("");
+            var transactionHtml = transactions.length
+                ? [
+                    '<div class="rkm-admin-order-modal__current-account-history">',
+                        '<strong>Historial de pagos</strong>',
+                        transactions.map(function (transaction) {
+                            var receipt = transaction.receipt_url
+                                ? '<a href="' + escapeHtml(transaction.receipt_url) + '" target="_blank" rel="noopener noreferrer">Ver comprobante</a>'
+                                : '';
+                            return [
+                                '<article>',
+                                    '<span>' + escapeDisplay(transaction.amount_display || transaction.amount || "-") + '</span>',
+                                    '<small>' + escapeHtml(transaction.status_label || transaction.status || "-") + ' · ' + escapeHtml(transaction.created_at || "-") + '</small>',
+                                    transaction.method_label ? '<small>' + escapeHtml(transaction.method_label) + '</small>' : '',
+                                    transaction.reference ? '<small>Ref: ' + escapeHtml(transaction.reference) + '</small>' : '',
+                                    receipt,
+                                '</article>'
+                            ].join("");
+                        }).join(""),
+                    '</div>'
+                ].join("")
+                : '<p class="rkm-admin-order-modal__empty">Sin pagos registrados.</p>';
+            var formHtml = canRegisterPayment
+                ? [
+                    '<details class="rkm-admin-order-modal__current-account-payment">',
+                        '<summary>Registrar pago</summary>',
+                        '<form data-rkm-current-account-payment-form>',
+                            '<label><span>Monto</span><input type="number" min="0.01" step="0.01" name="amount" required></label>',
+                            '<label><span>Metodo de pago</span><select name="method_id">' + methodOptions + '</select></label>',
+                            '<label><span>Referencia</span><input type="text" name="reference" maxlength="190"></label>',
+                            '<label><span>Comprobante opcional</span><input type="file" name="receipt" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"></label>',
+                            '<label><span>Nota</span><textarea name="note" rows="2"></textarea></label>',
+                            '<button type="submit" class="rkm-admin-orders__btn rkm-admin-orders__btn--primary">Guardar pago</button>',
+                        '</form>',
+                    '</details>'
+                ].join("")
+                : "";
+
+            currentAccount.innerHTML = [
+                '<div class="rkm-admin-order-modal__current-account-card">',
+                    '<p>Cuenta corriente generada al marcar el pedido como entregado.</p>',
+                    '<div>',
+                        rows.join(""),
+                    '</div>',
+                    formHtml,
+                    transactionHtml,
+                '</div>'
+            ].join("");
+
+            var paymentForm = currentAccount.querySelector("[data-rkm-current-account-payment-form]");
+            if (paymentForm) {
+                paymentForm.addEventListener("submit", function (event) {
+                    event.preventDefault();
+                    registerCurrentAccountPayment(order.id, paymentForm);
+                });
+            }
         }
 
         function renderWarehouseEvidence(order) {
@@ -954,6 +1055,7 @@
                 total.textContent = decodeHtml(order.total || "-");
                 renderItems(order);
                 renderLogistics(order);
+                renderCurrentAccount(order);
                 renderWarehouseEvidence(order);
                 renderWarehouseIncidents(order);
                 if (isEditable(order)) {
@@ -1193,6 +1295,57 @@
                 });
         }
 
+        function registerCurrentAccountPayment(orderId, form) {
+            var order = ordersById[String(orderId)];
+            var submitButton = form ? form.querySelector('button[type="submit"]') : null;
+            var formData = new FormData(form);
+            var amount = Number(formData.get("amount") || 0);
+
+            if (!order || !order.current_account_context || !order.current_account_context.enabled) {
+                showNotice("El pedido no tiene cuenta corriente activa.", "error");
+                return;
+            }
+
+            if (amount <= 0) {
+                showNotice("El monto debe ser mayor a cero.", "error");
+                return;
+            }
+
+            if (amount > Number(order.current_account_context.balance || 0)) {
+                showNotice("El monto no puede superar el saldo pendiente.", "error");
+                return;
+            }
+
+            formData.append("action", "rkm_register_current_account_payment");
+            formData.append("order_id", orderId);
+            formData.append("nonce", window.rkmOperationalOrders.nonce || "");
+
+            setButtonLoading(submitButton, true, "Guardando...");
+
+            fetch(window.rkmOperationalOrders.ajax_url, {
+                method: "POST",
+                body: formData,
+                credentials: "same-origin"
+            })
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (payload) {
+                    if (!payload || !payload.success) {
+                        throw new Error(payload && payload.data && payload.data.message ? payload.data.message : "No se pudo registrar el pago.");
+                    }
+
+                    applyUpdatedOrder(payload.data.order);
+                    showNotice(payload.data.message || "Pago registrado correctamente.", "success");
+                })
+                .catch(function (error) {
+                    showNotice(error.message || "No se pudo registrar el pago.", "error");
+                })
+                .finally(function () {
+                    setButtonLoading(submitButton, false);
+                });
+        }
+
         function saveOrder(orderId, sourceButton) {
             var order = ordersById[String(orderId)];
 
@@ -1330,6 +1483,7 @@
 
             renderItems(order);
             renderLogistics(order);
+            renderCurrentAccount(order);
             renderWarehouseEvidence(order);
             renderWarehouseIncidents(order);
             if (isEditable(order)) {
