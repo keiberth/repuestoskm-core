@@ -426,7 +426,7 @@
             var transactionHtml = transactions.length
                 ? [
                     '<div class="rkm-admin-order-modal__current-account-history">',
-                        '<strong>Historial de pagos</strong>',
+                        '<strong>Historial de pagos informados</strong>',
                         transactions.map(function (transaction) {
                             var receipt = transaction.receipt_url
                                 ? '<a href="' + escapeHtml(transaction.receipt_url) + '" target="_blank" rel="noopener noreferrer">Ver comprobante</a>'
@@ -443,18 +443,18 @@
                         }).join(""),
                     '</div>'
                 ].join("")
-                : '<p class="rkm-admin-order-modal__empty">Sin pagos registrados.</p>';
+                : '<p class="rkm-admin-order-modal__empty">Sin pagos informados.</p>';
             var formHtml = canRegisterPayment
                 ? [
                     '<details class="rkm-admin-order-modal__current-account-payment">',
-                        '<summary>Registrar pago</summary>',
+                        '<summary>Informar pago externo</summary>',
                         '<form data-rkm-current-account-payment-form>',
                             '<label><span>Monto</span><input type="number" min="0.01" step="0.01" name="amount" required></label>',
-                            '<label><span>Metodo de pago</span><select name="method_id">' + methodOptions + '</select></label>',
+                            '<label><span>Forma de pago</span><select name="method_id">' + methodOptions + '</select></label>',
                             '<label><span>Referencia</span><input type="text" name="reference" maxlength="190"></label>',
-                            '<label><span>Comprobante opcional</span><input type="file" name="receipt" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"></label>',
+                            '<label><span>Cargar comprobante</span><input type="file" name="receipt" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"></label>',
                             '<label><span>Nota</span><textarea name="note" rows="2"></textarea></label>',
-                            '<button type="submit" class="rkm-admin-orders__btn rkm-admin-orders__btn--primary">Guardar pago</button>',
+                            '<button type="submit" class="rkm-admin-orders__btn rkm-admin-orders__btn--primary">Informar pago</button>',
                         '</form>',
                     '</details>'
                 ].join("")
@@ -1336,10 +1336,10 @@
                     }
 
                     applyUpdatedOrder(payload.data.order);
-                    showNotice(payload.data.message || "Pago registrado correctamente.", "success");
+                    showNotice(payload.data.message || "Pago informado correctamente.", "success");
                 })
                 .catch(function (error) {
-                    showNotice(error.message || "No se pudo registrar el pago.", "error");
+                    showNotice(error.message || "No se pudo informar el pago.", "error");
                 })
                 .finally(function () {
                     setButtonLoading(submitButton, false);

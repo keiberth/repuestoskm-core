@@ -26,7 +26,27 @@ class RKM_Sellers {
     }
 
     public static function get_section_url() {
-        return home_url('/mi-cuenta/panel/?section=' . self::SECTION_KEY);
+        if (function_exists('rkm_get_panel_url')) {
+            return rkm_get_panel_url(['section' => self::SECTION_KEY]);
+        }
+
+        $base_url = function_exists('wc_get_account_endpoint_url')
+            ? wc_get_account_endpoint_url('panel')
+            : home_url('/mi-cuenta/panel/');
+
+        return add_query_arg('section', self::SECTION_KEY, $base_url);
+    }
+
+    private static function get_panel_section_url($section) {
+        if (function_exists('rkm_get_panel_url')) {
+            return rkm_get_panel_url(['section' => $section]);
+        }
+
+        $base_url = function_exists('wc_get_account_endpoint_url')
+            ? wc_get_account_endpoint_url('panel')
+            : home_url('/mi-cuenta/panel/');
+
+        return add_query_arg('section', $section, $base_url);
     }
 
     public static function get_page_title() {
@@ -201,12 +221,12 @@ class RKM_Sellers {
             [
                 'label'       => 'Cargar pedido',
                 'description' => 'Ir directo al flujo actual de nueva orden.',
-                'url'         => home_url('/mi-cuenta/panel/?section=nueva-orden'),
+                'url'         => self::get_panel_section_url('nueva-orden'),
             ],
             [
                 'label'       => 'Ver pedidos',
                 'description' => 'Abrir el listado actual de pedidos del sistema.',
-                'url'         => class_exists('RKM_Operational_Orders') ? RKM_Operational_Orders::get_section_url() : home_url('/mi-cuenta/panel/?section=pedidos-operativos'),
+                'url'         => class_exists('RKM_Operational_Orders') ? RKM_Operational_Orders::get_section_url() : self::get_panel_section_url('pedidos-operativos'),
             ],
         ];
     }

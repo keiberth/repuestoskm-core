@@ -58,6 +58,9 @@ if (!defined('ABSPATH')) {
                 <div class="rkm-admin-actions">
                     <?php foreach ($data['admin_quick_actions'] as $action) : ?>
                         <a class="rkm-admin-action-card" href="<?php echo esc_url($action['url']); ?>">
+                            <?php if (!empty($action['badge'])) : ?>
+                                <span class="rkm-admin-action-card__badge"><?php echo esc_html((string) $action['badge']); ?></span>
+                            <?php endif; ?>
                             <strong><?php echo esc_html($action['label']); ?></strong>
                             <span><?php echo esc_html($action['description']); ?></span>
                         </a>

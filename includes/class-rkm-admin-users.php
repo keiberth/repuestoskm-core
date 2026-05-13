@@ -24,7 +24,27 @@ class RKM_Admin_Users {
     }
 
     public static function get_section_url() {
-        return home_url('/mi-cuenta/panel/?section=' . self::SECTION_KEY);
+        if (function_exists('rkm_get_panel_url')) {
+            return rkm_get_panel_url(['section' => self::SECTION_KEY]);
+        }
+
+        $base_url = function_exists('wc_get_account_endpoint_url')
+            ? wc_get_account_endpoint_url('panel')
+            : home_url('/mi-cuenta/panel/');
+
+        return add_query_arg('section', self::SECTION_KEY, $base_url);
+    }
+
+    private static function get_panel_url($args = []) {
+        if (function_exists('rkm_get_panel_url')) {
+            return rkm_get_panel_url($args);
+        }
+
+        $base_url = function_exists('wc_get_account_endpoint_url')
+            ? wc_get_account_endpoint_url('panel')
+            : home_url('/mi-cuenta/panel/');
+
+        return !empty($args) ? add_query_arg($args, $base_url) : $base_url;
     }
 
     public static function get_page_title() {
@@ -327,10 +347,10 @@ class RKM_Admin_Users {
                 'role_slug'  => $primary_role,
                 'status'     => ((int) $user->user_status === 0) ? 'Activo' : 'Inactivo',
                 'registered' => mysql2date('d/m/Y', $user->user_registered, true),
-                'edit_url'   => add_query_arg([
+                'edit_url'   => self::get_panel_url([
                     'section' => self::SECTION_KEY,
                     'edit_user' => $user->ID,
-                ], home_url('/mi-cuenta/panel/')),
+                ]),
             ];
         }
 
@@ -428,10 +448,10 @@ class RKM_Admin_Users {
     }
 
     private function redirect_to_edit($user_id) {
-        wp_safe_redirect(add_query_arg([
+        wp_safe_redirect(self::get_panel_url([
             'section' => self::SECTION_KEY,
             'edit_user' => absint($user_id),
-        ], home_url('/mi-cuenta/panel/')));
+        ]));
         exit;
     }
 }

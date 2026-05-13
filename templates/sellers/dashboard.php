@@ -2,6 +2,9 @@
 if (!defined('ABSPATH')) {
     exit;
 }
+
+$panel_base_url = function_exists('wc_get_account_endpoint_url') ? wc_get_account_endpoint_url('panel') : home_url('/mi-cuenta/panel/');
+$panel_url = function_exists('rkm_get_panel_url') ? rkm_get_panel_url() : $panel_base_url;
 ?>
 
 <div class="rkm-app rkm-module-app rkm-sellers-app">
@@ -46,7 +49,7 @@ if (!defined('ABSPATH')) {
                 </div>
 
                 <?php if (!empty($data['seller_customer_options'])) : ?>
-                    <form class="rkm-sellers-actions-form" method="get" action="<?php echo esc_url(home_url('/mi-cuenta/panel/')); ?>">
+                    <form class="rkm-sellers-actions-form" method="get" action="<?php echo esc_url($panel_url); ?>">
                         <input type="hidden" name="section" value="nueva-orden">
 
                         <label class="rkm-sellers-actions-form__field" for="rkmSellerCustomerId">
@@ -115,7 +118,7 @@ if (!defined('ABSPATH')) {
             </div>
 
             <?php if (!empty($data['seller_customer_options'])) : ?>
-                <form class="rkm-sellers-history-form" method="get" action="<?php echo esc_url(home_url('/mi-cuenta/panel/')); ?>">
+                <form class="rkm-sellers-history-form" method="get" action="<?php echo esc_url($panel_url); ?>">
                     <input type="hidden" name="section" value="<?php echo esc_attr($current); ?>">
 
                     <label class="rkm-sellers-history-form__field" for="rkmSellerHistoryCustomerId">

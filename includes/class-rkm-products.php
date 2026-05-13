@@ -34,6 +34,10 @@ class RKM_Products {
     }
 
     private static function get_panel_base_url() {
+        if (function_exists('rkm_get_panel_url')) {
+            return rkm_get_panel_url();
+        }
+
         if (function_exists('wc_get_account_endpoint_url')) {
             $panel_url = wc_get_account_endpoint_url('panel');
 

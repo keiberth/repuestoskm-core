@@ -7,8 +7,10 @@ $page_title = $data['page_title'] ?? 'Productos';
 $page_subtitle = $data['page_subtitle'] ?? '';
 $notice = $data['products_notice'] ?? null;
 $view = $data['view'] ?? 'list';
-$list_url = $data['list_url'] ?? home_url('/mi-cuenta/panel/?section=productos');
-$create_url = $data['create_url'] ?? home_url('/mi-cuenta/panel/?section=productos&view=create');
+$panel_base_url = function_exists('wc_get_account_endpoint_url') ? wc_get_account_endpoint_url('panel') : home_url('/mi-cuenta/panel/');
+$panel_url = function_exists('rkm_get_panel_url') ? rkm_get_panel_url() : $panel_base_url;
+$list_url = $data['list_url'] ?? (function_exists('rkm_get_panel_url') ? rkm_get_panel_url(['section' => 'productos']) : add_query_arg('section', 'productos', $panel_base_url));
+$create_url = $data['create_url'] ?? (function_exists('rkm_get_panel_url') ? rkm_get_panel_url(['section' => 'productos', 'view' => 'create']) : add_query_arg(['section' => 'productos', 'view' => 'create'], $panel_base_url));
 $subtemplate = RKM_CORE_PATH . 'templates/admin/products/list.php';
 
 if ($view === 'create') {
@@ -31,7 +33,7 @@ if ($view === 'create') {
             </div>
 
             <div class="rkm-admin-products-page__actions">
-                <a class="rkm-admin-products-page__back" href="<?php echo esc_url(home_url('/mi-cuenta/panel/')); ?>">Panel admin</a>
+                <a class="rkm-admin-products-page__back" href="<?php echo esc_url($panel_url); ?>">Panel admin</a>
                 <a class="rkm-admin-products-page__back <?php echo $view === 'list' ? 'is-active' : ''; ?>" href="<?php echo esc_url($list_url); ?>">Publicaciones</a>
                 <a class="rkm-admin-products-page__primary" href="<?php echo esc_url($create_url); ?>">Nueva publicacion</a>
             </div>

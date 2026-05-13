@@ -98,6 +98,20 @@ if (!function_exists('rkm_get_product_bcv_price')) {
     }
 }
 
+if (!function_exists('rkm_get_panel_url')) {
+    function rkm_get_panel_url($args = []) {
+        $base_url = function_exists('wc_get_account_endpoint_url')
+            ? wc_get_account_endpoint_url('panel')
+            : home_url('/mi-cuenta/panel/');
+
+        $args = is_array($args) ? array_filter($args, static function ($value) {
+            return $value !== null && $value !== '';
+        }) : [];
+
+        return !empty($args) ? add_query_arg($args, $base_url) : $base_url;
+    }
+}
+
 require_once RKM_CORE_PATH . 'includes/class-rkm-loader.php';
 require_once RKM_CORE_PATH . 'includes/class-rkm-permissions.php';
 require_once RKM_CORE_PATH . 'includes/class-rkm-auth.php';

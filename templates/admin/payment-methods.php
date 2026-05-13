@@ -8,7 +8,14 @@ $page_subtitle = isset($data['page_subtitle']) ? $data['page_subtitle'] : '';
 $notice = isset($data['payment_methods_notice']) ? $data['payment_methods_notice'] : null;
 $methods = isset($data['payment_methods']) && is_array($data['payment_methods']) ? $data['payment_methods'] : [];
 $types = isset($data['payment_method_types']) && is_array($data['payment_method_types']) ? $data['payment_method_types'] : [];
-$section_url = class_exists('RKM_Payment_Methods') ? RKM_Payment_Methods::get_section_url() : home_url('/mi-cuenta/panel/?section=formas-pago');
+$panel_base_url = function_exists('wc_get_account_endpoint_url') ? wc_get_account_endpoint_url('panel') : home_url('/mi-cuenta/panel/');
+if (empty($panel_base_url)) {
+    $panel_base_url = home_url('/mi-cuenta/panel/');
+}
+$section_url = class_exists('RKM_Payment_Methods')
+    ? RKM_Payment_Methods::get_section_url()
+    : add_query_arg('section', 'formas-pago', $panel_base_url);
+$panel_url = function_exists('rkm_get_panel_url') ? rkm_get_panel_url() : $panel_base_url;
 $active_count = count(array_filter($methods, static function ($method) {
     return !empty($method['active']);
 }));
@@ -24,7 +31,7 @@ $active_count = count(array_filter($methods, static function ($method) {
                 <p><?php echo esc_html($page_subtitle); ?></p>
             </div>
 
-            <a class="rkm-admin-payment-methods-page__back" href="<?php echo esc_url(home_url('/mi-cuenta/panel/')); ?>">
+            <a class="rkm-admin-payment-methods-page__back" href="<?php echo esc_url($panel_url); ?>">
                 Volver al panel admin
             </a>
         </div>
@@ -60,6 +67,7 @@ $active_count = count(array_filter($methods, static function ($method) {
 
                     <form method="post" action="<?php echo esc_url($section_url); ?>" class="rkm-admin-payment-methods-form" data-rkm-payment-method-form>
                         <input type="hidden" name="rkm_payment_methods_action" value="save_method">
+                        <input type="hidden" name="section" value="formas-pago">
                         <input type="hidden" name="method_id" value="" data-rkm-payment-method-id>
                         <?php wp_nonce_field('rkm_payment_methods_update', 'rkm_payment_methods_nonce'); ?>
 
@@ -154,6 +162,7 @@ $active_count = count(array_filter($methods, static function ($method) {
 
                                         <form method="post" action="<?php echo esc_url($section_url); ?>">
                                             <input type="hidden" name="rkm_payment_methods_action" value="toggle_method">
+                                            <input type="hidden" name="section" value="formas-pago">
                                             <input type="hidden" name="method_id" value="<?php echo esc_attr($method['id']); ?>">
                                             <?php wp_nonce_field('rkm_payment_methods_update', 'rkm_payment_methods_nonce'); ?>
                                             <button type="submit" class="rkm-admin-payment-methods-link">
@@ -163,6 +172,7 @@ $active_count = count(array_filter($methods, static function ($method) {
 
                                         <form method="post" action="<?php echo esc_url($section_url); ?>" data-rkm-payment-method-delete>
                                             <input type="hidden" name="rkm_payment_methods_action" value="delete_method">
+                                            <input type="hidden" name="section" value="formas-pago">
                                             <input type="hidden" name="method_id" value="<?php echo esc_attr($method['id']); ?>">
                                             <?php wp_nonce_field('rkm_payment_methods_update', 'rkm_payment_methods_nonce'); ?>
                                             <button type="submit" class="rkm-admin-payment-methods-link rkm-admin-payment-methods-link--danger">

@@ -235,7 +235,7 @@ document.addEventListener("DOMContentLoaded", function () {
             details = `
                 <div class="rkm-order-payment-term__details" data-rkm-payment-term-details>
                     <label class="rkm-order-payment-term__field" for="rkmUpfrontAmount">
-                        <span>Monto a pagar ahora</span>
+                        <span>Monto informado como realizado</span>
                         <input id="rkmUpfrontAmount" type="number" min="0" step="0.01" value="${termState.upfrontAmount || ""}" data-rkm-upfront-amount>
                     </label>
                     <span>Saldo restante a credito: ${formatPrice(calculations.creditBalance)}</span>
@@ -273,8 +273,8 @@ document.addEventListener("DOMContentLoaded", function () {
             return `
                 <div class="rkm-order-payment" data-rkm-payment-methods>
                     <div class="rkm-order-payment__header">
-                        <span class="rkm-order-payment__eyebrow">Pago</span>
-                        <strong>Forma de pago</strong>
+                        <span class="rkm-order-payment__eyebrow">Pago externo</span>
+                        <strong>Forma de pago informada</strong>
                     </div>
                     <div class="rkm-order-payment__empty">
                         No hay formas de pago activas por ahora. El pedido se puede crear sin seleccion.
@@ -295,8 +295,8 @@ document.addEventListener("DOMContentLoaded", function () {
         return `
             <div class="rkm-order-payment" data-rkm-payment-methods>
                 <div class="rkm-order-payment__header">
-                    <span class="rkm-order-payment__eyebrow">Pago</span>
-                    <strong>${termState.term === "mixed" ? "Forma de pago inicial" : "Forma de pago"}</strong>
+                    <span class="rkm-order-payment__eyebrow">Pago externo</span>
+                    <strong>${termState.term === "mixed" ? "Forma de pago inicial informada" : "Forma de pago informada"}</strong>
                 </div>
 
                 <label class="rkm-order-payment__field" for="rkmPaymentMethod">
@@ -310,7 +310,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 <div id="rkmPaymentMethodDescription" class="rkm-order-payment__description" data-rkm-payment-method-description hidden></div>
 
                 <label class="rkm-order-payment__field" for="rkmPaymentNote">
-                    <span>Observacion de pago</span>
+                    <span>Observacion del pago externo</span>
                     <textarea id="rkmPaymentNote" data-rkm-payment-note rows="3" placeholder="Referencia, banco, condiciones o comentario opcional.">${escapeHtml(paymentState.note)}</textarea>
                 </label>
             </div>

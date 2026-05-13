@@ -9,7 +9,7 @@ $pending_orders = isset($data['pending_orders']) && is_array($data['pending_orde
 $payment_reports = isset($data['payment_reports']) && is_array($data['payment_reports']) ? $data['payment_reports'] : [];
 $payment_methods = isset($data['payment_methods']) && is_array($data['payment_methods']) ? $data['payment_methods'] : [];
 $notice = $data['current_account_notice'] ?? null;
-$section_url = $data['section_url'] ?? home_url('/mi-cuenta/panel/?section=cuenta-corriente');
+$section_url = $data['section_url'] ?? (function_exists('rkm_get_panel_url') ? rkm_get_panel_url(['section' => 'cuenta-corriente']) : home_url('/mi-cuenta/panel/?section=cuenta-corriente'));
 $status_labels = isset($data['status_labels']) && is_array($data['status_labels']) ? $data['status_labels'] : [];
 $current_account = class_exists('RKM_Current_Account') ? new RKM_Current_Account() : null;
 $pending_total = $data['pending_total'] ?? 0;
@@ -57,7 +57,7 @@ $today = function_exists('wp_date') ? wp_date('Y-m-d', current_time('timestamp')
                 <section class="rkm-card rkm-current-account-panel">
                     <div class="rkm-current-account-panel__header">
                         <h2>Informar pago</h2>
-                        <p>El pago queda pendiente hasta que administracion lo valide.</p>
+                        <p>Reporta un pago realizado por fuera de la plataforma. Queda pendiente de validacion administrativa.</p>
                     </div>
 
                     <?php if (empty($pending_orders)) : ?>
@@ -95,7 +95,7 @@ $today = function_exists('wp_date') ? wp_date('Y-m-d', current_time('timestamp')
 
                             <div class="rkm-current-account-form__row">
                                 <label class="rkm-current-account-field">
-                                    <span>Monto pagado</span>
+                                    <span>Monto realizado</span>
                                     <input type="number" name="amount" min="0.01" step="0.01" required placeholder="0,00" data-rkm-payment-amount>
                                 </label>
 
@@ -118,20 +118,20 @@ $today = function_exists('wp_date') ? wp_date('Y-m-d', current_time('timestamp')
                             </div>
 
                             <label class="rkm-current-account-field">
-                                <span>Referencia / comprobante</span>
-                                <input type="text" name="reference" maxlength="160" placeholder="Ej: numero de transferencia o captura enviada">
+                                <span>Referencia externa</span>
+                                <input type="text" name="reference" maxlength="160" placeholder="Ej: numero de transferencia, pago movil o Zelle">
                             </label>
 
                             <label class="rkm-current-account-field rkm-current-account-file">
-                                <span>Comprobante adjunto</span>
+                                <span>Cargar comprobante</span>
                                 <input
                                     type="file"
                                     name="receipt"
                                     required
-                                    accept="<?php echo esc_attr($current_account ? $current_account->get_receipt_accept_attribute() : '.jpg,.jpeg,.png,.pdf'); ?>"
+                                    accept="<?php echo esc_attr($current_account ? $current_account->get_receipt_accept_attribute() : '.jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf'); ?>"
                                     data-rkm-payment-receipt
                                 >
-                                <small>Formatos permitidos: JPG, PNG o PDF. Tamano maximo: 5 MB.</small>
+                                <small>Formatos permitidos: JPG, PNG, WEBP o PDF. Tamano maximo: 5 MB.</small>
                             </label>
 
                             <label class="rkm-current-account-field">
@@ -196,7 +196,7 @@ $today = function_exists('wp_date') ? wp_date('Y-m-d', current_time('timestamp')
             <section class="rkm-card rkm-current-account-panel rkm-current-account-history">
                 <div class="rkm-current-account-panel__header">
                     <h2>Historial de pagos informados</h2>
-                    <p>Seguimiento de pagos pendientes, aprobados y rechazados.</p>
+                    <p>Seguimiento de pagos reportados, pendientes de validacion, aprobados y rechazados.</p>
                 </div>
 
                 <?php if (empty($payment_reports)) : ?>

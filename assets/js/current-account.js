@@ -11,7 +11,7 @@
     const balanceHint = form.querySelector('[data-rkm-payment-balance]');
     const feedback = form.querySelector('[data-rkm-current-account-feedback]');
     const maxReceiptSize = 5 * 1024 * 1024;
-    const allowedReceiptTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+    const allowedReceiptTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
     const formatAmount = (value) => {
         const amount = Number(value || 0);
@@ -85,7 +85,7 @@
 
         if (!allowedReceiptTypes.includes(receipt.type)) {
             event.preventDefault();
-            setFeedback('El comprobante debe ser JPG, PNG o PDF.');
+            setFeedback('El comprobante debe ser JPG, PNG, WEBP o PDF.');
             return;
         }
 

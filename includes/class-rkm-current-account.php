@@ -56,12 +56,20 @@ class RKM_Current_Account {
     }
 
     public static function get_admin_section_url() {
-        return home_url('/mi-cuenta/panel/?section=' . self::ADMIN_SECTION_KEY);
+        if (function_exists('rkm_get_panel_url')) {
+            return rkm_get_panel_url(['section' => self::ADMIN_SECTION_KEY]);
+        }
+
+        $base_url = function_exists('wc_get_account_endpoint_url')
+            ? wc_get_account_endpoint_url('panel')
+            : home_url('/mi-cuenta/panel/');
+
+        return add_query_arg('section', self::ADMIN_SECTION_KEY, $base_url);
     }
 
     public static function get_status_labels() {
         return [
-            self::STATUS_PENDING  => 'Pendiente',
+            self::STATUS_PENDING  => 'Pendiente de validacion',
             self::STATUS_APPROVED => 'Aprobado',
             self::STATUS_REJECTED => 'Rechazado',
             'voided'              => 'Anulado',
@@ -198,7 +206,7 @@ class RKM_Current_Account {
 
         $view_data = array_merge($data, [
             'page_title' => 'Pagos clientes',
-            'page_subtitle' => 'Revisa, aprueba o rechaza los pagos informados por clientes.',
+            'page_subtitle' => 'Valida pagos realizados por fuera de la plataforma antes de impactar cuenta corriente.',
             'current_section' => self::ADMIN_SECTION_KEY,
             'payment_reports' => $this->get_admin_payment_reports(),
             'current_account_notice' => $this->consume_flash_notice(),
@@ -365,7 +373,8 @@ class RKM_Current_Account {
         }
 
         if ($action === 'reject_payment') {
-            $this->reject_payment_report($report_id);
+            $reason = isset($_POST['rejection_note']) ? sanitize_textarea_field(wp_unslash($_POST['rejection_note'])) : '';
+            $this->reject_payment_report($report_id, $reason);
         }
 
         $this->set_flash_notice('error', 'Accion no reconocida.');
@@ -421,7 +430,7 @@ class RKM_Current_Account {
         $this->redirect_to(self::get_admin_section_url());
     }
 
-    public function reject_payment_report($report_id) {
+    public function reject_payment_report($report_id, $reason = '') {
         if (!class_exists('RKM_Current_Account_Transactions')) {
             $this->set_flash_notice('error', 'El registro formal de cobranza no esta disponible.');
             $this->redirect_to(self::get_admin_section_url());
@@ -439,7 +448,7 @@ class RKM_Current_Account {
             $this->redirect_to(self::get_admin_section_url());
         }
 
-        $result = RKM_Current_Account_Transactions::reject_transaction($report_id);
+        $result = RKM_Current_Account_Transactions::reject_transaction($report_id, $reason);
 
         if (is_wp_error($result)) {
             $this->set_flash_notice('error', $result->get_error_message());
@@ -887,8 +896,11 @@ class RKM_Current_Account {
         $reported_by = (int) ($transaction['created_by'] ?? 0);
         $customer = $customer_id > 0 ? get_user_by('id', $customer_id) : null;
         $reported_by_user = $reported_by > 0 ? get_user_by('id', $reported_by) : null;
+        $reviewed_by = (int) ($transaction['approved_by'] ?? 0);
+        $reviewed_by_user = $reviewed_by > 0 ? get_user_by('id', $reviewed_by) : null;
         $order = function_exists('wc_get_order') && $order_id > 0 ? wc_get_order($order_id) : null;
         $created_at = (string) ($transaction['created_at'] ?? '');
+        $note = (string) ($transaction['note'] ?? '');
 
         return [
             'id' => (int) $transaction['id'],
@@ -898,11 +910,11 @@ class RKM_Current_Account {
             'order_number' => $order ? $order->get_order_number() : (string) $order_id,
             'order_balance' => $order ? $this->get_order_credit_balance($order) : 0,
             'amount' => (float) ($transaction['amount'] ?? 0),
-            'payment_date' => $created_at !== '' ? substr($created_at, 0, 10) : '',
+            'payment_date' => $this->extract_payment_date_from_note($note) ?: ($created_at !== '' ? substr($created_at, 0, 10) : ''),
             'payment_method_id' => (string) ($transaction['method_id'] ?? ''),
             'payment_method_label' => (string) ($transaction['method_label'] ?? ''),
             'reference' => (string) ($transaction['reference'] ?? ''),
-            'note' => (string) ($transaction['note'] ?? ''),
+            'note' => $note,
             'status' => (string) ($transaction['status'] ?? self::STATUS_PENDING),
             'created_at' => $created_at,
             'updated_at' => (string) ($transaction['updated_at'] ?? ''),
@@ -911,9 +923,20 @@ class RKM_Current_Account {
             'reported_by_role' => $reported_by_user instanceof WP_User ? $this->get_reported_by_role($reported_by_user) : 'customer',
             'receipt_attachment_id' => (int) ($transaction['receipt_attachment_id'] ?? 0),
             'receipt_url' => (string) ($transaction['receipt_url'] ?? ''),
-            'reviewed_by' => (int) ($transaction['approved_by'] ?? 0),
+            'reviewed_by' => $reviewed_by,
+            'reviewed_by_name' => $reviewed_by_user instanceof WP_User ? ($reviewed_by_user->display_name ?: $reviewed_by_user->user_login) : '',
             'reviewed_at' => (string) ($transaction['approved_at'] ?? ''),
         ];
+    }
+
+    private function extract_payment_date_from_note($note) {
+        $note = (string) $note;
+
+        if (preg_match('/Fecha de pago informada:\s*(\d{4}-\d{2}-\d{2})/', $note, $matches)) {
+            return $matches[1];
+        }
+
+        return '';
     }
 
     public static function maybe_generate_order_debt($order, $delivered_at = '', $user = null) {
@@ -1101,6 +1124,10 @@ class RKM_Current_Account {
         return array_values($reports);
     }
 
+    public function get_pending_payment_reports_count() {
+        return count($this->get_pending_payment_reports());
+    }
+
     private function get_payment_report($report_id) {
         global $wpdb;
 
@@ -1143,6 +1170,8 @@ class RKM_Current_Account {
         $order_id = (int) $row['order_id'];
         $reported_by = (int) $row['reported_by'];
         $reported_by_user = $reported_by > 0 ? get_user_by('id', $reported_by) : null;
+        $reviewed_by = (int) $row['reviewed_by'];
+        $reviewed_by_user = $reviewed_by > 0 ? get_user_by('id', $reviewed_by) : null;
         $receipt_attachment_id = (int) $row['receipt_attachment_id'];
         $customer = $customer_id > 0 ? get_user_by('id', $customer_id) : null;
         $order = function_exists('wc_get_order') && $order_id > 0 ? wc_get_order($order_id) : null;
@@ -1168,7 +1197,8 @@ class RKM_Current_Account {
             'reported_by_role'     => (string) $row['reported_by_role'],
             'receipt_attachment_id' => $receipt_attachment_id,
             'receipt_url'          => $this->get_receipt_url((int) $report_id),
-            'reviewed_by'          => (int) $row['reviewed_by'],
+            'reviewed_by'          => $reviewed_by,
+            'reviewed_by_name'     => $reviewed_by_user instanceof WP_User ? ($reviewed_by_user->display_name ?: $reviewed_by_user->user_login) : '',
             'reviewed_at'          => (string) $row['reviewed_at'],
         ];
     }
@@ -1305,7 +1335,7 @@ class RKM_Current_Account {
     }
 
     public function get_receipt_accept_attribute() {
-        return '.jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf';
+        return '.jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf';
     }
 
     private function get_report_payment_methods() {
@@ -1437,7 +1467,7 @@ class RKM_Current_Account {
         $filetype = wp_check_filetype_and_ext($file['tmp_name'], $file['name'], $allowed_mimes);
 
         if (empty($filetype['ext']) || empty($filetype['type']) || !in_array($filetype['type'], $allowed_mimes, true)) {
-            return new WP_Error('rkm_receipt_invalid_type', 'El comprobante debe ser JPG, PNG o PDF.');
+            return new WP_Error('rkm_receipt_invalid_type', 'El comprobante debe ser JPG, PNG, WEBP o PDF.');
         }
 
         return true;
@@ -1464,6 +1494,7 @@ class RKM_Current_Account {
             'jpg'  => 'image/jpeg',
             'jpeg' => 'image/jpeg',
             'png'  => 'image/png',
+            'webp' => 'image/webp',
             'pdf'  => 'application/pdf',
         ];
     }

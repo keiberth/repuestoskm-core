@@ -20,6 +20,13 @@ $brand_logo = defined('RKM_CORE_URL') ? RKM_CORE_URL . 'assets/img/logo.png' : '
 $brand_name = 'Repuestos-KM';
 $bcv_rate = isset($data['bcv_rate']) && is_array($data['bcv_rate']) ? $data['bcv_rate'] : null;
 $section = isset($_GET['section']) ? sanitize_key(wp_unslash($_GET['section'])) : 'panel';
+$panel_url = function_exists('rkm_get_panel_url') ? rkm_get_panel_url() : home_url('/mi-cuenta/panel/');
+$pending_payment_reports_count = 0;
+
+if (class_exists('RKM_Current_Account') && RKM_Current_Account::can_admin_access()) {
+    $pending_payment_reports_count = (new RKM_Current_Account())->get_pending_payment_reports_count();
+}
+
 $module_labels = [
     'panel'          => 'Panel de cuenta',
     'catalogo'       => 'Catalogo',
@@ -45,7 +52,7 @@ $module_label = isset($module_labels[$section]) ? $module_labels[$section] : 'Si
 <div class="rkm-private-header-pro">
     <div class="rkm-private-header-pro__inner">
         <div class="rkm-private-header-pro__brand">
-            <a href="<?php echo esc_url(home_url('/mi-cuenta/panel')); ?>" class="rkm-private-header-pro__brand-link">
+            <a href="<?php echo esc_url($panel_url); ?>" class="rkm-private-header-pro__brand-link">
                 <?php if ($brand_logo !== '') : ?>
                     <img
                         src="<?php echo esc_url($brand_logo); ?>"
@@ -122,7 +129,9 @@ $module_label = isset($module_labels[$section]) ? $module_labels[$section] : 'Si
                         <a href="<?php echo esc_url(RKM_Products::get_section_url()); ?>">Productos</a>
                     <?php endif; ?>
                     <?php if (class_exists('RKM_Current_Account') && RKM_Current_Account::can_admin_access()) : ?>
-                        <a href="<?php echo esc_url(RKM_Current_Account::get_admin_section_url()); ?>">Pagos clientes</a>
+                        <a href="<?php echo esc_url(RKM_Current_Account::get_admin_section_url()); ?>">
+                            Pagos clientes<?php echo $pending_payment_reports_count > 0 ? ' (' . esc_html((string) $pending_payment_reports_count) . ')' : ''; ?>
+                        </a>
                     <?php endif; ?>
                     <?php if (class_exists('RKM_Operational_Orders') && RKM_Operational_Orders::can_access()) : ?>
                         <a href="<?php echo esc_url(RKM_Operational_Orders::get_section_url()); ?>">Pedidos operativos</a>
@@ -133,8 +142,8 @@ $module_label = isset($module_labels[$section]) ? $module_labels[$section] : 'Si
                     <?php if (class_exists('RKM_Current_Account') && RKM_Current_Account::can_customer_access()) : ?>
                         <a href="<?php echo esc_url(RKM_Current_Account::get_customer_section_url()); ?>">Cuenta corriente</a>
                     <?php endif; ?>
-                    <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=mi-cuenta')); ?>">Mi perfil</a>
-                    <a href="<?php echo esc_url(home_url('/mi-cuenta/panel/?section=pedidos')); ?>">Pedidos</a>
+                    <a href="<?php echo esc_url(function_exists('rkm_get_panel_url') ? rkm_get_panel_url(['section' => 'mi-cuenta']) : home_url('/mi-cuenta/panel/?section=mi-cuenta')); ?>">Mi perfil</a>
+                    <a href="<?php echo esc_url(function_exists('rkm_get_panel_url') ? rkm_get_panel_url(['section' => 'pedidos']) : home_url('/mi-cuenta/panel/?section=pedidos')); ?>">Pedidos</a>
                     <a class="rkm-private-header-pro__dropdown-danger" href="<?php echo esc_url(class_exists('RKM_Auth') ? RKM_Auth::get_logout_url() : wc_logout_url(home_url('/mi-cuenta/'))); ?>">Cerrar sesion</a>
                 </div>
             </div>

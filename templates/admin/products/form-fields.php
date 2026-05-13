@@ -5,7 +5,8 @@ if (!defined('ABSPATH')) {
 
 $is_edit = isset($is_edit) ? (bool) $is_edit : (($data['view'] ?? '') === 'edit');
 $form_action = isset($form_action) ? $form_action : ($data['form_action'] ?? 'create_product');
-$section_url = isset($section_url) ? $section_url : ($data['section_url'] ?? home_url('/mi-cuenta/panel/?section=productos'));
+$panel_base_url = function_exists('wc_get_account_endpoint_url') ? wc_get_account_endpoint_url('panel') : home_url('/mi-cuenta/panel/');
+$section_url = isset($section_url) ? $section_url : ($data['section_url'] ?? (function_exists('rkm_get_panel_url') ? rkm_get_panel_url(['section' => 'productos']) : add_query_arg('section', 'productos', $panel_base_url)));
 $form_url = isset($form_url) ? $form_url : $section_url;
 $list_url = isset($list_url) ? $list_url : ($data['list_url'] ?? $section_url);
 $categories = isset($categories) && is_array($categories) ? $categories : (isset($data['categories']) && is_array($data['categories']) ? $data['categories'] : []);

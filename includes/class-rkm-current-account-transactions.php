@@ -146,14 +146,18 @@ class RKM_Current_Account_Transactions {
         }
 
         $transaction_id = (int) $wpdb->insert_id;
+        $created_by_user = get_user_by('id', !empty($data['created_by']) ? absint($data['created_by']) : get_current_user_id());
+        $created_by_label = $created_by_user instanceof WP_User ? ($created_by_user->display_name ?: $created_by_user->user_login) : 'Sistema';
+
         self::add_audit_event(
             $order,
-            'Pago de cuenta corriente registrado',
+            $status === self::STATUS_APPROVED ? 'Pago externo registrado y aprobado' : 'Pago externo informado',
             sprintf(
-                'Se registro transaccion #%d por %s. Estado: %s.',
+                'Transaccion #%d por %s. Estado: %s. Informado por: %s.',
                 $transaction_id,
                 wp_strip_all_tags(self::format_money($amount)),
-                self::get_status_label($status)
+                self::get_status_label($status),
+                $created_by_label
             ),
             null,
             self::get_transaction($transaction_id)
@@ -230,8 +234,8 @@ class RKM_Current_Account_Transactions {
         return self::transition_transaction($transaction_id, self::STATUS_APPROVED);
     }
 
-    public static function reject_transaction($transaction_id) {
-        return self::transition_transaction($transaction_id, self::STATUS_REJECTED);
+    public static function reject_transaction($transaction_id, $reason = '') {
+        return self::transition_transaction($transaction_id, self::STATUS_REJECTED, $reason);
     }
 
     public static function get_approved_total_by_order($order_id) {
@@ -310,7 +314,7 @@ class RKM_Current_Account_Transactions {
         return $current;
     }
 
-    private static function transition_transaction($transaction_id, $new_status) {
+    private static function transition_transaction($transaction_id, $new_status, $review_note = '') {
         global $wpdb;
 
         $transaction_id = absint($transaction_id);
@@ -330,10 +334,18 @@ class RKM_Current_Account_Transactions {
         }
 
         $now = current_time('mysql');
+        $review_note = sanitize_textarea_field((string) $review_note);
+        $updated_note = (string) ($transaction['note'] ?? '');
+
+        if ($new_status === self::STATUS_REJECTED && $review_note !== '') {
+            $updated_note = trim($updated_note . "\nMotivo de rechazo: " . $review_note);
+        }
+
         $updated = $wpdb->update(
             self::get_table_name(),
             [
                 'status' => $new_status,
+                'note' => $updated_note,
                 'approved_by' => get_current_user_id(),
                 'approved_at' => $now,
                 'updated_at' => $now,
@@ -343,6 +355,7 @@ class RKM_Current_Account_Transactions {
                 'status' => self::STATUS_PENDING,
             ],
             [
+                '%s',
                 '%s',
                 '%d',
                 '%s',
@@ -362,15 +375,24 @@ class RKM_Current_Account_Transactions {
         $order = function_exists('wc_get_order') ? wc_get_order((int) $transaction['order_id']) : null;
 
         if ($order) {
+            $reviewer = wp_get_current_user();
+            $reviewer_label = $reviewer instanceof WP_User && !empty($reviewer->ID) ? ($reviewer->display_name ?: $reviewer->user_login) : 'Sistema';
+            $details = sprintf(
+                'Transaccion #%d %s por %s. Revisado por: %s.',
+                $transaction_id,
+                $new_status === self::STATUS_APPROVED ? 'aprobada' : 'rechazada',
+                wp_strip_all_tags(self::format_money((float) $transaction['amount'])),
+                $reviewer_label
+            );
+
+            if ($new_status === self::STATUS_REJECTED && $review_note !== '') {
+                $details .= ' Motivo: ' . $review_note;
+            }
+
             self::add_audit_event(
                 $order,
-                $new_status === self::STATUS_APPROVED ? 'Pago de cuenta corriente aprobado' : 'Pago de cuenta corriente rechazado',
-                sprintf(
-                    'Transaccion #%d %s por %s.',
-                    $transaction_id,
-                    $new_status === self::STATUS_APPROVED ? 'aprobada' : 'rechazada',
-                    wp_strip_all_tags(self::format_money((float) $transaction['amount']))
-                ),
+                $new_status === self::STATUS_APPROVED ? 'Pago externo aprobado' : 'Pago externo rechazado',
+                $details,
                 $transaction,
                 $updated_transaction
             );
@@ -459,7 +481,7 @@ class RKM_Current_Account_Transactions {
 
     private static function get_status_label($status) {
         $labels = [
-            self::STATUS_PENDING => 'Pendiente',
+            self::STATUS_PENDING => 'Pendiente de validacion',
             self::STATUS_APPROVED => 'Aprobado',
             self::STATUS_REJECTED => 'Rechazado',
             self::STATUS_VOIDED => 'Anulado',

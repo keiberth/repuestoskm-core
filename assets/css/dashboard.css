@@ -723,6 +723,23 @@
     font-size: 13.5px;
 }
 
+.rkm-admin-action-card__badge {
+    align-items: center;
+    background: #dc2626;
+    border-radius: 999px;
+    color: #ffffff !important;
+    display: inline-flex;
+    font-size: 12px !important;
+    font-weight: 800;
+    height: 24px;
+    justify-content: center;
+    min-width: 24px;
+    padding: 0 8px;
+    position: absolute;
+    right: 14px;
+    top: 14px;
+}
+
 .rkm-admin-list {
     padding-left: 20px;
 }
@@ -912,6 +929,11 @@
 .rkm-admin-note p {
     font-size: 13px;
     color: #475569;
+}
+
+.rkm-admin-action-card .rkm-admin-action-card__badge {
+    color: #ffffff !important;
+    font-size: 12px !important;
 }
 
 @media (max-width: 767px) {

@@ -66,13 +66,15 @@ class RKM_Auth {
     }
 
     public static function get_admin_panel_url() {
-        return apply_filters('rkm_admin_panel_url', home_url('/mi-cuenta/panel/'));
+        $url = function_exists('rkm_get_panel_url') ? rkm_get_panel_url() : home_url('/mi-cuenta/panel/');
+
+        return apply_filters('rkm_admin_panel_url', $url);
     }
 
     public static function get_vendor_redirect_url() {
         return apply_filters(
             'rkm_vendor_redirect_url',
-            home_url('/mi-cuenta/panel/?section=panel-vendedor')
+            function_exists('rkm_get_panel_url') ? rkm_get_panel_url(['section' => 'panel-vendedor']) : home_url('/mi-cuenta/panel/?section=panel-vendedor')
         );
     }
 

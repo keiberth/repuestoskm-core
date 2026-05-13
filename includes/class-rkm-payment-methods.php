@@ -11,8 +11,8 @@ class RKM_Payment_Methods {
     const NOTICE_TRANSIENT_PREFIX = 'rkm_payment_methods_notice_';
 
     public function init() {
+        add_action('init', [$this, 'handle_submission'], 20);
         add_action('wp_enqueue_scripts', [$this, 'enqueue_assets']);
-        add_action('template_redirect', [$this, 'handle_submission'], 5);
     }
 
     public static function can_access($user = null) {
@@ -24,7 +24,15 @@ class RKM_Payment_Methods {
     }
 
     public static function get_section_url() {
-        return home_url('/mi-cuenta/panel/?section=' . self::SECTION_KEY);
+        $base_url = function_exists('wc_get_account_endpoint_url')
+            ? wc_get_account_endpoint_url('panel')
+            : home_url('/mi-cuenta/panel/');
+
+        if (empty($base_url)) {
+            $base_url = home_url('/mi-cuenta/panel/');
+        }
+
+        return add_query_arg('section', self::SECTION_KEY, $base_url);
     }
 
     public static function get_page_title() {
@@ -156,8 +164,13 @@ class RKM_Payment_Methods {
     }
 
     public function handle_submission() {
-        if (!$this->is_active_section() || !$this->is_post_request()) {
+        if (!$this->is_payment_methods_submission()) {
             return;
+        }
+
+        if (!is_user_logged_in() || !self::can_access()) {
+            $this->set_flash_notice('error', 'No tenes permiso para gestionar formas de pago.');
+            $this->redirect_back();
         }
 
         if (!isset($_POST['rkm_payment_methods_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['rkm_payment_methods_nonce'])), 'rkm_payment_methods_update')) {
@@ -311,6 +324,20 @@ class RKM_Payment_Methods {
 
     private function is_post_request() {
         return strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST';
+    }
+
+    private function is_payment_methods_submission() {
+        if (!$this->is_post_request()) {
+            return false;
+        }
+
+        if (!isset($_POST['rkm_payment_methods_action'])) {
+            return false;
+        }
+
+        $section = isset($_POST['section']) ? sanitize_key(wp_unslash($_POST['section'])) : '';
+
+        return $section === '' || $section === self::SECTION_KEY;
     }
 
     private function get_notice_transient_key() {

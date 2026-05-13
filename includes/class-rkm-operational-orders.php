@@ -41,7 +41,9 @@ class RKM_Operational_Orders {
     }
 
     public static function get_section_url() {
-        return home_url('/mi-cuenta/panel/?section=' . self::SECTION_KEY);
+        return function_exists('rkm_get_panel_url')
+            ? rkm_get_panel_url(['section' => self::SECTION_KEY])
+            : add_query_arg('section', self::SECTION_KEY, home_url('/mi-cuenta/panel/'));
     }
 
     public static function can_confirm($user = null) {
@@ -659,20 +661,25 @@ class RKM_Operational_Orders {
             wp_send_json_error(['message' => $receipt_attachment_id->get_error_message()], 400);
         }
 
+        $is_admin_review = class_exists('RKM_Permissions') && RKM_Permissions::is_rkm_admin();
+        $transaction_status = $is_admin_review
+            ? RKM_Current_Account_Transactions::STATUS_APPROVED
+            : RKM_Current_Account_Transactions::STATUS_PENDING;
+
         $transaction_id = RKM_Current_Account_Transactions::add_transaction([
             'order_id' => $order_id,
             'customer_id' => (int) $order->get_customer_id(),
             'type' => RKM_Current_Account_Transactions::TYPE_PAYMENT,
             'amount' => $amount,
-            'status' => RKM_Current_Account_Transactions::STATUS_APPROVED,
+            'status' => $transaction_status,
             'method_id' => is_numeric($method_id) ? absint($method_id) : null,
             'method_label' => $method_label,
             'reference' => $reference,
             'note' => $note,
             'receipt_attachment_id' => (int) $receipt_attachment_id,
             'created_by' => get_current_user_id(),
-            'approved_by' => get_current_user_id(),
-            'approved_at' => current_time('mysql'),
+            'approved_by' => $is_admin_review ? get_current_user_id() : null,
+            'approved_at' => $is_admin_review ? current_time('mysql') : null,
         ]);
 
         if (is_wp_error($transaction_id)) {
@@ -682,15 +689,12 @@ class RKM_Operational_Orders {
             wp_send_json_error(['message' => $transaction_id->get_error_message()], 400);
         }
 
-        $sync_result = RKM_Current_Account_Transactions::sync_order_balance($order_id);
-        if (is_wp_error($sync_result)) {
-            wp_send_json_error(['message' => $sync_result->get_error_message()], 500);
-        }
-
         $updated_order = wc_get_order($order_id);
 
         wp_send_json_success([
-            'message' => 'Pago registrado y saldo actualizado.',
+            'message' => $is_admin_review
+                ? 'Pago externo registrado, aprobado y aplicado al saldo.'
+                : 'Pago externo informado. Queda pendiente de validacion administrativa.',
             'order' => $this->format_order_row($updated_order),
         ]);
     }

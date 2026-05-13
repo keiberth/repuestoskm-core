@@ -9,6 +9,8 @@ $notice = isset($data['assignments_notice']) ? $data['assignments_notice'] : nul
 $rows = isset($data['assignments_rows']) && is_array($data['assignments_rows']) ? $data['assignments_rows'] : [];
 $vendors = isset($data['assignments_vendors']) && is_array($data['assignments_vendors']) ? $data['assignments_vendors'] : [];
 $summary = isset($data['assignments_summary']) && is_array($data['assignments_summary']) ? $data['assignments_summary'] : [];
+$panel_base_url = function_exists('wc_get_account_endpoint_url') ? wc_get_account_endpoint_url('panel') : home_url('/mi-cuenta/panel/');
+$panel_url = function_exists('rkm_get_panel_url') ? rkm_get_panel_url() : $panel_base_url;
 ?>
 
 <div class="rkm-app">
@@ -22,7 +24,7 @@ $summary = isset($data['assignments_summary']) && is_array($data['assignments_su
             </div>
 
             <div class="rkm-admin-assignments-page__actions">
-                <a class="rkm-admin-assignments-page__back" href="<?php echo esc_url(home_url('/mi-cuenta/panel/')); ?>">
+                <a class="rkm-admin-assignments-page__back" href="<?php echo esc_url($panel_url); ?>">
                     Volver al panel admin
                 </a>
             </div>

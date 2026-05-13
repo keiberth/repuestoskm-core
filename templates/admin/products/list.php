@@ -10,7 +10,9 @@ $products_max_pages = isset($data['products_max_pages']) ? max(1, (int) $data['p
 $product_search = $data['product_search'] ?? '';
 $product_status = $data['product_status'] ?? '';
 $product_cat = isset($data['product_cat']) ? (int) $data['product_cat'] : 0;
-$section_url = $data['section_url'] ?? home_url('/mi-cuenta/panel/?section=productos');
+$panel_base_url = function_exists('wc_get_account_endpoint_url') ? wc_get_account_endpoint_url('panel') : home_url('/mi-cuenta/panel/');
+$panel_url = function_exists('rkm_get_panel_url') ? rkm_get_panel_url() : $panel_base_url;
+$section_url = $data['section_url'] ?? (function_exists('rkm_get_panel_url') ? rkm_get_panel_url(['section' => 'productos']) : add_query_arg('section', 'productos', $panel_base_url));
 $status_options = isset($data['status_options']) && is_array($data['status_options']) ? $data['status_options'] : [];
 $categories = isset($data['categories']) && is_array($data['categories']) ? $data['categories'] : [];
 $products_module = class_exists('RKM_Products') ? new RKM_Products() : null;
@@ -30,7 +32,7 @@ $products_module = class_exists('RKM_Products') ? new RKM_Products() : null;
 </section>
 
 <section class="rkm-card rkm-admin-products-list-card">
-    <form method="get" action="<?php echo esc_url(home_url('/mi-cuenta/panel/')); ?>" class="rkm-admin-products-filters">
+    <form method="get" action="<?php echo esc_url($panel_url); ?>" class="rkm-admin-products-filters">
         <input type="hidden" name="section" value="productos">
         <input type="hidden" name="view" value="list">
 
@@ -177,13 +179,13 @@ $products_module = class_exists('RKM_Products') ? new RKM_Products() : null;
                 ?>
 
                 <?php if ($products_page > 1) : ?>
-                    <a href="<?php echo esc_url(add_query_arg(array_merge($base_args, ['products_page' => $products_page - 1]), home_url('/mi-cuenta/panel/'))); ?>">Anterior</a>
+                    <a href="<?php echo esc_url(add_query_arg(array_merge($base_args, ['products_page' => $products_page - 1]), $panel_url)); ?>">Anterior</a>
                 <?php endif; ?>
 
                 <span>Pagina <?php echo esc_html((string) $products_page); ?> de <?php echo esc_html((string) $products_max_pages); ?></span>
 
                 <?php if ($products_page < $products_max_pages) : ?>
-                    <a href="<?php echo esc_url(add_query_arg(array_merge($base_args, ['products_page' => $products_page + 1]), home_url('/mi-cuenta/panel/'))); ?>">Siguiente</a>
+                    <a href="<?php echo esc_url(add_query_arg(array_merge($base_args, ['products_page' => $products_page + 1]), $panel_url)); ?>">Siguiente</a>
                 <?php endif; ?>
             </nav>
         <?php endif; ?>

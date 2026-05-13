@@ -14,6 +14,18 @@ class RKM_Admin_Dashboard {
         return RKM_Permissions::is_rkm_admin($user);
     }
 
+    private static function get_panel_url($args = []) {
+        if (function_exists('rkm_get_panel_url')) {
+            return rkm_get_panel_url($args);
+        }
+
+        $base_url = function_exists('wc_get_account_endpoint_url')
+            ? wc_get_account_endpoint_url('panel')
+            : home_url('/mi-cuenta/panel/');
+
+        return !empty($args) ? add_query_arg($args, $base_url) : $base_url;
+    }
+
     public function render_dashboard($data = []) {
         if (!self::can_access()) {
             wp_safe_redirect(RKM_Auth::get_redirect_url_for_user());
@@ -31,6 +43,8 @@ class RKM_Admin_Dashboard {
     }
 
     private function get_dashboard_data() {
+        $pending_payment_reports_count = $this->get_pending_payment_reports_count();
+
         return [
             'admin_metrics' => [
                 [
@@ -44,7 +58,7 @@ class RKM_Admin_Dashboard {
                     'value' => $this->get_active_orders_count(),
                     'meta'  => 'Pendientes, en revision o en proceso',
                     'tone'  => 'warning',
-                    'url'   => class_exists('RKM_Operational_Orders') ? RKM_Operational_Orders::get_section_url() : home_url('/mi-cuenta/panel/?section=pedidos-operativos'),
+                    'url'   => class_exists('RKM_Operational_Orders') ? RKM_Operational_Orders::get_section_url() : self::get_panel_url(['section' => 'pedidos-operativos']),
                 ],
                 [
                     'label' => 'Clientes activos',
@@ -59,10 +73,11 @@ class RKM_Admin_Dashboard {
                     'tone'  => 'neutral',
                 ],
                 [
-                    'label' => 'Rentabilidad',
-                    'value' => 'Placeholder',
-                    'meta'  => 'Listo para conectar costos, margenes y utilidad',
-                    'tone'  => 'neutral',
+                    'label' => 'Pagos por validar',
+                    'value' => $pending_payment_reports_count,
+                    'meta'  => 'Informados por clientes o vendedores',
+                    'tone'  => $pending_payment_reports_count > 0 ? 'warning' : 'neutral',
+                    'url'   => class_exists('RKM_Current_Account') ? RKM_Current_Account::get_admin_section_url() : self::get_panel_url(['section' => 'pagos-clientes']),
                 ],
                 [
                     'label' => 'Desempeno comercial',
@@ -75,47 +90,50 @@ class RKM_Admin_Dashboard {
                 [
                     'label'       => 'Nueva orden',
                     'description' => 'Registrar una orden manual desde el frontend comercial.',
-                    'url'         => home_url('/mi-cuenta/panel/?section=nueva-orden'),
+                    'url'         => self::get_panel_url(['section' => 'nueva-orden']),
                 ],
                 [
                     'label'       => 'Panel vendedor',
                     'description' => 'Revisar la base operativa del modulo comercial.',
-                    'url'         => class_exists('RKM_Sellers') ? RKM_Sellers::get_section_url() : home_url('/mi-cuenta/panel/'),
+                    'url'         => class_exists('RKM_Sellers') ? RKM_Sellers::get_section_url() : self::get_panel_url(['section' => 'panel-vendedor']),
                 ],
                 [
                     'label'       => 'Usuarios',
                     'description' => 'Crear usuarios internos y asignar roles sin salir del sistema RKM.',
-                    'url'         => class_exists('RKM_Admin_Users') ? RKM_Admin_Users::get_section_url() : home_url('/mi-cuenta/panel/'),
+                    'url'         => class_exists('RKM_Admin_Users') ? RKM_Admin_Users::get_section_url() : self::get_panel_url(['section' => 'usuarios']),
                 ],
                 [
                     'label'       => 'Asignaciones',
                     'description' => 'Asignar clientes a vendedores y preparar el filtrado comercial por cartera.',
-                    'url'         => class_exists('RKM_Assignments') ? RKM_Assignments::get_section_url() : home_url('/mi-cuenta/panel/'),
+                    'url'         => class_exists('RKM_Assignments') ? RKM_Assignments::get_section_url() : self::get_panel_url(['section' => 'asignaciones']),
                 ],
                 [
                     'label'       => 'Formas de pago',
                     'description' => 'Administrar los metodos disponibles al crear pedidos.',
-                    'url'         => class_exists('RKM_Payment_Methods') ? RKM_Payment_Methods::get_section_url() : home_url('/mi-cuenta/panel/'),
+                    'url'         => class_exists('RKM_Payment_Methods') ? RKM_Payment_Methods::get_section_url() : self::get_panel_url(['section' => 'formas-pago']),
                 ],
                 [
                     'label'       => 'Condiciones de pago',
                     'description' => 'Configurar contado, credito, mixto y descuento comercial.',
-                    'url'         => class_exists('RKM_Payment_Terms') ? RKM_Payment_Terms::get_section_url() : home_url('/mi-cuenta/panel/'),
+                    'url'         => class_exists('RKM_Payment_Terms') ? RKM_Payment_Terms::get_section_url() : self::get_panel_url(['section' => 'condiciones-pago']),
                 ],
                 [
                     'label'       => 'Productos',
                     'description' => 'Crear y actualizar productos WooCommerce desde el panel RKM.',
-                    'url'         => class_exists('RKM_Products') ? RKM_Products::get_section_url() : home_url('/mi-cuenta/panel/'),
+                    'url'         => class_exists('RKM_Products') ? RKM_Products::get_section_url() : self::get_panel_url(['section' => 'productos']),
                 ],
                 [
                     'label'       => 'Pagos clientes',
-                    'description' => 'Revisar pagos informados y actualizar saldos pendientes.',
-                    'url'         => class_exists('RKM_Current_Account') ? RKM_Current_Account::get_admin_section_url() : home_url('/mi-cuenta/panel/'),
+                    'description' => $pending_payment_reports_count > 0
+                        ? sprintf('%d pago(s) pendiente(s) de validacion externa.', $pending_payment_reports_count)
+                        : 'Revisar pagos informados y actualizar saldos pendientes.',
+                    'url'         => class_exists('RKM_Current_Account') ? RKM_Current_Account::get_admin_section_url() : self::get_panel_url(['section' => 'pagos-clientes']),
+                    'badge'       => $pending_payment_reports_count,
                 ],
                 [
                     'label'       => 'Mi cuenta',
                     'description' => 'Gestionar los datos personales del usuario actual.',
-                    'url'         => home_url('/mi-cuenta/panel/?section=mi-cuenta'),
+                    'url'         => self::get_panel_url(['section' => 'mi-cuenta']),
                 ],
                 [
                     'label'       => 'WordPress Admin',
@@ -160,6 +178,14 @@ class RKM_Admin_Dashboard {
         }
 
         return $this->format_money($total);
+    }
+
+    private function get_pending_payment_reports_count() {
+        if (!class_exists('RKM_Current_Account')) {
+            return 0;
+        }
+
+        return (new RKM_Current_Account())->get_pending_payment_reports_count();
     }
 
     private function get_active_orders_count() {

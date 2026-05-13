@@ -324,6 +324,22 @@
     gap: 8px;
 }
 
+.rkm-payments-review-actions form {
+    display: grid;
+    gap: 8px;
+}
+
+.rkm-payments-review-actions textarea {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    color: #111827;
+    font: inherit;
+    min-height: 54px;
+    padding: 8px 10px;
+    resize: vertical;
+    width: 180px;
+}
+
 .rkm-current-account-action {
     border: 0;
     cursor: pointer;
@@ -342,6 +358,12 @@
 .rkm-current-account-reviewed {
     background: #f3f4f6;
     color: #6b7280;
+}
+
+.rkm-current-account-muted {
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 700;
 }
 
 .rkm-current-account-receipt-link {

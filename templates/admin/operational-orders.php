@@ -5,6 +5,7 @@ if (!defined('ABSPATH')) {
 
 $page_title = $data['page_title'] ?? 'Pedidos operativos';
 $page_subtitle = $data['page_subtitle'] ?? '';
+$panel_url = function_exists('rkm_get_panel_url') ? rkm_get_panel_url() : home_url('/mi-cuenta/panel/');
 $orders = isset($data['operational_orders']) && is_array($data['operational_orders']) ? $data['operational_orders'] : [];
 $current = $data['current_section'] ?? 'pedidos-operativos';
 $can_confirm_orders = !empty($data['can_confirm_orders']);
@@ -34,7 +35,7 @@ $pending_review_count = count(array_filter($orders, static function ($order) use
                 <p><?php echo esc_html($page_subtitle); ?></p>
             </div>
 
-            <a class="rkm-admin-orders-back" href="<?php echo esc_url(home_url('/mi-cuenta/panel/')); ?>">
+            <a class="rkm-admin-orders-back" href="<?php echo esc_url($panel_url); ?>">
                 Volver al panel
             </a>
         </div>

@@ -5,7 +5,8 @@ if (!defined('ABSPATH')) {
 
 $categories = isset($data['categories']) && is_array($data['categories']) ? $data['categories'] : [];
 $status_options = isset($data['status_options']) && is_array($data['status_options']) ? $data['status_options'] : [];
-$section_url = $data['section_url'] ?? home_url('/mi-cuenta/panel/?section=productos');
+$panel_base_url = function_exists('wc_get_account_endpoint_url') ? wc_get_account_endpoint_url('panel') : home_url('/mi-cuenta/panel/');
+$section_url = $data['section_url'] ?? (function_exists('rkm_get_panel_url') ? rkm_get_panel_url(['section' => 'productos']) : add_query_arg('section', 'productos', $panel_base_url));
 $list_url = $data['list_url'] ?? $section_url;
 $form_url = class_exists('RKM_Products') ? RKM_Products::get_section_url(['view' => 'create']) : $section_url;
 $form_action = 'create_product';

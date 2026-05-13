@@ -13,6 +13,8 @@ $edit_user = isset($data['admin_users_edit_user']) && is_array($data['admin_user
 $is_editing = !empty($edit_user);
 $selected_role = isset($form['role']) ? $form['role'] : 'customer';
 $selected_role_description = '';
+$panel_base_url = function_exists('wc_get_account_endpoint_url') ? wc_get_account_endpoint_url('panel') : home_url('/mi-cuenta/panel/');
+$panel_url = function_exists('rkm_get_panel_url') ? rkm_get_panel_url() : $panel_base_url;
 
 foreach ($roles as $role_option) {
     if ($role_option['value'] === $selected_role) {
@@ -33,7 +35,7 @@ foreach ($roles as $role_option) {
             </div>
 
             <div class="rkm-admin-users-page__actions">
-                <a class="rkm-admin-users-page__back" href="<?php echo esc_url(home_url('/mi-cuenta/panel/')); ?>">
+                <a class="rkm-admin-users-page__back" href="<?php echo esc_url($panel_url); ?>">
                     Volver al panel admin
                 </a>
             </div>

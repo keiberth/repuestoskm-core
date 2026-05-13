@@ -6,7 +6,8 @@ if (!defined('ABSPATH')) {
 $product = $data['product'] ?? null;
 $product_form_data = isset($data['product_form_data']) && is_array($data['product_form_data']) ? $data['product_form_data'] : [];
 $status_options = isset($data['status_options']) && is_array($data['status_options']) ? $data['status_options'] : [];
-$list_url = $data['list_url'] ?? home_url('/mi-cuenta/panel/?section=productos&view=list');
+$panel_base_url = function_exists('wc_get_account_endpoint_url') ? wc_get_account_endpoint_url('panel') : home_url('/mi-cuenta/panel/');
+$list_url = $data['list_url'] ?? (function_exists('rkm_get_panel_url') ? rkm_get_panel_url(['section' => 'productos', 'view' => 'list']) : add_query_arg(['section' => 'productos', 'view' => 'list'], $panel_base_url));
 
 if (!$product instanceof WC_Product) {
     ?>

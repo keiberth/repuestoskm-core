@@ -5,9 +5,11 @@ if (!defined('ABSPATH')) {
 
 $page_title = $data['page_title'] ?? 'Pagos clientes';
 $page_subtitle = $data['page_subtitle'] ?? '';
+$panel_base_url = function_exists('wc_get_account_endpoint_url') ? wc_get_account_endpoint_url('panel') : home_url('/mi-cuenta/panel/');
+$panel_url = function_exists('rkm_get_panel_url') ? rkm_get_panel_url() : $panel_base_url;
 $payment_reports = isset($data['payment_reports']) && is_array($data['payment_reports']) ? $data['payment_reports'] : [];
 $notice = $data['current_account_notice'] ?? null;
-$section_url = $data['section_url'] ?? home_url('/mi-cuenta/panel/?section=pagos-clientes');
+$section_url = $data['section_url'] ?? (function_exists('rkm_get_panel_url') ? rkm_get_panel_url(['section' => 'pagos-clientes']) : add_query_arg('section', 'pagos-clientes', $panel_base_url));
 $status_labels = isset($data['status_labels']) && is_array($data['status_labels']) ? $data['status_labels'] : [];
 $current_account = class_exists('RKM_Current_Account') ? new RKM_Current_Account() : null;
 $pending_count = count(array_filter($payment_reports, static function ($report) {
@@ -25,7 +27,7 @@ $pending_count = count(array_filter($payment_reports, static function ($report) 
                 <p><?php echo esc_html($page_subtitle); ?></p>
             </div>
 
-            <a class="rkm-current-account-back" href="<?php echo esc_url(home_url('/mi-cuenta/panel/')); ?>">
+            <a class="rkm-current-account-back" href="<?php echo esc_url($panel_url); ?>">
                 Volver al panel admin
             </a>
         </div>
@@ -33,7 +35,7 @@ $pending_count = count(array_filter($payment_reports, static function ($report) 
         <div class="rkm-module-shell rkm-current-account-shell">
             <section class="rkm-current-account-summary">
                 <div>
-                    <span class="rkm-current-account-summary__eyebrow">Revision administrativa</span>
+                    <span class="rkm-current-account-summary__eyebrow">Pagos externos</span>
                     <strong><?php echo esc_html((string) $pending_count); ?></strong>
                     <p>pagos pendientes de validacion</p>
                 </div>
@@ -47,14 +49,14 @@ $pending_count = count(array_filter($payment_reports, static function ($report) 
 
             <section class="rkm-card rkm-current-account-panel rkm-current-account-history">
                 <div class="rkm-current-account-panel__header">
-                    <h2>Pagos informados</h2>
-                    <p>Al aprobar, el sistema descuenta el monto del saldo pendiente del pedido.</p>
+                    <h2>Pagos pendientes de validacion</h2>
+                    <p>Verifica banco, referencia y comprobante fuera de RKM. Solo al aprobar se descuenta el saldo pendiente.</p>
                 </div>
 
                 <?php if (empty($payment_reports)) : ?>
                     <div class="rkm-current-account-empty">
                         <strong>No hay pagos informados</strong>
-                        <p>Cuando un cliente informe un pago, aparecera en esta revision.</p>
+                        <p>Cuando un cliente o vendedor informe un pago realizado por fuera, aparecera en esta revision.</p>
                     </div>
                 <?php else : ?>
                     <div class="rkm-current-account-table-wrap">
@@ -70,6 +72,7 @@ $pending_count = count(array_filter($payment_reports, static function ($report) 
                                     <th>Referencia</th>
                                     <th>Comprobante</th>
                                     <th>Estado</th>
+                                    <th>Validacion</th>
                                     <th>Fecha</th>
                                     <th>Acciones</th>
                                 </tr>
@@ -110,6 +113,14 @@ $pending_count = count(array_filter($payment_reports, static function ($report) 
                                                 <?php echo esc_html($status_labels[$status] ?? ucfirst($status)); ?>
                                             </span>
                                         </td>
+                                        <td>
+                                            <?php if (!empty($report['reviewed_by_name']) || !empty($report['reviewed_at'])) : ?>
+                                                <?php echo esc_html(!empty($report['reviewed_by_name']) ? $report['reviewed_by_name'] : '-'); ?>
+                                                <small><?php echo esc_html(!empty($report['reviewed_at']) && $current_account ? $current_account->format_date($report['reviewed_at']) : ($report['reviewed_at'] ?? '')); ?></small>
+                                            <?php else : ?>
+                                                <span class="rkm-current-account-muted">Pendiente de validacion</span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td><?php echo esc_html($current_account ? $current_account->format_date($report['created_at']) : $report['created_at']); ?></td>
                                         <td>
                                             <?php if ($status === 'pending') : ?>
@@ -124,6 +135,7 @@ $pending_count = count(array_filter($payment_reports, static function ($report) 
                                                     <form method="post" action="<?php echo esc_url($section_url); ?>">
                                                         <input type="hidden" name="rkm_current_account_action" value="reject_payment">
                                                         <input type="hidden" name="report_id" value="<?php echo esc_attr((string) $report['id']); ?>">
+                                                        <textarea name="rejection_note" rows="2" placeholder="Motivo de rechazo"></textarea>
                                                         <?php wp_nonce_field('rkm_current_account_review', 'rkm_current_account_nonce'); ?>
                                                         <button type="submit" class="rkm-current-account-action rkm-current-account-action--reject">Rechazar</button>
                                                     </form>

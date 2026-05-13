@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) {
 }
 
 $current = isset($current) ? $current : '';
-$panel_url = home_url('/mi-cuenta/panel/');
+$panel_url = function_exists('rkm_get_panel_url') ? rkm_get_panel_url() : home_url('/mi-cuenta/panel/');
 $current_user = wp_get_current_user();
 $is_vendor_user = class_exists('RKM_Permissions') && RKM_Permissions::is_rkm_vendor($current_user);
 ?>

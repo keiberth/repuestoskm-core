@@ -414,7 +414,7 @@ class RKM_Dashboard {
             'returns_count'      => $returns_count,
             'dashboard_cards'    => [
                 [
-                    'label' => 'Pendiente por pagar',
+                    'label' => 'Saldo pendiente',
                     'value' => $pending_total,
                 ],
                 [

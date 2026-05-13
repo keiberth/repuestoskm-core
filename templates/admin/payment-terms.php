@@ -11,7 +11,14 @@ $settings = isset($data['payment_terms_settings']) && is_array($data['payment_te
     : (class_exists('RKM_Payment_Terms') ? RKM_Payment_Terms::get_settings() : []);
 $terms = isset($settings['terms']) && is_array($settings['terms']) ? $settings['terms'] : [];
 $discount = isset($settings['cash_discount_percent']) ? (float) $settings['cash_discount_percent'] : 0;
-$section_url = class_exists('RKM_Payment_Terms') ? RKM_Payment_Terms::get_section_url() : home_url('/mi-cuenta/panel/?section=condiciones-pago');
+$panel_base_url = function_exists('wc_get_account_endpoint_url') ? wc_get_account_endpoint_url('panel') : home_url('/mi-cuenta/panel/');
+if (empty($panel_base_url)) {
+    $panel_base_url = home_url('/mi-cuenta/panel/');
+}
+$section_url = class_exists('RKM_Payment_Terms')
+    ? RKM_Payment_Terms::get_section_url()
+    : add_query_arg('section', 'condiciones-pago', $panel_base_url);
+$panel_url = function_exists('rkm_get_panel_url') ? rkm_get_panel_url() : $panel_base_url;
 ?>
 
 <div class="rkm-app rkm-module-app">
@@ -24,7 +31,7 @@ $section_url = class_exists('RKM_Payment_Terms') ? RKM_Payment_Terms::get_sectio
                 <p><?php echo esc_html($page_subtitle); ?></p>
             </div>
 
-            <a class="rkm-admin-payment-terms-page__back" href="<?php echo esc_url(home_url('/mi-cuenta/panel/')); ?>">
+            <a class="rkm-admin-payment-terms-page__back" href="<?php echo esc_url($panel_url); ?>">
                 Volver al panel admin
             </a>
         </div>
@@ -43,6 +50,7 @@ $section_url = class_exists('RKM_Payment_Terms') ? RKM_Payment_Terms::get_sectio
             <?php endif; ?>
 
             <form method="post" action="<?php echo esc_url($section_url); ?>" class="rkm-admin-payment-terms-form">
+                <input type="hidden" name="section" value="condiciones-pago">
                 <?php wp_nonce_field('rkm_payment_terms_update', 'rkm_payment_terms_nonce'); ?>
 
                 <section class="rkm-card rkm-admin-payment-terms-discount">

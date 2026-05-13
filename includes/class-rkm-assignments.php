@@ -24,7 +24,15 @@ class RKM_Assignments {
     }
 
     public static function get_section_url() {
-        return home_url('/mi-cuenta/panel/?section=' . self::SECTION_KEY);
+        if (function_exists('rkm_get_panel_url')) {
+            return rkm_get_panel_url(['section' => self::SECTION_KEY]);
+        }
+
+        $base_url = function_exists('wc_get_account_endpoint_url')
+            ? wc_get_account_endpoint_url('panel')
+            : home_url('/mi-cuenta/panel/');
+
+        return add_query_arg('section', self::SECTION_KEY, $base_url);
     }
 
     public static function get_assignment_meta_key() {

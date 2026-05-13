@@ -3,6 +3,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+$panel_base_url = function_exists('wc_get_account_endpoint_url') ? wc_get_account_endpoint_url('panel') : home_url('/mi-cuenta/panel/');
+$panel_url = function_exists('rkm_get_panel_url') ? rkm_get_panel_url() : $panel_base_url;
+
 $page_title = $data['page_title'] ?? 'Almacen';
 $page_subtitle = $data['page_subtitle'] ?? '';
 $orders = isset($data['warehouse_orders']) && is_array($data['warehouse_orders']) ? $data['warehouse_orders'] : [];
@@ -22,7 +25,7 @@ $warehouse_count = count(array_filter($orders, static function ($order) {
                 <p><?php echo esc_html($page_subtitle); ?></p>
             </div>
 
-            <a class="rkm-warehouse-back" href="<?php echo esc_url(home_url('/mi-cuenta/panel/')); ?>">
+            <a class="rkm-warehouse-back" href="<?php echo esc_url($panel_url); ?>">
                 Volver al panel
             </a>
         </div>
